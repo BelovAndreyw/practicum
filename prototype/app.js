@@ -13,6 +13,9 @@ tabs.forEach((tab) => {
     const targetView = document.getElementById(targetId);
     if (targetView) {
       targetView.classList.add("is-active");
+      targetView.querySelectorAll(".reveal").forEach((element) => {
+        element.classList.add("is-visible");
+      });
     }
   });
 });
