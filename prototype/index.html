@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>Командный зачёт - UX/UI MVP</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-glow page-glow--left"></div>
+  <div class="page-glow page-glow--right"></div>
+
+  <div class="shell">
+    <header class="topbar reveal">
+      <a class="brand" href="#top">
+        <span class="brand__mark"></span>
+        <div>
+          <p class="eyebrow">UX/UI MVP</p>
+          <h1>Командный зачёт</h1>
+        </div>
+      </a>
+
+      <nav class="topbar__nav">
+        <a href="#experience">Прототип</a>
+        <a href="#architecture">IA</a>
+        <a href="#coverage">Покрытие ТЗ</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero reveal">
+        <div class="hero__copy">
+          <span class="kicker">Командная учебная экосистема для подготовки к сессии</span>
+          <h2>Веб-интерфейс, где рейтинг мотивирует, а не давит.</h2>
+          <p>
+            MVP сфокусирован на трех ролях: студент, капитан, организатор.
+            В центре интерфейса - команда, прогресс по КРК, биржа знаний,
+            события, челленджи и прозрачные игровые механики.
+          </p>
+
+          <div class="hero__actions">
+            <a class="button button--primary" href="#experience">Смотреть экраны</a>
+            <a class="button button--ghost" href="../docs/ux-ui-mvp.md">Открыть UX-обоснование</a>
+          </div>
+        </div>
+
+        <div class="hero__metrics">
+          <article class="metric-card metric-card--accent">
+            <span class="metric-card__label">Формула MVP</span>
+            <strong>60 / 30 / 10</strong>
+            <p>Базовый рейтинг, сплоченность и бонусы визуально разделены, чтобы команде было проще понимать свой результат.</p>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-card__label">UX-фокус</span>
+            <strong>Прозрачность + мотивация</strong>
+            <p>Студент сразу видит личный вклад, действия для роста и ближайшие точки включения в игру.</p>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-card__label">MVP-ролей</span>
+            <strong>3 интерфейса</strong>
+            <p>Отдельные сценарии для студента, капитана и организатора без смешивания контуров ответственности.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section reveal" id="principles">
+        <div class="section__header">
+          <div>
+            <p class="eyebrow">Design Principles</p>
+            <h2>На чем строится UX/UI MVP</h2>
+          </div>
+        </div>
+
+        <div class="principles-grid">
+          <article class="principle-card">
+            <span class="principle-card__number">01</span>
+            <h3>Понятный прогресс</h3>
+            <p>КРК и командная динамика читаются с первого взгляда: вклад, позиции в лиге, активность и бонусы всегда на поверхности.</p>
+          </article>
+
+          <article class="principle-card">
+            <span class="principle-card__number">02</span>
+            <h3>Команда как центр</h3>
+            <p>Почти каждый сценарий возвращает пользователя к командному контексту: совместные события, помощь, челленджи, оценки вклада.</p>
+          </article>
+
+          <article class="principle-card">
+            <span class="principle-card__number">03</span>
+            <h3>Низкий порог входа</h3>
+            <p>Большие CTA, короткие статусы, карточная подача и ролевое разделение не перегружают пользователя на первом входе.</p>
+          </article>
+
+          <article class="principle-card">
+            <span class="principle-card__number">04</span>
+            <h3>Доверие к системе</h3>
+            <p>Чувствительные механики вроде "спасения" и анонимной оценки поданы через понятные этапы, объяснения и подтверждения.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section reveal" id="experience">
+        <div class="section__header section__header--split">
+          <div>
+            <p class="eyebrow">Adaptive Prototype</p>
+            <h2>Ключевые UX/UI-сценарии MVP</h2>
+            <p class="section__lead">Роли разделены по задачам, но объединены общим визуальным языком: темный графит, теплый оранжевый акцент и карточки с высоким ощущением прогресса.</p>
+          </div>
+
+          <div class="tab-list" role="tablist" aria-label="Роли">
+            <button class="tab is-active" data-target="student" type="button">Студент</button>
+            <button class="tab" data-target="captain" type="button">Капитан</button>
+            <button class="tab" data-target="organizer" type="button">Организатор</button>
+          </div>
+        </div>
+
+        <section class="role-view is-active" id="student">
+          <div class="mockup-grid">
+            <article class="phone-screen">
+              <div class="screen-header">
+                <div>
+                  <span class="eyebrow">Главный экран</span>
+                  <h3>Сегодня для команды "Квант"</h3>
+                </div>
+                <span class="pill pill--positive">Лига: Профи</span>
+              </div>
+
+              <div class="story-strip">
+                <article class="story-card story-card--mountain">
+                  <span>Новости</span>
+                  <strong>Как забрать максимум пользы от приложения</strong>
+                </article>
+                <article class="story-card story-card--warm">
+                  <span>Журнал</span>
+                  <strong>Три формата командной подготовки на неделю</strong>
+                </article>
+                <article class="story-card story-card--summary">
+                  <span>Итоги</span>
+                  <strong>Команда поднялась на 2 позиции</strong>
+                </article>
+              </div>
+
+              <article class="challenge-card">
+                <div class="challenge-card__visual">
+                  <div class="route route--one"></div>
+                  <div class="route route--two"></div>
+                  <div class="route-point route-point--one">5642</div>
+                  <div class="route-point route-point--two">1569</div>
+                  <div class="route-point route-point--three">688</div>
+                  <div class="route-point route-point--four">2090</div>
+                </div>
+
+                <div class="challenge-card__content">
+                  <div class="challenge-card__head">
+                    <span class="pill">Глобальный челлендж</span>
+                    <span class="muted">до 24 апреля</span>
+                  </div>
+                  <h4>По вершинам</h4>
+                  <p>Общий путь команды через серию учебных целей и межкомандных активностей.</p>
+
+                  <div class="progress-row">
+                    <div class="progress-track">
+                      <span class="progress-track__fill" style="width: 46%;"></span>
+                    </div>
+                    <strong>7 845 / 17 400</strong>
+                  </div>
+                </div>
+              </article>
+
+              <div class="dashboard-grid">
+                <article class="card activity-card">
+                  <div class="card__head">
+                    <h4>Индекс команды</h4>
+                    <span class="badge badge--down">74</span>
+                  </div>
+
+                  <div class="radial-score">
+                    <div class="radial-score__ring">
+                      <div class="radial-score__center">
+                        <strong>74</strong>
+                        <span>из 100</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p class="muted">Основан на активности, check-in и взаимной поддержке внутри команды.</p>
+                </article>
+
+                <article class="card leaderboard-card">
+                  <div class="card__head">
+                    <h4>Лидеры недели</h4>
+                    <a href="#coverage">Все рейтинги</a>
+                  </div>
+
+                  <div class="leaderboard-tabs">
+                    <span class="leaderboard-tabs__active">Команды</span>
+                    <span>Участники</span>
+                  </div>
+
+                  <ul class="leaderboard-list">
+                    <li>
+                      <span class="medal medal--gold">1</span>
+                      <span class="leaderboard-list__name">Команда 3</span>
+                      <strong>390</strong>
+                    </li>
+                    <li>
+                      <span class="medal medal--silver">2</span>
+                      <span class="leaderboard-list__name">Команда 4</span>
+                      <strong>384</strong>
+                    </li>
+                    <li>
+                      <span class="medal medal--bronze">3</span>
+                      <span class="leaderboard-list__name">Квант</span>
+                      <strong>374</strong>
+                    </li>
+                  </ul>
+                </article>
+              </div>
+
+              <article class="card achievement-card">
+                <div class="card__head">
+                  <h4>Достижения</h4>
+                  <a href="#architecture">Смотреть все</a>
+                </div>
+
+                <ul class="achievement-list">
+                  <li>
+                    <span class="achievement-list__icon">★</span>
+                    <div>
+                      <strong>Участвуйте в проекте</strong>
+                      <p>Получите первый командный опыт и разблокируйте стартовую ачивку.</p>
+                    </div>
+                    <span class="checkmark">✓</span>
+                  </li>
+                  <li>
+                    <span class="achievement-list__icon">↗</span>
+                    <div>
+                      <strong>Расскажите о себе</strong>
+                      <p>Профиль помогает быстрее находить помощь и собирать сильную команду.</p>
+                    </div>
+                    <span class="checkmark">✓</span>
+                  </li>
+                  <li>
+                    <span class="achievement-list__icon">☻</span>
+                    <div>
+                      <strong>Помогите другой команде</strong>
+                      <p>Откроет путь к ачивке "Волонтер" и бонусным баллам.</p>
+                    </div>
+                    <span class="chevron">→</span>
+                  </li>
+                </ul>
+              </article>
+
+              <article class="card calendar-card">
+                <div>
+                  <h4>Календарь событий</h4>
+                  <p>Воркшоп по теормеху, weekly check-in и дедлайн по челленджу уже собраны в одном месте.</p>
+                </div>
+                <div class="calendar-date">
+                  <span>29</span>
+                  <small>апр</small>
+                </div>
+              </article>
+            </article>
+
+            <article class="spec-card">
+              <span class="eyebrow">Что получает студент</span>
+              <h3>Один экран вместо хаоса из чатов, табличек и разрозненных дедлайнов</h3>
+              <p>
+                Главный сценарий студента собран вокруг ощущения контроля: где команда сейчас,
+                как выглядит личный вклад, какой челлендж активен и где можно быстро включиться
+                в полезное действие.
+              </p>
+
+              <ul class="feature-list">
+                <li>Дашборд показывает прогресс команды, личные ачивки и ближайшие события.</li>
+                <li>Лидерборд и лига мотивируют, но не перегружают деталями на первом экране.</li>
+                <li>Stories-формат для новостей помогает сделать контент более живым и заметным.</li>
+                <li>Глобальный челлендж визуализирует общий путь команды через метафору маршрута.</li>
+              </ul>
+
+              <div class="flow-board">
+                <article>
+                  <span>01</span>
+                  <strong>Вход</strong>
+                  <p>Верификация через вузовой контур и короткий онбординг.</p>
+                </article>
+                <article>
+                  <span>02</span>
+                  <strong>Команда</strong>
+                  <p>Понимание своего места, вклада и ближайшей активности.</p>
+                </article>
+                <article>
+                  <span>03</span>
+                  <strong>Действие</strong>
+                  <p>Челлендж, помощь другой команде, участие в событии или заявка на биржу.</p>
+                </article>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="role-view" id="captain">
+          <div class="mockup-grid mockup-grid--wide">
+            <article class="workspace-card">
+              <div class="workspace-card__header">
+                <div>
+                  <span class="eyebrow">Captain Workspace</span>
+                  <h3>Управление командой без перегруза</h3>
+                </div>
+                <div class="workspace-card__chips">
+                  <span class="pill">7 участников</span>
+                  <span class="pill pill--soft">КРК 374</span>
+                </div>
+              </div>
+
+              <div class="workspace-grid">
+                <article class="card team-hub">
+                  <div class="card__head">
+                    <h4>Профиль команды "Квант"</h4>
+                    <a href="#coverage">Открыть страницу</a>
+                  </div>
+                  <div class="team-hub__hero">
+                    <div class="team-hub__identity">
+                      <span class="team-hub__badge">К</span>
+                      <div>
+                        <strong>Лига "Профи"</strong>
+                        <p>Команда поднялась на 2 позиции за неделю.</p>
+                      </div>
+                    </div>
+                    <div class="kpk-breakdown">
+                      <div>
+                        <span>База</span>
+                        <strong>223</strong>
+                      </div>
+                      <div>
+                        <span>Сплоченность</span>
+                        <strong>112</strong>
+                      </div>
+                      <div>
+                        <span>Бонус</span>
+                        <strong>39</strong>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="card invite-card">
+                  <div class="card__head">
+                    <h4>Приглашение в команду</h4>
+                    <span class="pill">QR + ссылка</span>
+                  </div>
+                  <div class="invite-card__body">
+                    <div class="invite-code">KZ-RTF-2026</div>
+                    <p>Капитан может делиться ссылкой, кодом или QR, не переключаясь между внешними сервисами.</p>
+                  </div>
+                </article>
+
+                <article class="card market-card">
+                  <div class="card__head">
+                    <h4>Биржа знаний</h4>
+                    <span class="pill pill--accent">3 активные сделки</span>
+                  </div>
+
+                  <ul class="status-list">
+                    <li>
+                      <div>
+                        <strong>Нужен разбор по Java Streams</strong>
+                        <p>Команда "Ротор", 40 баллов</p>
+                      </div>
+                      <span class="status status--active">Активна</span>
+                    </li>
+                    <li>
+                      <div>
+                        <strong>Разбор задач по физике</strong>
+                        <p>Команда "Квант", 25 баллов</p>
+                      </div>
+                      <span class="status status--progress">В работе</span>
+                    </li>
+                    <li>
+                      <div>
+                        <strong>Конспект по матану</strong>
+                        <p>Команда "Поток", 15 баллов</p>
+                      </div>
+                      <span class="status status--done">Подтверждено</span>
+                    </li>
+                  </ul>
+                </article>
+
+                <article class="card rescue-card">
+                  <div class="card__head">
+                    <h4>Механика "Спасение"</h4>
+                    <span class="pill pill--accent">+ бонус к КРК</span>
+                  </div>
+
+                  <ol class="rescue-steps">
+                    <li>
+                      <span>01</span>
+                      <div>
+                        <strong>Заявка</strong>
+                        <p>Капитан фиксирует, какая именно помощь нужна и в какие сроки.</p>
+                      </div>
+                    </li>
+                    <li>
+                      <span>02</span>
+                      <div>
+                        <strong>Подтверждение</strong>
+                        <p>Другая команда берет запрос в работу и получает прозрачный статус.</p>
+                      </div>
+                    </li>
+                    <li>
+                      <span>03</span>
+                      <div>
+                        <strong>Проверка</strong>
+                        <p>Организатор или капитаны подтверждают результат, после чего начисляется бонус.</p>
+                      </div>
+                    </li>
+                  </ol>
+                </article>
+
+                <article class="card checkin-card">
+                  <div class="card__head">
+                    <h4>Weekly check-in</h4>
+                    <span class="muted">Заполняет капитан</span>
+                  </div>
+
+                  <div class="checkin-fields">
+                    <div class="checkin-field">
+                      <span>Общий темп команды</span>
+                      <strong>Стабильный</strong>
+                    </div>
+                    <div class="checkin-field">
+                      <span>Нужна помощь</span>
+                      <strong>Да, по физике</strong>
+                    </div>
+                    <div class="checkin-field">
+                      <span>Следующее событие</span>
+                      <strong>Воркшоп в пятницу</strong>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="card vote-card">
+                  <div class="card__head">
+                    <h4>Анонимная оценка вклада</h4>
+                    <span class="pill pill--soft">Конец цикла</span>
+                  </div>
+
+                  <div class="vote-card__items">
+                    <div class="vote-item">
+                      <span>Алина</span>
+                      <div class="vote-bar"><span style="width: 88%;"></span></div>
+                    </div>
+                    <div class="vote-item">
+                      <span>Илья</span>
+                      <div class="vote-bar"><span style="width: 76%;"></span></div>
+                    </div>
+                    <div class="vote-item">
+                      <span>Марк</span>
+                      <div class="vote-bar"><span style="width: 64%;"></span></div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </article>
+
+            <article class="spec-card">
+              <span class="eyebrow">UX-логика капитана</span>
+              <h3>Капитан не тонет в администрировании, а видит только то, что помогает команде двигаться вперед</h3>
+              <p>
+                Для капитана MVP собран как рабочая зона с быстрыми решениями: кого позвать,
+                где команде нужна помощь, как выглядит вклад участников и что отправить организатору.
+              </p>
+
+              <ul class="feature-list">
+                <li>КРК разбит по составляющим, чтобы принимать решения не интуитивно, а осознанно.</li>
+                <li>Биржа знаний поддерживает статусы сделки и снижает риск конфликтов между командами.</li>
+                <li>Check-in и анонимная оценка вынесены в отдельные смысловые карточки.</li>
+                <li>Командные действия сгруппированы вокруг одной зоны управления вместо разрозненных экранов.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="role-view" id="organizer">
+          <div class="mockup-grid mockup-grid--wide">
+            <article class="admin-shell">
+              <aside class="admin-sidebar">
+                <span class="eyebrow">Organizer Console</span>
+                <h3>РТФ / Командный зачёт</h3>
+
+                <nav class="admin-nav">
+                  <a class="is-current" href="#organizer">Обзор</a>
+                  <a href="#organizer">Челленджи</a>
+                  <a href="#organizer">Новости</a>
+                  <a href="#organizer">Модерация</a>
+                  <a href="#organizer">Аналитика</a>
+                  <a href="#organizer">Рейтинги</a>
+                </nav>
+              </aside>
+
+              <div class="admin-main">
+                <div class="admin-metrics">
+                  <article class="admin-metric">
+                    <span>Активные команды</span>
+                    <strong>12</strong>
+                  </article>
+                  <article class="admin-metric">
+                    <span>Check-in за неделю</span>
+                    <strong>9 / 12</strong>
+                  </article>
+                  <article class="admin-metric">
+                    <span>Нуждаются в поддержке</span>
+                    <strong>3</strong>
+                  </article>
+                </div>
+
+                <div class="admin-grid">
+                  <article class="card admin-card">
+                    <div class="card__head">
+                      <h4>Челлендж недели</h4>
+                      <span class="pill pill--accent">Запущен</span>
+                    </div>
+                    <p>Создать командный конспект по ключевой теме и загрузить отчет до пятницы.</p>
+                    <div class="admin-card__meta">
+                      <span>Охват: 8 команд</span>
+                      <span>Отчеты: 5</span>
+                    </div>
+                  </article>
+
+                  <article class="card admin-card">
+                    <div class="card__head">
+                      <h4>Модерация биржи знаний</h4>
+                      <span class="pill">2 спорные сделки</span>
+                    </div>
+                    <ul class="moderation-list">
+                      <li>
+                        <span>"Ротор" -> "Квант"</span>
+                        <strong>Требуется подтверждение</strong>
+                      </li>
+                      <li>
+                        <span>"Альфа" -> "Поток"</span>
+                        <strong>Жалоба на невыполнение</strong>
+                      </li>
+                    </ul>
+                  </article>
+
+                  <article class="card admin-card admin-card--chart">
+                    <div class="card__head">
+                      <h4>Динамика вовлеченности</h4>
+                      <a href="#coverage">Аналитика</a>
+                    </div>
+                    <div class="bar-chart">
+                      <div><span style="height: 74%;"></span><small>пн</small></div>
+                      <div><span style="height: 82%;"></span><small>вт</small></div>
+                      <div><span style="height: 68%;"></span><small>ср</small></div>
+                      <div><span style="height: 91%;"></span><small>чт</small></div>
+                      <div><span style="height: 78%;"></span><small>пт</small></div>
+                      <div><span style="height: 66%;"></span><small>сб</small></div>
+                    </div>
+                  </article>
+
+                  <article class="card admin-card">
+                    <div class="card__head">
+                      <h4>Контент-план</h4>
+                      <span class="pill pill--soft">На 7 дней</span>
+                    </div>
+                    <ul class="timeline-list">
+                      <li><span>Пн</span><strong>Новость о правилах недели</strong></li>
+                      <li><span>Ср</span><strong>Промежуточные итоги и лайфхак</strong></li>
+                      <li><span>Пт</span><strong>Открытие голосования вклада</strong></li>
+                    </ul>
+                  </article>
+                </div>
+              </div>
+            </article>
+
+            <article class="spec-card">
+              <span class="eyebrow">UX-логика организатора</span>
+              <h3>Админка показывает не просто цифры, а зоны внимания: где падает вовлеченность, где нужен разговор с командой и какие процессы требуют модерации</h3>
+              <p>
+                Интерфейс организатора проектируется как операционная панель: минимум декоративности,
+                четкие статусы, обзор команды целиком и быстрый доступ к критическим действиям.
+              </p>
+
+              <ul class="feature-list">
+                <li>Организатор видит слабые сигналы: просроченные check-in, спорные заявки, просадки по вовлеченности.</li>
+                <li>Контент, челленджи и аналитика живут в одной консоли, а не в отдельных инструментах.</li>
+                <li>Данные о команде и активности подаются в формате, удобном для принятия решений и коммуникации.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <section class="section reveal" id="architecture">
+        <div class="section__header">
+          <div>
+            <p class="eyebrow">Information Architecture</p>
+            <h2>Навигация и продуктовая структура MVP</h2>
+          </div>
+        </div>
+
+        <div class="architecture-grid">
+          <article class="architecture-card">
+            <h3>Студент</h3>
+            <ul>
+              <li>Главная</li>
+              <li>Команда</li>
+              <li>Рейтинги</li>
+              <li>Активности</li>
+              <li>Календарь</li>
+              <li>Профиль</li>
+            </ul>
+          </article>
+
+          <article class="architecture-card">
+            <h3>Капитан</h3>
+            <ul>
+              <li>Все разделы студента</li>
+              <li>Приглашения</li>
+              <li>Weekly check-in</li>
+              <li>Создание событий</li>
+              <li>Спасение</li>
+              <li>Вклад участников</li>
+            </ul>
+          </article>
+
+          <article class="architecture-card">
+            <h3>Организатор</h3>
+            <ul>
+              <li>Обзор и аналитика</li>
+              <li>Челленджи</li>
+              <li>Новости</li>
+              <li>Модерация</li>
+              <li>Рейтинги</li>
+              <li>Пользователи и команды</li>
+            </ul>
+          </article>
+
+          <article class="architecture-card">
+            <h3>MVP-контент</h3>
+            <ul>
+              <li>Новости и stories</li>
+              <li>Биржа знаний</li>
+              <li>Календарь событий</li>
+              <li>Лиги и лидерборды</li>
+              <li>Ачивки и прогресс</li>
+              <li>Командные отчеты</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section reveal" id="coverage">
+        <div class="section__header">
+          <div>
+            <p class="eyebrow">From TZ to UI</p>
+            <h2>Какие блоки ТЗ уже отражены в UX/UI MVP</h2>
+          </div>
+          <a class="button button--ghost button--small" href="../docs/mvp-coverage.md">Открыть полную матрицу</a>
+        </div>
+
+        <div class="coverage-grid">
+          <article class="coverage-card">
+            <h3>Пользовательский контур</h3>
+            <p>Вход, профиль, личный вклад, достижения, лента активностей, календарь.</p>
+          </article>
+          <article class="coverage-card">
+            <h3>Командный контур</h3>
+            <p>Создание команды, приглашения, страница команды, КРК, лига, командные события.</p>
+          </article>
+          <article class="coverage-card">
+            <h3>Игровые механики</h3>
+            <p>Челленджи, лидерборды, спасение, анонимное голосование, бонусы за помощь.</p>
+          </article>
+          <article class="coverage-card">
+            <h3>Организаторский контур</h3>
+            <p>Управление челленджами, новости, модерация биржи знаний, аналитика и контроль вовлеченности.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
