@@ -1,0 +1,10 @@
+# Gitleaks configuration
+# Подавление ложных срабатываний
+
+[allowlist]
+  description = "Global allowlist"
+  paths = [
+    '''.env\.example''',
+    '''prototype/.*''',
+    '''docs/.*\.md''',
+  ]

@@ -1,0 +1,28 @@
+# Claude Code — локальный контекст, не для репо
+CLAUDE.md
+
+# Секреты и окружения
+.env
+.env.*
+*.env
+secrets/
+.secrets
+
+# Зависимости
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Сборки
+dist/
+build/
+.next/
+out/
+
+# IDE и OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,60 @@
+# Деплой инфраструктурных изменений из ветки DevOps
+# TODO: активировать при получении сервера
+
+name: Infra Deploy
+
+on:
+  push:
+    branches: [DevOps]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra-deploy.yml'
+
+jobs:
+  validate:
+    name: Validate infrastructure configs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env for validation
+        run: |
+          cp .env.example .env
+          sed -i 's/CHANGE_ME/validation_password/g' .env
+          sed -i 's/CHANGE_ME_GENERATE_WITH_openssl_rand_hex_32/validation_secret_key/g' .env
+          sed -i 's/CHANGE_ME_MIN_8_CHARS/val_minio/g' .env
+          cp .env .env.test
+
+      - name: Validate dev compose
+        run: docker compose -f infra/docker-compose.dev.yml --env-file .env config --quiet
+
+      - name: Validate test compose
+        run: docker compose -f infra/docker-compose.test.yml --env-file .env.test config --quiet
+
+      - name: Check nginx configs syntax
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/infra/nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro \
+            nginx:1.25-alpine nginx -t
+
+  # TODO: раскомментировать при получении сервера
+  # deploy:
+  #   name: Deploy infra to test server
+  #   needs: validate
+  #   runs-on: ubuntu-latest
+  #
+  #   steps:
+  #     - name: Deploy via SSH
+  #       uses: appleboy/ssh-action@v0.1.10
+  #       with:
+  #         host: ${{ secrets.TEST_SERVER_HOST }}
+  #         username: ${{ secrets.TEST_SERVER_USER }}
+  #         key: ${{ secrets.TEST_SERVER_SSH_KEY }}
+  #         script: |
+  #           cd /opt/teamzachet
+  #           git fetch origin DevOps
+  #           git checkout DevOps -- infra/
+  #           docker compose -f infra/docker-compose.test.yml --env-file .env up -d --force-recreate
+  #           docker compose -f infra/docker-compose.test.yml ps

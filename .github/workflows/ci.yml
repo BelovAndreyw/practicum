@@ -1,0 +1,70 @@
+# CI/CD — основной пайплайн
+# Триггер: push/PR в master
+# Сборка Docker-образов + деплой на test (TODO: активировать при получении сервера)
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  COMPOSE_FILE: infra/docker-compose.test.yml
+
+jobs:
+  build:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create test .env file
+        run: |
+          cp .env.example .env.test
+          # Подставляем тестовые значения
+          sed -i 's/CHANGE_ME/ci_test_password/g' .env.test
+          sed -i 's/CHANGE_ME_GENERATE_WITH_openssl_rand_hex_32/ci_test_secret_key_1234567890abcdef/g' .env.test
+          sed -i 's/CHANGE_ME_MIN_8_CHARS/ci_minio_pass/g' .env.test
+
+      - name: Build all Docker images
+        run: |
+          docker compose -f infra/docker-compose.test.yml --env-file .env.test build
+
+      - name: Start services and verify health
+        run: |
+          docker compose -f infra/docker-compose.test.yml --env-file .env.test up -d
+          echo "Waiting for services to be healthy..."
+          sleep 15
+          docker compose -f infra/docker-compose.test.yml --env-file .env.test ps
+          # Проверяем health backend через внутреннюю сеть
+          docker exec tz-test-backend wget -q -O- http://localhost:8000/api/health || exit 1
+          echo "Health check passed!"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose -f infra/docker-compose.test.yml --env-file .env.test down -v
+
+  # TODO: раскомментировать и настроить при получении сервера
+  # deploy:
+  #   name: Deploy to test server
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+  #
+  #   steps:
+  #     - name: Deploy via SSH
+  #       uses: appleboy/ssh-action@v0.1.10
+  #       with:
+  #         host: ${{ secrets.TEST_SERVER_HOST }}
+  #         username: ${{ secrets.TEST_SERVER_USER }}
+  #         key: ${{ secrets.TEST_SERVER_SSH_KEY }}
+  #         script: |
+  #           cd /opt/teamzachet
+  #           git pull origin master
+  #           docker compose -f infra/docker-compose.test.yml --env-file .env up -d --build
+  #           docker compose -f infra/docker-compose.test.yml ps
