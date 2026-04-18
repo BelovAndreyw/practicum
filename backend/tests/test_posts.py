@@ -76,7 +76,7 @@ async def client():
 @pytest.mark.asyncio
 async def test_create_post_without_images(client):
     """Тест создания поста без изображений"""
-    login = await client.post("/auth/login", json={
+    login = await client.post("/api/auth/login", json={
         "username": "ivanov_captain",
         "password": "CaptainPass123!"
     })
@@ -84,7 +84,7 @@ async def test_create_post_without_images(client):
     token = login.json()["access_token"]
 
     # Используем form-data, а не JSON!
-    create = await client.post("/posts/", data={
+    create = await client.post("/api/posts/", data={
         "title": "Мой первый пост",
         "content": "Это содержание поста"
     }, headers={"Authorization": f"Bearer {token}"})
@@ -103,23 +103,23 @@ async def test_create_post_without_images(client):
 @pytest.mark.asyncio
 async def test_get_all_posts(client):
     """Тест получения списка постов"""
-    login = await client.post("/auth/login", json={
+    login = await client.post("/api/auth/login", json={
         "username": "ivanov_captain",
         "password": "CaptainPass123!"
     })
     token = login.json()["access_token"]
 
-    await client.post("/posts/", data={
+    await client.post("/api/posts/", data={
         "title": "Post 1",
         "content": "Content 1"
     }, headers={"Authorization": f"Bearer {token}"})
 
-    await client.post("/posts/", data={
+    await client.post("/api/posts/", data={
         "title": "Post 2",
         "content": "Content 2"
     }, headers={"Authorization": f"Bearer {token}"})
 
-    get_posts = await client.get("/posts/")
+    get_posts = await client.get("/api/posts/")
     assert get_posts.status_code == 200
     data = get_posts.json()
     assert data["total"] >= 2  # Может быть больше из-за других тестов
@@ -128,13 +128,13 @@ async def test_get_all_posts(client):
 @pytest.mark.asyncio
 async def test_update_post(client):
     """Тест обновления поста"""
-    login = await client.post("/auth/login", json={
+    login = await client.post("/api/auth/login", json={
         "username": "ivanov_captain",
         "password": "CaptainPass123!"
     })
     token = login.json()["access_token"]
 
-    create = await client.post("/posts/", data={
+    create = await client.post("/api/posts/", data={
         "title": "Original Title",
         "content": "Original Content"
     }, headers={"Authorization": f"Bearer {token}"})
@@ -142,7 +142,7 @@ async def test_update_post(client):
     assert create.status_code == 200
     post_id = create.json()["id"]
 
-    update = await client.put(f"/posts/{post_id}", json={
+    update = await client.put(f"/api/posts/{post_id}", json={
         "title": "Updated Title",
         "content": "Updated Content"
     }, headers={"Authorization": f"Bearer {token}"})
@@ -154,13 +154,13 @@ async def test_update_post(client):
 @pytest.mark.asyncio
 async def test_delete_post(client):
     """Тест удаления поста"""
-    login = await client.post("/auth/login", json={
+    login = await client.post("/api/auth/login", json={
         "username": "ivanov_captain",
         "password": "CaptainPass123!"
     })
     token = login.json()["access_token"]
 
-    create = await client.post("/posts/", data={
+    create = await client.post("/api/posts/", data={
         "title": "Post to delete",
         "content": "Content"
     }, headers={"Authorization": f"Bearer {token}"})
@@ -168,23 +168,23 @@ async def test_delete_post(client):
     assert create.status_code == 200
     post_id = create.json()["id"]
 
-    delete = await client.delete(f"/posts/{post_id}", headers={"Authorization": f"Bearer {token}"})
+    delete = await client.delete(f"/api/posts/{post_id}", headers={"Authorization": f"Bearer {token}"})
     assert delete.status_code == 200
 
-    get_post = await client.get(f"/posts/{post_id}")
+    get_post = await client.get(f"/api/posts/{post_id}")
     assert get_post.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_cannot_update_others_post(client):
     """Тест что нельзя редактировать чужой пост"""
-    login_ivanov = await client.post("/auth/login", json={
+    login_ivanov = await client.post("/api/auth/login", json={
         "username": "ivanov_captain",
         "password": "CaptainPass123!"
     })
     ivanov_token = login_ivanov.json()["access_token"]
 
-    create = await client.post("/posts/", data={
+    create = await client.post("/api/posts/", data={
         "title": "Ivanov's post",
         "content": "Content"
     }, headers={"Authorization": f"Bearer {ivanov_token}"})
@@ -192,13 +192,13 @@ async def test_cannot_update_others_post(client):
     assert create.status_code == 200
     post_id = create.json()["id"]
 
-    login_petrov = await client.post("/auth/login", json={
+    login_petrov = await client.post("/api/auth/login", json={
         "username": "petrov_student",
         "password": "StudentPass123!"
     })
     petrov_token = login_petrov.json()["access_token"]
 
-    update = await client.put(f"/posts/{post_id}", json={
+    update = await client.put(f"/api/posts/{post_id}", json={
         "title": "Hacked!"
     }, headers={"Authorization": f"Bearer {petrov_token}"})
 

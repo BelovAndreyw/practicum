@@ -101,8 +101,11 @@ cp .env.example .env
 docker compose -f infra/docker-compose.dev.yml --env-file .env up -d
 
 # 3. Проверяем
-curl http://localhost/
-# {"message": "API работает! Открой /docs"}
+# Через Nginx (порт 80): / — фронтенд; API бэкенда — под префиксом /api/
+curl -s http://localhost/api/auth/verify -H "Content-Type: application/json" -d '{"student_id":123,"surname":"Иванов","name":"Иван","patronymic":"Иванович"}'
+# Прямой доступ к бэкенду (порт 8000, как в compose dev): корень — health, не API
+curl -s http://localhost:8000/
+# {"message": "Сервер работает. REST: префикс /api ...", ...}
 
 # 4. Останавливаем
 docker compose -f infra/docker-compose.dev.yml --env-file .env down

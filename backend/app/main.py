@@ -56,15 +56,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="University API", lifespan=lifespan)
 
-app.include_router(auth_router)
-app.include_router(team_router)
-app.include_router(posts_router)
+app.include_router(auth_router, prefix="/api")
+app.include_router(team_router, prefix="/api")
+app.include_router(posts_router, prefix="/api")
 
 
 @app.get("/")
 async def root():
     """Простая проверка, что сервер работает"""
-    return {"message": "API работает! Открой /docs"}
+    return {
+        "message": "Сервер работает. REST: префикс /api (например /api/auth/login). Документация: /docs",
+    }
 
 
 if __name__ == "__main__":

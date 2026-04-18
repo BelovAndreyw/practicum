@@ -70,7 +70,7 @@ async def client():
 @pytest.mark.asyncio
 async def test_verify_success(client):
     """Тест простой верификации"""
-    resp = await client.post("/auth/verify", json={
+    resp = await client.post("/api/auth/verify", json={
         "student_id": 124,
         "surname": "Петров",
         "name": "Пётр",
@@ -86,7 +86,7 @@ async def test_full_registration_flow(client):
 
     # --- Шаг 1: Верификация Петрова ---
     print("\n[TEST] 1. Верификация Петрова...")
-    v = await client.post("/auth/verify", json={
+    v = await client.post("/api/auth/verify", json={
         "student_id": 124,
         "surname": "Петров",
         "name": "Пётр",
@@ -98,7 +98,7 @@ async def test_full_registration_flow(client):
 
     # --- Шаг 2: Регистрация Петрова ---
     print("[TEST] 2. Регистрация Петрова...")
-    r = await client.post("/auth/register", json={
+    r = await client.post("/api/auth/register", json={
         "verification_token": verification_token,
         "username": "petrov_user",
         "password": "PetrovPass123!"
@@ -108,7 +108,7 @@ async def test_full_registration_flow(client):
 
     # --- Шаг 3: Вход Петрова ---
     print("[TEST] 3. Вход Петрова...")
-    l = await client.post("/auth/login", json={
+    l = await client.post("/api/auth/login", json={
         "username": "petrov_user",
         "password": "PetrovPass123!"
     })
@@ -133,7 +133,7 @@ async def test_two_students_different_status(client):
 
     # 🔹 Часть 1: Иванов (уже зарегистрирован) — проверяем вход
     print("\n[1/4] Иванов: попытка входа (аккаунт уже есть)...")
-    login_ivanov = await client.post("/auth/login", json={
+    login_ivanov = await client.post("/api/auth/login", json={
         "username": "ivanov_user",
         "password": "IvanovPass123!"
     })
@@ -144,7 +144,7 @@ async def test_two_students_different_status(client):
 
     # 🔹 Часть 2: Петров (не зарегистрирован) — проверяем, что нельзя войти
     print("\n[2/4] Петров: попытка входа без регистрации (должно отказать)...")
-    login_petrov_fail = await client.post("/auth/login", json={
+    login_petrov_fail = await client.post("/api/auth/login", json={
         "username": "petrov_user",
         "password": "AnyPassword123!"
     })
@@ -154,7 +154,7 @@ async def test_two_students_different_status(client):
 
     # 🔹 Часть 3: Петров проходит верификацию
     print("\n[3/4] Петров: верификация...")
-    verify_petrov = await client.post("/auth/verify", json={
+    verify_petrov = await client.post("/api/auth/verify", json={
         "student_id": 124,
         "surname": "Петров",
         "name": "Пётр",
@@ -168,7 +168,7 @@ async def test_two_students_different_status(client):
     print("\n[4/4] Петров: регистрация и вход...")
 
     # Регистрация
-    register_petrov = await client.post("/auth/register", json={
+    register_petrov = await client.post("/api/auth/register", json={
         "verification_token": petrov_verify_token,
         "username": "petrov_user",
         "password": "PetrovPass123!"
@@ -177,7 +177,7 @@ async def test_two_students_different_status(client):
     print("   Петров зарегистрирован")
 
     # Вход
-    login_petrov_success = await client.post("/auth/login", json={
+    login_petrov_success = await client.post("/api/auth/login", json={
         "username": "petrov_user",
         "password": "PetrovPass123!"
     })
@@ -190,7 +190,7 @@ async def test_two_students_different_status(client):
     print("\nПроверка профилей...")
 
     # Профиль Иванова
-    profile_ivanov = await client.get("/auth/me", headers={
+    profile_ivanov = await client.get("/api/auth/me", headers={
         "Authorization": f"Bearer {ivanov_token}"
     })
     assert profile_ivanov.status_code == 200
@@ -199,7 +199,7 @@ async def test_two_students_different_status(client):
     print(f"   Профиль Иванова: {profile_ivanov.json()}")
 
     # Профиль Петрова
-    profile_petrov = await client.get("/auth/me", headers={
+    profile_petrov = await client.get("/api/auth/me", headers={
         "Authorization": f"Bearer {petrov_token}"
     })
     assert profile_petrov.status_code == 200
@@ -220,7 +220,7 @@ async def test_cannot_register_twice(client):
 
     # Иванов уже зарегистрирован в фикстуре
     # Пытаемся верифицировать его снова
-    verify = await client.post("/auth/verify", json={
+    verify = await client.post("/api/auth/verify", json={
         "student_id": 123,
         "surname": "Иванов",
         "name": "Иван",
