@@ -1,5 +1,5 @@
 # Claude Code — локальный контекст, не для репо
-CLAUDE.md
+AGENT.md
 
 # Секреты и окружения
 .env
@@ -7,6 +7,10 @@ CLAUDE.md
 *.env
 secrets/
 .secrets
+
+# Но шаблоны окружения можно хранить в репо
+!.env.example
+!.env.test.example
 
 # Зависимости
 node_modules/

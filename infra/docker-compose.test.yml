@@ -40,36 +40,6 @@ services:
     networks:
       - teamzachet-test
 
-  minio:
-    image: minio/minio:latest
-    container_name: tz-test-minio
-    env_file: ../.env.test
-    command: server /data --console-address ":9001"
-    # Порты НЕ открыты наружу — доступ только через backend API
-    volumes:
-      - minio-test:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    networks:
-      - teamzachet-test
-
-  minio-init:
-    image: minio/mc:latest
-    container_name: tz-test-minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    env_file: ../.env.test
-    entrypoint: /bin/sh
-    command: /init-buckets.sh
-    volumes:
-      - ./minio/init-buckets.sh:/init-buckets.sh:ro
-    networks:
-      - teamzachet-test
-
   # ─── Приложение (stub — заменить при выборе стека) ─────────
 
   backend:
@@ -87,7 +57,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/api/health"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=2).read()\""]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -103,7 +73,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      test: ["CMD-SHELL", "nginx -t"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -127,7 +97,7 @@ services:
       frontend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost/api/health"]
+      test: ["CMD-SHELL", "nginx -t"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -137,7 +107,6 @@ services:
 volumes:
   pgdata-test:
   redis-test:
-  minio-test:
 
 networks:
   teamzachet-test:

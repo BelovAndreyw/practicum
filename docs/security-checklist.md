@@ -17,8 +17,6 @@
 | Test сервер (SSH) | DevSecOps | SSH key |
 | PostgreSQL (superuser) | Только init | docker-entrypoint-initdb |
 | PostgreSQL (app_user) | Backend | Ограниченные права (SELECT/INSERT/UPDATE/DELETE) |
-| MinIO (root) | Init-скрипт | Только при первом запуске |
-| MinIO (бакеты) | Backend | Через backend API, нет анонимного доступа |
 
 ## Сеть и TLS
 
@@ -47,11 +45,10 @@
 **Backend-разработчику:** использовать CORS middleware с `allow_origins` из env.
 Никогда не ставить `allow_origins=*` в test/prod.
 
-## Файловое хранилище (MinIO/S3)
+## Файловое хранилище
 
-- [ ] Бакет `uploads` с политикой `none` (нет анонимного доступа)
+- [ ] Файлы не должны пропадать при пересоздании контейнера (volume или внешнее хранилище)
 - [ ] Доступ к файлам только через backend API endpoints
-- [ ] MinIO порт не открыт наружу в test/prod
 - [ ] Валидация типа и размера файлов на backend
 
 ## Персональные данные

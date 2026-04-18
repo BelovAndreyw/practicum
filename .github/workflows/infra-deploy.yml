@@ -21,10 +21,25 @@ jobs:
 
       - name: Create .env for validation
         run: |
-          cp .env.example .env
-          sed -i 's/CHANGE_ME/validation_password/g' .env
-          sed -i 's/CHANGE_ME_GENERATE_WITH_openssl_rand_hex_32/validation_secret_key/g' .env
-          sed -i 's/CHANGE_ME_MIN_8_CHARS/val_minio/g' .env
+          cat > .env <<'EOF'
+          POSTGRES_USER=teamzachet
+          POSTGRES_PASSWORD=validation_password
+          POSTGRES_DB=teamzachet
+          DATABASE_URL=postgresql+asyncpg://teamzachet:validation_password@postgres:5432/teamzachet
+
+          # JWT
+          SECRET_KEY=validation_secret_key
+          ALGORITHM=HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES=30
+          DEMO_MODE=false
+
+          # Redis
+          REDIS_URL=redis://redis:6379/0
+
+          # App ports (docker-compose)
+          BACKEND_HOST=0.0.0.0
+          BACKEND_PORT=8000
+          EOF
           cp .env .env.test
 
       - name: Validate dev compose

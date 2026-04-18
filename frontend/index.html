@@ -1,19 +1,540 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Командный зачёт — Frontend Stub</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Командный зачёт - UX/UI MVP</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Командный зачёт</h1>
-    <p>Frontend stub — заменить при выборе стека</p>
-    <p>Status: <span id="status">loading...</span></p>
-    <script>
-        fetch('/api/health')
-            .then(r => r.json())
-            .then(d => document.getElementById('status').textContent = d.status)
-            .catch(() => document.getElementById('status').textContent = 'backend unavailable');
-    </script>
+  <div class="app-frame">
+    <aside class="sidebar reveal">
+      <div class="sidebar__brand">
+        <div class="brand-mark">КЗ</div>
+        <div>
+          <p class="eyebrow">УРФУ / UX/UI MVP</p>
+          <h1>Командный зачёт</h1>
+        </div>
+      </div>
+
+      <nav class="sidebar__nav">
+        <a class="is-active" href="#student">Обзор</a>
+        <a href="#board">Командная доска</a>
+        <a href="#knowledge">Биржа знаний</a>
+        <a href="#captain">Капитан</a>
+        <a href="#organizer">Организатор</a>
+        <a href="../docs/ux-ui-mvp.md">UX/UI логика</a>
+        <a href="../docs/mvp-coverage.md">Покрытие ТЗ</a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <span class="eyebrow">Смысл MVP</span>
+        <p>Не яркий концепт, а понятный интерфейс реального учебного сервиса: роли, процессы, статусы и ощущение контроля.</p>
+      </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="topbar reveal">
+        <div>
+          <p class="breadcrumbs">Список проектов / Командный зачёт / Разработка MVP</p>
+          <h2>Рабочая зона продукта</h2>
+        </div>
+
+        <div class="topbar__actions">
+          <div class="tab-list" aria-label="Роли">
+            <button class="tab is-active" data-target="student" type="button">Студент</button>
+            <button class="tab" data-target="captain" type="button">Капитан</button>
+            <button class="tab" data-target="organizer" type="button">Организатор</button>
+          </div>
+
+          <a class="ghost-button" href="../docs/ux-ui-mvp.md">Открыть структуру</a>
+          <div class="profile-chip">
+            <div class="profile-chip__avatar">БА</div>
+            <div>
+              <strong>Белов Андрей</strong>
+              <span>UX/UI designer</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="role-view is-active" id="student">
+          <section class="panel intro-panel reveal">
+            <div>
+              <p class="eyebrow">Студент / обзор недели</p>
+              <h3>Один экран, где видно команду, рейтинг, задачи, помощь и ближайшие события.</h3>
+              <p class="intro-text">Интерфейс стал ближе к реальному веб-сервису: светлая рабочая область, темный навигационный контур, спокойные холодные акценты и четкие доски задач в духе проектных систем.</p>
+            </div>
+            <div class="intro-panel__actions">
+              <a class="primary-button" href="#board">Открыть доску команды</a>
+              <a class="ghost-button" href="#knowledge">Биржа знаний</a>
+            </div>
+          </section>
+
+          <div class="summary-grid reveal">
+            <article class="panel team-summary">
+              <div class="team-summary__head">
+                <div>
+                  <p class="eyebrow">Команда</p>
+                  <h3>Квант</h3>
+                </div>
+                <span class="badge badge--soft">Лига: Профи</span>
+              </div>
+
+              <div class="team-summary__score">
+                <div>
+                  <span>Командный рейтинг</span>
+                  <strong>374 КРК</strong>
+                </div>
+                <span class="badge badge--positive">+12 за неделю</span>
+              </div>
+
+              <div class="kpk-grid">
+                <article>
+                  <span>Базовый рейтинг</span>
+                  <strong>223</strong>
+                  <div class="meter"><span style="width: 74%;"></span></div>
+                </article>
+                <article>
+                  <span>Сплочённость</span>
+                  <strong>112</strong>
+                  <div class="meter"><span style="width: 61%;"></span></div>
+                </article>
+                <article>
+                  <span>Бонус</span>
+                  <strong>39</strong>
+                  <div class="meter"><span style="width: 39%;"></span></div>
+                </article>
+              </div>
+
+              <div class="team-summary__foot">
+                <p>Следующий шаг для роста: закрыть weekly check-in, подтвердить помощь другой команде и загрузить отчёт по челленджу.</p>
+              </div>
+            </article>
+
+            <div class="metrics-grid">
+              <article class="metric-tile">
+                <span>Личный вклад</span>
+                <strong>84</strong>
+                <p>8 место среди участников потока</p>
+              </article>
+              <article class="metric-tile">
+                <span>Активности</span>
+                <strong>6</strong>
+                <p>2 события, 3 обсуждения, 1 помощь</p>
+              </article>
+              <article class="metric-tile">
+                <span>Достижения</span>
+                <strong>12</strong>
+                <p>Волонтёр, навигатор, командный старт</p>
+              </article>
+              <article class="metric-tile">
+                <span>Ближайший дедлайн</span>
+                <strong>16 апр</strong>
+                <p>Отчёт по командному челленджу</p>
+              </article>
+            </div>
+          </div>
+
+          <section class="panel board-panel reveal" id="board">
+            <div class="panel__head">
+              <div>
+                <p class="eyebrow">Командная доска</p>
+                <h3>Итерация: Подготовка к сессии</h3>
+              </div>
+              <span class="filter-chip">Неделя 04 - 16 апреля</span>
+            </div>
+
+            <div class="kanban-board">
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>Запланировано</h4>
+                  <span>3</span>
+                </div>
+                <div class="task-card">
+                  <strong>Командный воркшоп по физике</strong>
+                  <p>Собрать вопросы и назначить модератора встречи.</p>
+                  <div class="task-meta"><span>15 апр</span><span>Команда</span></div>
+                </div>
+                <div class="task-card">
+                  <strong>Запрос на помощь по Java</strong>
+                  <p>Оформить карточку на бирже знаний с вознаграждением в баллах.</p>
+                  <div class="task-meta"><span>16 апр</span><span>Биржа знаний</span></div>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>В работе</h4>
+                  <span>2</span>
+                </div>
+                <div class="task-card task-card--accent">
+                  <strong>Глобальный челлендж "По вершинам"</strong>
+                  <p>Команда закрывает этап с отчётом и общим конспектом.</p>
+                  <div class="task-meta"><span>74%</span><span>Челлендж</span></div>
+                </div>
+                <div class="task-card">
+                  <strong>Подготовка weekly check-in</strong>
+                  <p>Капитан собирает темп команды и проблемные зоны недели.</p>
+                  <div class="task-meta"><span>Внутри команды</span><span>Капитан</span></div>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>На проверке</h4>
+                  <span>2</span>
+                </div>
+                <div class="task-card">
+                  <strong>Помощь команде "Ротор"</strong>
+                  <p>Подтверждение от организатора для начисления бонусных баллов.</p>
+                  <div class="task-meta"><span>Спасение</span><span>+ бонус</span></div>
+                </div>
+                <div class="task-card">
+                  <strong>Анонимная оценка вклада</strong>
+                  <p>Открыт цикл голосования внутри команды.</p>
+                  <div class="task-meta"><span>До пятницы</span><span>Оценка</span></div>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>Сделано</h4>
+                  <span>3</span>
+                </div>
+                <div class="task-card">
+                  <strong>Профиль команды обновлён</strong>
+                  <p>Загружены роли участников и описание сильных сторон.</p>
+                  <div class="task-meta"><span>Готово</span><span>Команда</span></div>
+                </div>
+                <div class="task-card">
+                  <strong>Новость недели прочитана</strong>
+                  <p>Команда ознакомилась с изменениями правил рейтинга.</p>
+                  <div class="task-meta"><span>Инфо</span><span>Организаторы</span></div>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <div class="content-grid reveal">
+            <article class="panel leaderboard-panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Рейтинги</p>
+                  <h3>Лидеры потока</h3>
+                </div>
+                <a href="../docs/mvp-coverage.md">Смотреть все</a>
+              </div>
+
+              <ul class="ranking-list">
+                <li><span class="ranking-index">1</span><strong>Команда 3</strong><span>390</span></li>
+                <li><span class="ranking-index">2</span><strong>Команда 4</strong><span>384</span></li>
+                <li><span class="ranking-index is-own">3</span><strong>Квант</strong><span>374</span></li>
+                <li><span class="ranking-index">4</span><strong>Поток</strong><span>352</span></li>
+              </ul>
+            </article>
+
+            <article class="panel feed-panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Лента</p>
+                  <h3>Что произошло сегодня</h3>
+                </div>
+              </div>
+
+              <ul class="feed-list">
+                <li><span class="dot dot--violet"></span><div><strong>Организаторы опубликовали новый челлендж</strong><p>Создать лучший командный конспект недели.</p></div></li>
+                <li><span class="dot dot--blue"></span><div><strong>Команда "Ротор" приняла вашу помощь</strong><p>Заявка переведена в статус "в работе".</p></div></li>
+                <li><span class="dot dot--soft"></span><div><strong>Открыт weekly check-in</strong><p>Капитану нужно заполнить отчёт до вечера пятницы.</p></div></li>
+              </ul>
+            </article>
+
+            <article class="panel knowledge-panel" id="knowledge">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Биржа знаний</p>
+                  <h3>Запросы и предложения</h3>
+                </div>
+              </div>
+
+              <ul class="knowledge-list">
+                <li><strong>Ищем помощь по Java Streams</strong><span>40 баллов</span></li>
+                <li><strong>Разберём тему по физике для другой команды</strong><span>Предложение</span></li>
+                <li><strong>Нужен конспект по матану</strong><span>Активно</span></li>
+              </ul>
+            </article>
+
+            <article class="panel calendar-panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Календарь</p>
+                  <h3>Ближайшие события</h3>
+                </div>
+              </div>
+
+              <div class="event-card">
+                <strong>15 апреля, 18:30</strong>
+                <p>Командная встреча по физике в гибридном формате.</p>
+              </div>
+              <div class="event-card">
+                <strong>16 апреля, 21:00</strong>
+                <p>Дедлайн отчёта по челленджу и закрытие weekly check-in.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="role-view" id="captain">
+          <section class="panel intro-panel reveal">
+            <div>
+              <p class="eyebrow">Капитан / управление командой</p>
+              <h3>Рабочая зона капитана собирает приглашения, check-in, помощь другим командам и контроль вклада участников.</h3>
+            </div>
+            <div class="intro-panel__actions">
+              <a class="primary-button" href="#captain-board">Открыть рабочую доску</a>
+            </div>
+          </section>
+
+          <div class="content-grid content-grid--captain reveal">
+            <article class="panel wide-panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Профиль команды</p>
+                  <h3>Квант / 7 участников / КРК 374</h3>
+                </div>
+                <span class="filter-chip">Лига "Профи"</span>
+              </div>
+
+              <div class="captain-hero">
+                <div class="captain-hero__invite">
+                  <span>Код приглашения</span>
+                  <strong>KZ-RTF-2026</strong>
+                  <p>Ссылка, QR и код находятся в одной точке, чтобы не уводить капитана во внешние сервисы.</p>
+                </div>
+                <div class="captain-hero__stats">
+                  <article><span>База</span><strong>223</strong></article>
+                  <article><span>Сплочённость</span><strong>112</strong></article>
+                  <article><span>Бонус</span><strong>39</strong></article>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Weekly check-in</p>
+                  <h3>Статус недели</h3>
+                </div>
+              </div>
+              <ul class="status-stack">
+                <li><span>Темп команды</span><strong>Стабильный</strong></li>
+                <li><span>Нужна помощь</span><strong>Физика</strong></li>
+                <li><span>Следующее событие</span><strong>Воркшоп в пятницу</strong></li>
+              </ul>
+            </article>
+          </div>
+
+          <section class="panel board-panel reveal" id="captain-board">
+            <div class="panel__head">
+              <div>
+                <p class="eyebrow">Captain board</p>
+                <h3>Командные операции</h3>
+              </div>
+            </div>
+
+            <div class="kanban-board">
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>Нужно решить</h4>
+                  <span>2</span>
+                </div>
+                <div class="task-card">
+                  <strong>Набор в команду</strong>
+                  <p>Есть 2 неподтвержденные заявки на вступление.</p>
+                </div>
+                <div class="task-card">
+                  <strong>Помощь другой команде</strong>
+                  <p>Нужно подтвердить формат и сроки "спасения".</p>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>В работе</h4>
+                  <span>3</span>
+                </div>
+                <div class="task-card task-card--accent">
+                  <strong>Check-in капитана</strong>
+                  <p>Заполнение темпа, рисков и запроса на поддержку.</p>
+                </div>
+                <div class="task-card">
+                  <strong>Биржа знаний</strong>
+                  <p>Сделка по физике переведена в статус "в работе".</p>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>На подтверждении</h4>
+                  <span>2</span>
+                </div>
+                <div class="task-card">
+                  <strong>Анонимная оценка вклада</strong>
+                  <p>Открыта до конца цикла, организатор увидит только агрегированный результат.</p>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>Закрыто</h4>
+                  <span>2</span>
+                </div>
+                <div class="task-card">
+                  <strong>Профиль команды обновлен</strong>
+                  <p>Добавлены роли и специализации участников.</p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <div class="content-grid reveal">
+            <article class="panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Спасение</p>
+                  <h3>Формализованный flow</h3>
+                </div>
+              </div>
+              <ol class="flow-list">
+                <li><strong>Заявка</strong><p>Команда указывает, какая именно помощь нужна и до какого срока.</p></li>
+                <li><strong>Подтверждение</strong><p>Вторая команда берет задачу и закрепляет ответственного.</p></li>
+                <li><strong>Проверка</strong><p>Организатор подтверждает результат и начисляет бонус.</p></li>
+              </ol>
+            </article>
+
+            <article class="panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Вклад участников</p>
+                  <h3>Анонимная оценка</h3>
+                </div>
+              </div>
+              <ul class="contribution-list">
+                <li><span>Алина</span><div class="meter"><span style="width: 88%;"></span></div></li>
+                <li><span>Илья</span><div class="meter"><span style="width: 76%;"></span></div></li>
+                <li><span>Марк</span><div class="meter"><span style="width: 63%;"></span></div></li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="role-view" id="organizer">
+          <section class="panel intro-panel reveal">
+            <div>
+              <p class="eyebrow">Организатор / контроль игры</p>
+              <h3>Админский интерфейс показывает не только цифры, но и реальные зоны внимания: просадки, спорные заявки, дедлайны и контент недели.</h3>
+            </div>
+          </section>
+
+          <div class="metrics-grid metrics-grid--organizer reveal">
+            <article class="metric-tile"><span>Активные команды</span><strong>12</strong><p>Все команды пилотного потока</p></article>
+            <article class="metric-tile"><span>Check-in за неделю</span><strong>9 / 12</strong><p>3 команды требуют напоминания</p></article>
+            <article class="metric-tile"><span>Спорные заявки</span><strong>2</strong><p>Биржа знаний и спасение</p></article>
+            <article class="metric-tile"><span>Вовлечённость</span><strong>81%</strong><p>Средний индекс по потоку</p></article>
+          </div>
+
+          <section class="panel board-panel reveal">
+            <div class="panel__head">
+              <div>
+                <p class="eyebrow">Organizer board</p>
+                <h3>Модерация и контент</h3>
+              </div>
+            </div>
+
+            <div class="kanban-board">
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>Новые заявки</h4>
+                  <span>3</span>
+                </div>
+                <div class="task-card">
+                  <strong>Запрос на помощь по Java</strong>
+                  <p>Команда "Поток" просит эксперта по Streams.</p>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>Активные челленджи</h4>
+                  <span>2</span>
+                </div>
+                <div class="task-card task-card--accent">
+                  <strong>Лучший командный конспект</strong>
+                  <p>8 команд участвуют, 5 отчётов уже загружены.</p>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>На проверке</h4>
+                  <span>2</span>
+                </div>
+                <div class="task-card">
+                  <strong>Спасение "Ротор" -> "Квант"</strong>
+                  <p>Требуется подтверждение результата и начисление бонуса.</p>
+                </div>
+              </article>
+
+              <article class="board-column">
+                <div class="board-column__head">
+                  <h4>Завершено</h4>
+                  <span>4</span>
+                </div>
+                <div class="task-card">
+                  <strong>Новость недели опубликована</strong>
+                  <p>Материал с правилами рейтинга ушел в ленту.</p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <div class="content-grid reveal">
+            <article class="panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Аналитика</p>
+                  <h3>Динамика вовлечённости</h3>
+                </div>
+              </div>
+              <div class="bars">
+                <div><span style="height: 72%;"></span><small>пн</small></div>
+                <div><span style="height: 83%;"></span><small>вт</small></div>
+                <div><span style="height: 70%;"></span><small>ср</small></div>
+                <div><span style="height: 88%;"></span><small>чт</small></div>
+                <div><span style="height: 79%;"></span><small>пт</small></div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel__head">
+                <div>
+                  <p class="eyebrow">Контент-план</p>
+                  <h3>Коммуникация на неделю</h3>
+                </div>
+              </div>
+              <ul class="feed-list">
+                <li><span class="dot dot--violet"></span><div><strong>Понедельник</strong><p>Новость о старте недели и цели по КРК.</p></div></li>
+                <li><span class="dot dot--blue"></span><div><strong>Среда</strong><p>Промежуточные итоги и напоминание про биржу знаний.</p></div></li>
+                <li><span class="dot dot--soft"></span><div><strong>Пятница</strong><p>Открытие цикла анонимной оценки вклада.</p></div></li>
+              </ul>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>

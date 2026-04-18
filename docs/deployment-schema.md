@@ -23,10 +23,10 @@
                 │  │  │
          ┌──────┘  │  └──────┐
          ▼         ▼         ▼
-   ┌──────────┐ ┌──────┐ ┌──────┐
-   │PostgreSQL│ │Redis │ │MinIO │
-   │  (БД)    │ │(кэш) │ │ (S3) │
-   └──────────┘ └──────┘ └──────┘
+   ┌──────────┐ ┌──────┐
+   │PostgreSQL│ │Redis │
+   │  (БД)    │ │(кэш) │
+   └──────────┘ └──────┘
 ```
 
 ## Матрица окружений
@@ -48,8 +48,6 @@
 | Frontend | 3000 | Web UI (прямой доступ для отладки) |
 | PostgreSQL | 5432 | БД (прямой доступ для отладки) |
 | Redis | 6379 | Кэш (прямой доступ для отладки) |
-| MinIO API | 9000 | S3 API (прямой доступ для отладки) |
-| MinIO Console | 9001 | Веб-консоль MinIO |
 
 ### Test-окружение (минимальная поверхность атаки)
 
@@ -84,7 +82,6 @@ Push в любую ветку ──► GitHub Actions (secret-scan.yml)
 |--------|-------------|-----------------|
 | DB пароль | GitHub Actions Secrets + .env на сервере | DevSecOps |
 | Backend secret key | GitHub Actions Secrets + .env на сервере | DevSecOps |
-| MinIO пароль | GitHub Actions Secrets + .env на сервере | DevSecOps |
 | SSH ключ сервера | GitHub Actions Secrets | DevSecOps |
 | SSO credentials | GitHub Actions Secrets + .env на сервере | DevSecOps |
 
@@ -104,8 +101,8 @@ cp .env.example .env
 docker compose -f infra/docker-compose.dev.yml --env-file .env up -d
 
 # 3. Проверяем
-curl http://localhost/api/health
-# {"status": "ok", "service": "backend-stub"}
+curl http://localhost/
+# {"message": "API работает! Открой /docs"}
 
 # 4. Останавливаем
 docker compose -f infra/docker-compose.dev.yml --env-file .env down
