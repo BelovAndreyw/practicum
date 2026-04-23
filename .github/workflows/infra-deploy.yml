@@ -33,9 +33,6 @@ jobs:
           ACCESS_TOKEN_EXPIRE_MINUTES=30
           DEMO_MODE=false
 
-          # Redis
-          REDIS_URL=redis://redis:6379/0
-
           # App ports (docker-compose)
           BACKEND_HOST=0.0.0.0
           BACKEND_PORT=8000

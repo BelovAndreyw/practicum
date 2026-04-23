@@ -26,20 +26,6 @@ services:
     networks:
       - teamzachet-test
 
-  redis:
-    image: redis:7-alpine
-    container_name: tz-test-redis
-    # Порты НЕ открыты наружу
-    volumes:
-      - redis-test:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    networks:
-      - teamzachet-test
-
   # ─── Приложение (stub — заменить при выборе стека) ─────────
 
   backend:
@@ -53,8 +39,6 @@ services:
     # Порты НЕ открыты наружу
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=2).read()\""]
@@ -106,7 +90,6 @@ services:
 
 volumes:
   pgdata-test:
-  redis-test:
 
 networks:
   teamzachet-test:
