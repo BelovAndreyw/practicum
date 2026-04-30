@@ -103,7 +103,7 @@ jobs:
           DATABASE_URL: "sqlite+aiosqlite:///./ci_pytest.db"
           SECRET_KEY: "ci_pytest_secret"
         run: |
-          pytest
+          python -m pytest
         working-directory: backend
 
       - name: Dependency audit (python)
