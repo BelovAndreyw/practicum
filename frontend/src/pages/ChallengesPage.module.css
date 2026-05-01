@@ -1,0 +1,109 @@
+﻿.center { display: flex; justify-content: center; padding: 60px; }
+.section { font-size: 1rem; color: var(--text); margin: 20px 0 12px; }
+.sectionMuted { color: var(--muted); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.card { display: flex; flex-direction: column; }
+.cardHead { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.title { font-size: 1rem; margin-bottom: 8px; }
+.desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; flex: 1; }
+.deadline { font-size: 0.78rem; color: var(--warning); margin-top: 10px; }
+
+.modalDesc {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.requirements {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  padding: 12px;
+}
+
+.requirementsTitle {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.requirementItem {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.requirementItem + .requirementItem { margin-top: 4px; }
+
+.reportForm {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldHint {
+  margin: -6px 0 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.fileBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fileLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fileInput {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.fileHint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fileItem {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eef1ff;
+  color: var(--accent-strong);
+  font-size: 0.76rem;
+}
+
+.errorText {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--danger);
+}
