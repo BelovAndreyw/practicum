@@ -1,0 +1,20 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  min-width: 0;
+}
+
+.content {
+  padding: calc(var(--header-height) + 28px) 28px 40px;
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  .main { margin-left: 0; }
+  .content { padding: calc(var(--header-height) + 16px) 16px 32px; }
+}
