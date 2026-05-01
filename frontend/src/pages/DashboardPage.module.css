@@ -1,0 +1,118 @@
+﻿.center { display: flex; justify-content: center; padding: 60px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.newsColumn,
+.knowledgeColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.stickyCard {
+  position: sticky;
+  top: calc(var(--header-height) + 24px);
+}
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  margin-top: 2px;
+}
+
+.newsList,
+.activityList,
+.knowledgeList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.newsItem {
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.newsMeta { font-size: 0.74rem; color: var(--muted); margin-bottom: 4px; }
+.newsTitle { font-size: 0.95rem; margin-bottom: 6px; }
+.newsBody { font-size: 0.84rem; color: var(--muted); line-height: 1.55; }
+
+.activityItem {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.activityIcon { font-size: 1.15rem; }
+.activityBody { flex: 1; min-width: 0; }
+.activityTitle { font-size: 0.84rem; font-weight: 600; }
+.activityDesc { font-size: 0.8rem; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+.activityMeta { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+.knowledgeItem {
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.knowledgeTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.knowledgeDate { font-size: 0.72rem; color: var(--muted); }
+.knowledgeTitle { font-size: 0.88rem; margin-bottom: 4px; }
+.knowledgeDesc { font-size: 0.8rem; color: var(--muted); line-height: 1.45; margin-bottom: 8px; }
+.knowledgeTags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+
+.knowledgeFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.formGrid { display: flex; flex-direction: column; gap: 14px; }
+.typeRow { display: flex; flex-direction: column; gap: 6px; }
+.typeLabel { font-size: 0.82rem; font-weight: 600; }
+.typeBtns { display: flex; gap: 8px; }
+.typeBtn {
+  padding: 7px 14px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-soft);
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.typeActive { border-color: var(--accent); background: #eef1ff; color: var(--accent-strong); font-weight: 600; }
+
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: 1fr; }
+  .stickyCard { position: static; }
+}
