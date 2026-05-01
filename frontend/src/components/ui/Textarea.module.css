@@ -1,0 +1,18 @@
+.wrapper { display: flex; flex-direction: column; gap: 6px; }
+.label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.textarea {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: var(--text);
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.textarea::placeholder { color: var(--muted); }
+.textarea:focus { border-color: var(--accent); }
+.hasError { border-color: var(--danger) !important; }
+.error { font-size: 0.78rem; color: var(--danger); }

@@ -1,0 +1,19 @@
+.card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+}
+
+.sm { padding: 16px; }
+.md { padding: 24px; }
+.lg { padding: 32px; }
+
+.hoverable {
+  transition: box-shadow var(--transition), transform var(--transition);
+  cursor: pointer;
+}
+.hoverable:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
