@@ -1,0 +1,10 @@
+.center { display: flex; justify-content: center; padding: 60px; }
+.list { display: flex; flex-direction: column; gap: 14px; }
+.card {}
+.cardHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.topic { font-size: 1rem; margin-top: 6px; }
+.bonus { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--success); white-space: nowrap; }
+.desc { font-size: 0.85rem; color: var(--muted); line-height: 1.55; margin-bottom: 8px; }
+.meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
+.modalNote { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; line-height: 1.55; }
+.formGrid { display: flex; flex-direction: column; gap: 14px; }
