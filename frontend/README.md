@@ -44,6 +44,7 @@ npm run dev
 VITE_BACKEND_URL=http://localhost:8080
 VITE_API_BASE=/api
 VITE_USE_MOCK=false
+VITE_FORCE_REAL_API=true
 ```
 3. Перезапустить фронт:
 ```bash
@@ -62,6 +63,7 @@ npm run preview
 - `VITE_BACKEND_URL` — адрес backend
 - `VITE_API_BASE` — префикс API (обычно `/api`)
 - `VITE_USE_MOCK` — `true` для mock, `false` для реального backend
+- `VITE_FORCE_REAL_API` — в `dev` принудительно отключает mock и включает реальный backend
 
 ## Частые проблемы
 
