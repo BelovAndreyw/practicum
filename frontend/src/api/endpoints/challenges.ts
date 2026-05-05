@@ -1,9 +1,10 @@
 import { http } from '../client';
 import { mockDelay } from '../mock/delay';
+import { shouldUseMock } from '../mock/config';
 import { MOCK_CHALLENGES } from '../mock/data';
 import type { Challenge, ChallengeReport } from '@/types';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const USE_MOCK = shouldUseMock();
 
 export const challengesApi = {
   async list(): Promise<Challenge[]> {

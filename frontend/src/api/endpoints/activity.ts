@@ -1,9 +1,10 @@
 import { http } from '../client';
 import { mockDelay } from '../mock/delay';
+import { shouldUseMock } from '../mock/config';
 import { MOCK_ACTIVITY } from '../mock/data';
 import type { ActivityEvent } from '@/types';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const USE_MOCK = shouldUseMock();
 
 export const activityApi = {
   async getFeed(limit = 20): Promise<ActivityEvent[]> {

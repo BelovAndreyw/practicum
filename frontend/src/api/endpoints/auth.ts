@@ -1,9 +1,10 @@
 import { http } from '../client';
 import { mockDelay } from '../mock/delay';
+import { shouldUseMock } from '../mock/config';
 import { MOCK_ME, MOCK_USERS } from '../mock/data';
 import type { User } from '@/types';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const USE_MOCK = shouldUseMock();
 
 export interface LoginPayload { email: string; password: string; }
 export interface AuthResponse  { user: User; token: string; }

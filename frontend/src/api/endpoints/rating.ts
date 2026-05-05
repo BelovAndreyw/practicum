@@ -1,9 +1,10 @@
-﻿import { http } from '../client';
+import { http } from '../client';
 import { mockDelay } from '../mock/delay';
+import { shouldUseMock } from '../mock/config';
 import { MOCK_TEAM_RATING, MOCK_USER_RATING } from '../mock/data';
 import type { TeamRatingEntry, UserRatingEntry } from '@/types';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const USE_MOCK = shouldUseMock();
 
 export const ratingApi = {
   async getTeamRating(): Promise<TeamRatingEntry[]> {
