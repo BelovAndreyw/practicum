@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { checkinApi, rescueApi, votingApi, teamsApi } from '@/api';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { CheckIn, RescueRequest, VoteRound, TeamMember } from '@/types';
@@ -8,7 +8,7 @@ import styles from './ToolsPage.module.css';
 type Tab = 'checkin' | 'rescue' | 'voting';
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: 'РћР¶РёРґР°РµС‚', accepted: 'РџСЂРёРЅСЏС‚Рѕ', confirmed: 'РџРѕРґС‚РІРµСЂР¶РґРµРЅРѕ', rejected: 'РћС‚РєР»РѕРЅРµРЅРѕ',
+  pending: 'Ожидает', accepted: 'Принято', confirmed: 'Подтверждено', rejected: 'Отклонено',
 };
 const STATUS_VAR: Record<string, 'default' | 'accent' | 'warning' | 'success' | 'danger'> = {
   pending: 'warning', accepted: 'accent', confirmed: 'success', rejected: 'danger',
@@ -111,16 +111,16 @@ export function ToolsPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="РљРѕРјР°РЅРґРЅС‹Рµ РёРЅСЃС‚СЂСѓРјРµРЅС‚С‹"
-        title="РРЅСЃС‚СЂСѓРјРµРЅС‚С‹"
-        subtitle="Р•Р¶РµРЅРµРґРµР»СЊРЅС‹Рµ РѕС‚С‡С‘С‚С‹, Р·Р°РїСЂРѕСЃС‹ РїРѕРјРѕС‰Рё Рё РѕС†РµРЅРёРІР°РЅРёРµ РІРєР»Р°РґР° СѓС‡Р°СЃС‚РЅРёРєРѕРІ."
+        eyebrow="Командные инструменты"
+        title="Инструменты"
+        subtitle="Еженедельные отчёты, запросы помощи и оценивание вклада участников."
       />
 
       <div className={styles.tabBar}>
         {([
-          ['checkin', 'вњ…', 'Check-in'],
-          ['rescue',  'рџ†', 'РЎРїР°СЃРµРЅРёРµ'],
-          ['voting',  'рџ—іпёЏ', 'Р“РѕР»РѕСЃРѕРІР°РЅРёРµ'],
+          ['checkin', '✅', 'Check-in'],
+          ['rescue',  '🆘', 'Спасение'],
+          ['voting',  '🗳️', 'Голосование'],
         ] as const).map(([id, icon, label]) => (
           <button
             key={id}
@@ -132,56 +132,56 @@ export function ToolsPage() {
         ))}
       </div>
 
-      {/* в”Ђв”Ђ CHECK-IN в”Ђв”Ђ */}
+      {/* ── CHECK-IN ── */}
       {tab === 'checkin' && (
         <div className={styles.twoCol}>
-          {/* Р¤РѕСЂРјР° / РєРЅРѕРїРєР° */}
+          {/* Форма / кнопка */}
           <div className={styles.colLeft}>
             {ciSuccess && (
-              <div className={styles.successBanner}>вњ… Check-in РѕС‚РїСЂР°РІР»РµРЅ РѕСЂРіР°РЅРёР·Р°С‚РѕСЂР°Рј!</div>
+              <div className={styles.successBanner}>✅ Check-in отправлен организаторам!</div>
             )}
             {!showCiForm ? (
               <Card padding="lg" className={styles.actionCard}>
-                <span className={styles.actionIcon}>вњ…</span>
-                <h3 className={styles.actionTitle}>РћС‚РїСЂР°РІРёС‚СЊ РµР¶РµРЅРµРґРµР»СЊРЅС‹Р№ РѕС‚С‡С‘С‚</h3>
+                <span className={styles.actionIcon}>✅</span>
+                <h3 className={styles.actionTitle}>Отправить еженедельный отчёт</h3>
                 <p className={styles.actionDesc}>
-                  Р Р°СЃСЃРєР°Р¶РёС‚Рµ РѕСЂРіР°РЅРёР·Р°С‚РѕСЂР°Рј, С‡С‚Рѕ РєРѕРјР°РЅРґР° СЃРґРµР»Р°Р»Р° Р·Р° РЅРµРґРµР»СЋ, С‡РµРіРѕ РґРѕСЃС‚РёРіР»Р° Рё С‡С‚Рѕ РјРµС€Р°РµС‚ РґРІРёРіР°С‚СЊСЃСЏ РІРїРµСЂС‘Рґ.
+                  Расскажите организаторам, что команда сделала за неделю, чего достигла и что мешает двигаться вперёд.
                 </p>
                 <Button onClick={() => { setShowCiForm(true); setCiSuccess(false); }}>
-                  РќРѕРІС‹Р№ check-in
+                  Новый check-in
                 </Button>
               </Card>
             ) : (
               <Card padding="lg">
-                <h3 className={styles.formTitle}>РќРѕРІС‹Р№ Check-in</h3>
+                <h3 className={styles.formTitle}>Новый Check-in</h3>
                 <div className={styles.form}>
-                  <Input label="РќРµРґРµР»СЏ" value={ciForm.weekLabel} onChange={(e) => setCiForm({ ...ciForm, weekLabel: e.target.value })} placeholder="РќРµРґРµР»СЏ 3" />
-                  <Textarea label="Р§С‚Рѕ СЃРґРµР»Р°Р»Рё?" value={ciForm.summary} onChange={(e) => setCiForm({ ...ciForm, summary: e.target.value })} placeholder="РљСЂР°С‚РєРѕ Рѕ СЂРµР·СѓР»СЊС‚Р°С‚Р°С…..." />
-                  <Textarea label="Р”РѕСЃС‚РёР¶РµРЅРёСЏ" value={ciForm.achievements} onChange={(e) => setCiForm({ ...ciForm, achievements: e.target.value })} placeholder="Р—Р°РІРµСЂС€РёР»Рё С‡РµР»Р»РµРЅРґР¶, РІРѕСЂРєС€РѕРї..." />
-                  <Textarea label="Р‘Р»РѕРєРµСЂС‹ (РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ)" value={ciForm.blockers} onChange={(e) => setCiForm({ ...ciForm, blockers: e.target.value })} placeholder="РўСЂСѓРґРЅРѕСЃС‚Рё, РЅРµС…РІР°С‚РєР° РІСЂРµРјРµРЅРё..." />
+                  <Input label="Неделя" value={ciForm.weekLabel} onChange={(e) => setCiForm({ ...ciForm, weekLabel: e.target.value })} placeholder="Неделя 3" />
+                  <Textarea label="Что сделали?" value={ciForm.summary} onChange={(e) => setCiForm({ ...ciForm, summary: e.target.value })} placeholder="Кратко о результатах..." />
+                  <Textarea label="Достижения" value={ciForm.achievements} onChange={(e) => setCiForm({ ...ciForm, achievements: e.target.value })} placeholder="Завершили челлендж, воркшоп..." />
+                  <Textarea label="Блокеры (необязательно)" value={ciForm.blockers} onChange={(e) => setCiForm({ ...ciForm, blockers: e.target.value })} placeholder="Трудности, нехватка времени..." />
                   <div className={styles.formBtns}>
-                    <Button onClick={handleCiSubmit} loading={ciSaving} disabled={!ciForm.weekLabel || !ciForm.summary}>РћС‚РїСЂР°РІРёС‚СЊ</Button>
-                    <Button variant="ghost" onClick={() => setShowCiForm(false)}>РћС‚РјРµРЅР°</Button>
+                    <Button onClick={handleCiSubmit} loading={ciSaving} disabled={!ciForm.weekLabel || !ciForm.summary}>Отправить</Button>
+                    <Button variant="ghost" onClick={() => setShowCiForm(false)}>Отмена</Button>
                   </div>
                 </div>
               </Card>
             )}
           </div>
 
-          {/* РСЃС‚РѕСЂРёСЏ */}
+          {/* История */}
           <div className={styles.colRight}>
-            <h3 className={styles.histTitle}>РСЃС‚РѕСЂРёСЏ check-in</h3>
+            <h3 className={styles.histTitle}>История check-in</h3>
             {checkins.length === 0
-              ? <Empty icon="рџ“‹" message="Р•С‰С‘ РЅРµ Р±С‹Р»Рѕ check-in" hint="РћС‚РїСЂР°РІСЊС‚Рµ РїРµСЂРІС‹Р№ РѕС‚С‡С‘С‚" />
+              ? <Empty icon="📋" message="Ещё не было check-in" hint="Отправьте первый отчёт" />
               : checkins.map((ci) => (
                 <Card key={ci.id} padding="md" className={styles.ciItem}>
                   <div className={styles.ciHead}>
                     <Badge variant="accent">{ci.weekLabel}</Badge>
                     <span className={styles.ciDate}>{new Date(ci.submittedAt).toLocaleDateString('ru-RU')}</span>
                   </div>
-                  <p className={styles.ciField}><strong>РС‚РѕРіРё:</strong> {ci.summary}</p>
-                  <p className={styles.ciField}><strong>Р”РѕСЃС‚РёР¶РµРЅРёСЏ:</strong> {ci.achievements}</p>
-                  {ci.blockers && <p className={styles.ciField}><strong>Р‘Р»РѕРєРµСЂС‹:</strong> {ci.blockers}</p>}
+                  <p className={styles.ciField}><strong>Итоги:</strong> {ci.summary}</p>
+                  <p className={styles.ciField}><strong>Достижения:</strong> {ci.achievements}</p>
+                  {ci.blockers && <p className={styles.ciField}><strong>Блокеры:</strong> {ci.blockers}</p>}
                 </Card>
               ))
             }
@@ -189,25 +189,25 @@ export function ToolsPage() {
         </div>
       )}
 
-      {/* в”Ђв”Ђ RESCUE в”Ђв”Ђ */}
+      {/* ── RESCUE ── */}
       {tab === 'rescue' && (
         <div className={styles.twoCol}>
           <div className={styles.colLeft}>
             <Card padding="lg" className={styles.actionCard}>
-              <span className={styles.actionIcon}>рџ†</span>
-              <h3 className={styles.actionTitle}>Р—Р°РїСЂРѕСЃРёС‚СЊ РїРѕРјРѕС‰СЊ</h3>
+              <span className={styles.actionIcon}>🆘</span>
+              <h3 className={styles.actionTitle}>Запросить помощь</h3>
               <p className={styles.actionDesc}>
-                Р Р°Р·РјРµСЃС‚РёС‚Рµ Р·Р°СЏРІРєСѓ вЂ” РґСЂСѓРіР°СЏ РєРѕРјР°РЅРґР° РѕС‚РєР»РёРєРЅРµС‚СЃСЏ Рё РїРѕРјРѕР¶РµС‚ СЂР°Р·РѕР±СЂР°С‚СЊСЃСЏ СЃ С‚РµРјРѕР№.
-                РћР±Рµ РєРѕРјР°РЅРґС‹ РїРѕР»СѓС‡Р°С‚ Р±РѕРЅСѓСЃРЅС‹Рµ Р±Р°Р»Р»С‹ РїРѕСЃР»Рµ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ.
+                Разместите заявку — другая команда откликнется и поможет разобраться с темой.
+                Обе команды получат бонусные баллы после подтверждения.
               </p>
-              <Button onClick={() => setShowRescueForm(true)}>Р—Р°РїСЂРѕСЃРёС‚СЊ СЃРїР°СЃРµРЅРёРµ</Button>
+              <Button onClick={() => setShowRescueForm(true)}>Запросить спасение</Button>
             </Card>
           </div>
 
           <div className={styles.colRight}>
-            <h3 className={styles.histTitle}>Р—Р°СЏРІРєРё РЅР° СЃРїР°СЃРµРЅРёРµ</h3>
+            <h3 className={styles.histTitle}>Заявки на спасение</h3>
             {rescues.length === 0
-              ? <Empty icon="рџ†" message="РќРµС‚ Р·Р°СЏРІРѕРє" hint="РЎРѕР·РґР°Р№С‚Рµ РїРµСЂРІСѓСЋ Р·Р°СЏРІРєСѓ РЅР° РїРѕРјРѕС‰СЊ" />
+              ? <Empty icon="🆘" message="Нет заявок" hint="Создайте первую заявку на помощь" />
               : rescues.map((r) => (
                 <Card key={r.id} padding="md" className={styles.rescueItem}>
                   <div className={styles.rescueHead}>
@@ -217,14 +217,14 @@ export function ToolsPage() {
                   <h4 className={styles.rescueTopic}>{r.topic}</h4>
                   <p className={styles.rescueDesc}>{r.description}</p>
                   <div className={styles.rescueMeta}>
-                    <span>РћС‚: {r.requesterTeamName}</span>
-                    {r.helperTeamName && <span>в†’ {r.helperTeamName}</span>}
+                    <span>От: {r.requesterTeamName}</span>
+                    {r.helperTeamName && <span>→ {r.helperTeamName}</span>}
                   </div>
                   {r.status === 'pending' && user?.teamId && r.requesterTeamId !== user.teamId && (
-                    <Button size="sm" variant="secondary" onClick={() => handleAccept(r.id)} style={{ marginTop: 10 }}>РџРѕРјРѕС‡СЊ</Button>
+                    <Button size="sm" variant="secondary" onClick={() => handleAccept(r.id)} style={{ marginTop: 10 }}>Помочь</Button>
                   )}
                   {r.status === 'accepted' && (
-                    <Button size="sm" onClick={() => handleConfirm(r.id)} style={{ marginTop: 10 }}>вњ… РџРѕРґС‚РІРµСЂРґРёС‚СЊ</Button>
+                    <Button size="sm" onClick={() => handleConfirm(r.id)} style={{ marginTop: 10 }}>✅ Подтвердить</Button>
                   )}
                 </Card>
               ))
@@ -233,25 +233,25 @@ export function ToolsPage() {
         </div>
       )}
 
-      {/* в”Ђв”Ђ VOTING в”Ђв”Ђ */}
+      {/* ── VOTING ── */}
       {tab === 'voting' && (
         <div className={styles.votingWrap}>
           {round === null && (
-            <Empty icon="рџ—іпёЏ" message="РќРµС‚ Р°РєС‚РёРІРЅРѕРіРѕ СЂР°СѓРЅРґР°" hint="РћСЂРіР°РЅРёР·Р°С‚РѕСЂС‹ РѕС‚РєСЂРѕСЋС‚ РіРѕР»РѕСЃРѕРІР°РЅРёРµ РІ РєРѕРЅС†Рµ С†РёРєР»Р°." />
+            <Empty icon="🗳️" message="Нет активного раунда" hint="Организаторы откроют голосование в конце цикла." />
           )}
           {round && voteSubmitted && (
             <Card padding="lg" className={styles.voteSuccess}>
-              <span className={styles.voteSuccessIcon}>рџЋ‰</span>
-              <h2>Р“РѕР»РѕСЃР° СѓС‡С‚РµРЅС‹!</h2>
-              <p className={styles.voteSuccessDesc}>Р’Р°С€Рё РѕС†РµРЅРєРё РѕС‚РїСЂР°РІР»РµРЅС‹ Р°РЅРѕРЅРёРјРЅРѕ Рё Р±СѓРґСѓС‚ СѓС‡С‚РµРЅС‹ РїСЂРё СЂР°СЃС‡С‘С‚Рµ СЂРµР№С‚РёРЅРіР° СѓС‡Р°СЃС‚РЅРёРєРѕРІ.</p>
+              <span className={styles.voteSuccessIcon}>🎉</span>
+              <h2>Голоса учтены!</h2>
+              <p className={styles.voteSuccessDesc}>Ваши оценки отправлены анонимно и будут учтены при расчёте рейтинга участников.</p>
             </Card>
           )}
           {round && !voteSubmitted && (
             <>
               <div className={styles.roundInfo}>
                 <Badge variant="accent">{round.cycleLabel}</Badge>
-                <span className={styles.roundClose}>Р—Р°РєСЂС‹РІР°РµС‚СЃСЏ: {new Date(round.closesAt).toLocaleDateString('ru-RU')}</span>
-                <p className={styles.roundHint}>РћС†РµРЅРёС‚Рµ РІРєР»Р°Рґ РєР°Р¶РґРѕРіРѕ СѓС‡Р°СЃС‚РЅРёРєР° РІР°С€РµР№ РєРѕРјР°РЅРґС‹ РїРѕ 5-Р±Р°Р»Р»СЊРЅРѕР№ С€РєР°Р»Рµ. Р“РѕР»РѕСЃР° Р°РЅРѕРЅРёРјРЅС‹.</p>
+                <span className={styles.roundClose}>Закрывается: {new Date(round.closesAt).toLocaleDateString('ru-RU')}</span>
+                <p className={styles.roundHint}>Оцените вклад каждого участника вашей команды по 5-балльной шкале. Голоса анонимны.</p>
               </div>
               <div className={styles.membersGrid}>
                 {members.map((m) => (
@@ -259,7 +259,7 @@ export function ToolsPage() {
                     <div className={styles.memberInfo}>
                       <Avatar name={`${m.firstName} ${m.lastName}`} src={m.avatarUrl} size="lg" />
                       <p className={styles.memberName}>{m.firstName} {m.lastName}</p>
-                      <p className={styles.memberRole}>{m.role === 'captain' ? 'РљР°РїРёС‚Р°РЅ' : 'РЈС‡Р°СЃС‚РЅРёРє'}</p>
+                      <p className={styles.memberRole}>{m.role === 'captain' ? 'Капитан' : 'Участник'}</p>
                     </div>
                     <div className={styles.stars}>
                       {[1, 2, 3, 4, 5].map((s) => (
@@ -267,21 +267,21 @@ export function ToolsPage() {
                           key={s}
                           className={[styles.star, (scores[m.userId] ?? 0) >= s ? styles.starActive : ''].join(' ')}
                           onClick={() => handleScore(m.userId, s)}
-                        >в…</button>
+                        >★</button>
                       ))}
                     </div>
                     <span className={styles.scoreLabel}>
-                      {scores[m.userId] ? `${scores[m.userId]} / 5` : 'РЅРµ РѕС†РµРЅРµРЅ'}
+                      {scores[m.userId] ? `${scores[m.userId]} / 5` : 'не оценен'}
                     </span>
                   </Card>
                 ))}
               </div>
               <div className={styles.submitRow}>
                 <Button size="lg" onClick={handleVoteSubmit} loading={voteSaving} disabled={members.some((m) => !scores[m.userId])}>
-                  РћС‚РїСЂР°РІРёС‚СЊ РѕС†РµРЅРєРё
+                  Отправить оценки
                 </Button>
                 {members.some((m) => !scores[m.userId]) && (
-                  <p className={styles.submitHint}>РћС†РµРЅРёС‚Рµ РІСЃРµС… СѓС‡Р°СЃС‚РЅРёРєРѕРІ</p>
+                  <p className={styles.submitHint}>Оцените всех участников</p>
                 )}
               </div>
             </>
@@ -291,22 +291,22 @@ export function ToolsPage() {
 
       {/* Rescue modal */}
       <Modal
-        title="Р—Р°РїСЂРѕСЃ РЅР° СЃРїР°СЃРµРЅРёРµ"
+        title="Запрос на спасение"
         open={showRescueForm}
         onClose={() => setShowRescueForm(false)}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowRescueForm(false)}>РћС‚РјРµРЅР°</Button>
+            <Button variant="secondary" onClick={() => setShowRescueForm(false)}>Отмена</Button>
             <Button onClick={handleRescueCreate} loading={rescueSaving} disabled={!rescueForm.topic.trim()}>
-              РћС‚РїСЂР°РІРёС‚СЊ Р·Р°РїСЂРѕСЃ
+              Отправить запрос
             </Button>
           </>
         }
       >
-        <p className={styles.modalNote}>РЈРєР°Р¶РёС‚Рµ С‚РµРјСѓ вЂ” РґСЂСѓРіРёРµ РєРѕРјР°РЅРґС‹ СѓРІРёРґСЏС‚ Р·Р°РїСЂРѕСЃ Рё СЃРјРѕРіСѓС‚ РѕС‚РєР»РёРєРЅСѓС‚СЊСЃСЏ.</p>
+        <p className={styles.modalNote}>Укажите тему — другие команды увидят запрос и смогут откликнуться.</p>
         <div className={styles.form}>
-          <Input label="РўРµРјР°" value={rescueForm.topic} onChange={(e) => setRescueForm({ ...rescueForm, topic: e.target.value })} placeholder="РўРµРѕСЂРјРµС… вЂ” РєРёРЅРµРјР°С‚РёРєР°" />
-          <Textarea label="РћРїРёСЃР°РЅРёРµ" value={rescueForm.description} onChange={(e) => setRescueForm({ ...rescueForm, description: e.target.value })} placeholder="Р’ С‡С‘Рј РєРѕРЅРєСЂРµС‚РЅРѕ РЅСѓР¶РЅР° РїРѕРјРѕС‰СЊ..." />
+          <Input label="Тема" value={rescueForm.topic} onChange={(e) => setRescueForm({ ...rescueForm, topic: e.target.value })} placeholder="Теормех — кинематика" />
+          <Textarea label="Описание" value={rescueForm.description} onChange={(e) => setRescueForm({ ...rescueForm, description: e.target.value })} placeholder="В чём конкретно нужна помощь..." />
         </div>
       </Modal>
     </div>
