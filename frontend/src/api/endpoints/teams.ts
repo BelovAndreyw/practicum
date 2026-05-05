@@ -1,9 +1,10 @@
-﻿import { http } from '../client';
+import { http } from '../client';
 import { mockDelay } from '../mock/delay';
+import { shouldUseMock } from '../mock/config';
 import { MOCK_TEAMS } from '../mock/data';
 import type { Team, KrkBreakdown } from '@/types';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const USE_MOCK = shouldUseMock();
 
 export const teamsApi = {
   async getTeam(id: string): Promise<Team> {

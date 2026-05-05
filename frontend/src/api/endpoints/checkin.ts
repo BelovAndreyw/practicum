@@ -1,9 +1,10 @@
 import { http } from '../client';
 import { mockDelay } from '../mock/delay';
+import { shouldUseMock } from '../mock/config';
 import { MOCK_CHECKINS } from '../mock/data';
 import type { CheckIn } from '@/types';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const USE_MOCK = shouldUseMock();
 
 export const checkinApi = {
   async list(teamId: string): Promise<CheckIn[]> {
