@@ -16,11 +16,22 @@ export function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
       await login(email, password);
       navigate('/', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка входа');
+      if (err instanceof Error) {
+        if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+          setError('Сервер авторизации недоступен. Для локального просмотра включите mock-режим.');
+        } else if (err.message === 'Internal Server Error') {
+          setError('Ошибка на сервере авторизации. Проверьте backend или войдите в mock-режиме.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Ошибка входа');
+      }
     } finally {
       setLoading(false);
     }
@@ -42,7 +53,7 @@ export function LoginPage() {
         <form onSubmit={onSubmit} className={styles.form}>
           <Input
             label="Email / логин УрФУ"
-            type="email"
+            type="text"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="student@urfu.ru"
