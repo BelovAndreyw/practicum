@@ -1,94 +1,77 @@
-# Командный зачёт — Frontend
+﻿# Командный зачёт — Frontend
 
-Веб-фронтенд игры «Командный зачёт». React + TypeScript + Vite.
+Фронтенд игры «Командный зачёт» на React + TypeScript + Vite.
 
-## Быстрый старт
+## Быстрый запуск (каждый у себя локально, независимо)
 
+Этот сценарий **не зависит от чужого компьютера/сервера**.
+Каждый разработчик поднимает свой локальный экземпляр.
+
+1. Клонировать репозиторий и перейти в ветку `frontend`:
 ```bash
-cd frontend
-cp .env.example .env.development   # уже скопирован в репо
-npm install
-npm run dev                         # http://localhost:5173
+git clone https://github.com/BelovAndreyw/practicum.git
+cd practicum
+git checkout frontend
 ```
 
-По умолчанию `VITE_USE_MOCK=true` — бэкенд не нужен.
+2. Перейти во фронтенд и установить зависимости:
+```bash
+cd frontend
+npm install
+```
 
-## Подключение бэкенда
+3. Запустить локальный dev-сервер:
+```bash
+npm run dev
+```
 
-1. Запустите backend на `http://localhost:8080` (или другом порту).
-2. Отредактируйте `.env.development`:
-   ```
-   VITE_BACKEND_URL=http://localhost:8080
-   VITE_API_BASE=/api
-   VITE_USE_MOCK=false
-   ```
-3. Перезапустите `npm run dev`.
+4. Открыть в браузере:
+- `http://localhost:5173`
 
-Vite проксирует запросы `/api/*` на `VITE_BACKEND_URL`, поэтому CORS не нужен в dev-режиме.
+## Локальный вход в демо-режиме
+
+По умолчанию для локальной разработки используется mock-режим:
+- `VITE_USE_MOCK=true` в `.env.development`
+- вход работает с любым логином/паролем (для демонстрации интерфейса)
+
+Это не мешает дальнейшей интеграции с backend.
+
+## Как включить реальный backend
+
+1. Поднять backend (локально/на стенде).
+2. В `frontend/.env.development` указать:
+```env
+VITE_BACKEND_URL=http://localhost:8080
+VITE_API_BASE=/api
+VITE_USE_MOCK=false
+```
+3. Перезапустить фронт:
+```bash
+npm run dev
+```
 
 ## Production-сборка
 
 ```bash
-npm run build      # dist/
-npm run preview    # проверка dist/ локально
+npm run build
+npm run preview
 ```
-
-## Структура проекта
-
-```
-src/
-├── api/                  # HTTP-клиент + эндпоинты + mock-данные
-│   ├── client.ts         # fetch-обёртка, ApiError
-│   ├── endpoints/        # по одному файлу на ресурс (auth, teams, ...)
-│   ├── mock/
-│   │   ├── data.ts       # mock-объекты всех сущностей
-│   │   └── delay.ts      # имитация задержки сети
-│   └── index.ts          # реэкспорт всех API
-│
-├── components/
-│   ├── ui/               # базовые UI-компоненты (Button, Card, Badge, ...)
-│   └── layout/           # AppLayout, Sidebar, Header
-│
-├── features/
-│   └── auth/             # AuthContext, ProtectedRoute, LoginPage
-│
-├── pages/                # страницы (1 файл = 1 маршрут)
-├── styles/               # CSS-токены + reset + global
-├── types/                # TypeScript-типы DTO (User, Team, Challenge, ...)
-├── router.tsx            # react-router v6 createBrowserRouter
-└── main.tsx
-```
-
-## API-интеграция
-
-Полный контракт: [`docs/api-contract.md`](docs/api-contract.md).
-
-Весь обмен данных инкапсулирован в `src/api/endpoints/*.ts`.
-Для перехода с mock на реальный бэк достаточно:
-1. Поставить `VITE_USE_MOCK=false`
-2. Убедиться, что эндпоинты возвращают те же DTO, что описаны в `src/types/index.ts`
 
 ## Переменные окружения
 
-| Переменная         | По умолчанию              | Описание                              |
-|--------------------|---------------------------|---------------------------------------|
-| `VITE_BACKEND_URL` | `http://localhost:8080`   | URL backend-сервера                   |
-| `VITE_API_BASE`    | `/api`                    | Префикс всех API-запросов             |
-| `VITE_USE_MOCK`    | `true`                    | `true` — mock, `false` — реальный бэк |
+- `VITE_BACKEND_URL` — адрес backend
+- `VITE_API_BASE` — префикс API (обычно `/api`)
+- `VITE_USE_MOCK` — `true` для mock, `false` для реального backend
 
-## Технологии
+## Частые проблемы
 
-- React 18 + TypeScript 5
-- Vite 5 (dev-сервер, сборка)
-- React Router v6 (SPA-роутинг)
-- CSS Modules (изоляция стилей)
-- Нет глобального state-менеджера — state локален в компонентах + AuthContext
+1. `localhost:5173` не открывается:
+- проверьте, что в терминале запущен `npm run dev`
+- проверьте, что порт 5173 не занят
 
-## Скрипты
+2. Ошибка при `npm install`:
+- проверьте версию Node.js (`node -v`), рекомендуется Node 20+
 
-| Команда           | Описание                              |
-|-------------------|---------------------------------------|
-| `npm run dev`     | Dev-сервер на порту 5173              |
-| `npm run build`   | Production-сборка в `dist/`           |
-| `npm run preview` | Локальный просмотр `dist/`            |
-| `npm run typecheck` | Проверка типов без сборки           |
+3. Белая страница:
+- откройте DevTools (F12) и проверьте ошибки в Console
+- выполните `Ctrl+F5`
