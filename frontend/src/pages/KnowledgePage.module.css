@@ -12,5 +12,17 @@
 .typeRow { display: flex; flex-direction: column; gap: 6px; }
 .typeLabel { font-size: 0.82rem; font-weight: 600; }
 .typeBtns { display: flex; gap: 8px; }
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .cardHead,
+  .cardFoot {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .typeBtns { flex-wrap: wrap; }
+}
 .typeBtn { padding: 7px 14px; border: 1.5px solid var(--border); background: var(--surface-soft); border-radius: var(--radius-sm); font-size: 0.85rem; cursor: pointer; transition: all var(--transition); }
 .typeActive { border-color: var(--accent); background: #eef1ff; color: var(--accent-strong); font-weight: 600; }

@@ -252,3 +252,78 @@
   .dayCell { min-height: 84px; padding: 5px; }
   .dayEvent { font-size: 0.64rem; }
 }
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .grid { gap: 14px; }
+  .rowBtns {
+    flex-wrap: wrap;
+  }
+  .krkTotal { font-size: 2.35rem; }
+  .krkRow {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .krkRowLabel,
+  .krkRowVal {
+    width: auto;
+    text-align: left;
+  }
+  .krkRowBar {
+    width: 100%;
+    flex: none;
+  }
+  .inviteCode {
+    font-size: 1.25rem;
+    letter-spacing: 0.1em;
+  }
+  .panelHead {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .calendarNav {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .monthGrid,
+  .weekHeader {
+    gap: 3px;
+  }
+  .dayCell {
+    min-height: 58px;
+    padding: 4px;
+  }
+  .dayNumber {
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.66rem;
+  }
+  .dayEventList {
+    gap: 2px;
+    margin-top: 4px;
+  }
+  .dayEvent {
+    display: block;
+    font-size: 0.58rem;
+  }
+  .dayEventTime {
+    display: none;
+  }
+  .membersGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .member {
+    padding: 14px 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .membersGrid { grid-template-columns: minmax(0, 1fr); }
+  .calendarMonth { font-size: 0.76rem; }
+  .weekday { font-size: 0.64rem; }
+  .dayCell { min-height: 48px; }
+  .dayEventTitle { display: none; }
+  .dayMore { display: none; }
+}

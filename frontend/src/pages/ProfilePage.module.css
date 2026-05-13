@@ -112,3 +112,29 @@
 @media (max-width: 1000px) {
   .layout { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 640px) {
+  .layout,
+  .leftCol,
+  .rightCol {
+    gap: 14px;
+  }
+
+  .stats { grid-template-columns: 1fr; }
+  .feedItem {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .achGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ratingSectionHead,
+  .ratingCompHead {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 420px) {
+  .achGrid { grid-template-columns: minmax(0, 1fr); }
+}

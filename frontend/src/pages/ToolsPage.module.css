@@ -9,8 +9,12 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   width: fit-content;
+  max-width: 100%;
   margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.tabBar::-webkit-scrollbar { display: none; }
 .tabBtn {
   padding: 8px 22px;
   border: none;
@@ -21,6 +25,7 @@
   color: var(--muted);
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
 }
 .tabBtn:hover { color: var(--text); }
 .tabActive { background: var(--surface); color: var(--accent-strong); box-shadow: var(--shadow-sm); }
@@ -119,4 +124,28 @@
 }
 @media (max-width: 860px) {
   .twoCol { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .tabBar {
+    width: 100%;
+    margin-bottom: 18px;
+  }
+  .tabBtn { padding: 8px 16px; }
+  .ciHead,
+  .rescueHead {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .formBtns,
+  .submitRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .membersGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
 }

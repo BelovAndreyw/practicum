@@ -69,7 +69,7 @@ export function RatingPage() {
             {teamRating.length === 0 ? (
               <Empty message="Нет данных по командам" />
             ) : (
-              <table className={styles.table}>
+              <table className={[styles.table, styles.teamsTable].join(' ')}>
                 <thead>
                   <tr>
                     <th className={styles.placeHeader}>Место</th>
@@ -134,7 +134,7 @@ export function RatingPage() {
             {filteredUsers.length === 0 ? (
               <Empty message="По выбранным фильтрам нет студентов" />
             ) : (
-              <table className={styles.table}>
+              <table className={[styles.table, styles.usersTable].join(' ')}>
                 <thead>
                   <tr>
                     <th className={styles.placeHeader}>Место</th>

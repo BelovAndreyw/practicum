@@ -49,3 +49,23 @@
   color: var(--muted);
   text-align: center;
 }
+
+@media (max-width: 520px) {
+  .page {
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .card {
+    max-width: none;
+    margin: auto 0;
+  }
+
+  .logo {
+    align-items: flex-start;
+  }
+
+  .title {
+    font-size: 1.35rem;
+  }
+}

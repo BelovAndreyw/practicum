@@ -32,4 +32,21 @@
 .scoreLabel { font-size: 0.78rem; color: var(--muted); margin-left: 6px; }
 
 .submitRow { display: flex; align-items: center; gap: 16px; }
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .roundBadge,
+  .memberCard,
+  .submitRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .memberInfo {
+    align-items: flex-start;
+  }
+  .stars {
+    align-self: flex-start;
+    flex-wrap: wrap;
+  }
+}
 .hint { font-size: 0.82rem; color: var(--muted); }
