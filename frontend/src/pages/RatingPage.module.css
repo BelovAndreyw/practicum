@@ -1,7 +1,15 @@
 ﻿.center { display: flex; justify-content: center; padding: 60px; }
-.content { margin-top: 20px; }
+.content {
+  margin-top: 20px;
+  overflow-x: auto;
+}
 
-.table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
 .table th {
   text-align: left;
   font-size: 0.75rem;
@@ -142,4 +150,95 @@
   .topGrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .placeHeader,
   .placeCell { width: 74px; }
+}
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .content {
+    overflow-x: visible;
+  }
+
+  .table,
+  .table thead,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+  }
+
+  .table {
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .table tr {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .table tr:last-child { border-bottom: none; }
+
+  .table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 6px 0;
+    border-bottom: none;
+    text-align: right;
+  }
+
+  .table td::before {
+    content: '';
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+  }
+
+  .teamsTable td:nth-child(1)::before,
+  .usersTable td:nth-child(1)::before { content: 'Место'; }
+  .teamsTable td:nth-child(2)::before { content: 'Команда'; }
+  .teamsTable td:nth-child(3)::before,
+  .usersTable td:nth-child(4)::before { content: 'Лига'; }
+  .teamsTable td:nth-child(4)::before { content: 'Баллы КРК'; }
+  .usersTable td:nth-child(2)::before { content: 'Студент'; }
+  .usersTable td:nth-child(3)::before { content: 'Команда'; }
+  .usersTable td:nth-child(5)::before { content: 'Баллы'; }
+
+  .placeHeader,
+  .placeCell {
+    width: auto;
+    text-align: right !important;
+  }
+
+  .userCell {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .filtersRow { gap: 10px; }
+  .filterField {
+    min-width: min(100%, 210px);
+    flex: 1 1 170px;
+  }
+
+  .topGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .leaguesGrid { gap: 12px; }
+  .leagueTeam { grid-template-columns: 42px minmax(0, 1fr) auto; gap: 8px; }
+  .leaguePlace { width: 30px; height: 30px; }
 }

@@ -107,3 +107,9 @@
   font-size: 0.78rem;
   color: var(--danger);
 }
+
+@media (max-width: 760px) {
+  .center { padding: 28px 12px; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .cardHead { align-items: flex-start; }
+}

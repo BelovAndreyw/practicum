@@ -7,6 +7,18 @@
 .histTitle { font-size: 1rem; color: var(--text); margin: 0 0 14px; }
 .list { display: flex; flex-direction: column; gap: 12px; }
 .ciHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .formBtns {
+    flex-wrap: wrap;
+  }
+  .ciHead {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
 .ciDate { font-size: 0.78rem; color: var(--muted); }
 .ciField { font-size: 0.88rem; color: var(--muted); line-height: 1.55; margin-top: 6px; }
 .ciField strong { color: var(--text); }

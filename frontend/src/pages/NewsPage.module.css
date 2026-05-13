@@ -1,5 +1,10 @@
 .center { display: flex; justify-content: center; padding: 60px; }
 .list { display: flex; flex-direction: column; gap: 16px; }
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .list { gap: 12px; }
+}
 .date { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
 .title { font-size: 1.1rem; margin-bottom: 10px; }
 .body { font-size: 0.9rem; color: var(--muted); line-height: 1.65; }

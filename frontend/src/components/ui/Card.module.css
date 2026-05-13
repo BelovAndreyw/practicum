@@ -17,3 +17,10 @@
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
+
+@media (max-width: 640px) {
+  .card { border-radius: var(--radius-lg); }
+  .sm { padding: 14px; }
+  .md { padding: 16px; }
+  .lg { padding: 20px; }
+}

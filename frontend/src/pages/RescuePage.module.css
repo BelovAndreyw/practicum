@@ -8,3 +8,11 @@
 .meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
 .modalNote { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; line-height: 1.55; }
 .formGrid { display: flex; flex-direction: column; gap: 14px; }
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .cardHead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

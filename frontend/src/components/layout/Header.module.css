@@ -73,5 +73,36 @@
 }
 
 @media (max-width: 860px) {
-  .header { left: 0; padding: 0 16px; }
+  .header {
+    left: 0;
+    padding: 0 16px;
+  }
+
+  .right {
+    width: 100%;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .user { min-width: 0; }
+  .userInfo { min-width: 0; }
+  .userText { min-width: 0; }
+  .userName {
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .header { padding: 0 12px; }
+  .right { gap: 8px; }
+  .user { gap: 6px; }
+  .userInfo { padding: 4px; }
+  .userLeague { display: none; }
+  .logoutBtn {
+    padding: 6px 9px;
+    font-size: 0.76rem;
+  }
 }
