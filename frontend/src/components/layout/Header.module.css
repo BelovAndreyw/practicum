@@ -1,0 +1,108 @@
+﻿.header {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: var(--header-height);
+  background: rgba(238, 243, 249, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 50;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  transition: background var(--transition);
+}
+.userInfo:hover { background: var(--surface-soft); }
+
+.userText {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.userLeague {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.logoutBtn {
+  background: #fff4f4;
+  border: 1px solid #f3c3c3;
+  border-radius: var(--radius-sm);
+  color: #b14a4a;
+  cursor: pointer;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.logoutBtn:hover {
+  background: #ffe6e6;
+  border-color: #dd8e8e;
+  color: #963636;
+}
+
+@media (max-width: 860px) {
+  .header {
+    left: 0;
+    padding: 0 16px;
+  }
+
+  .right {
+    width: 100%;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .user { min-width: 0; }
+  .userInfo { min-width: 0; }
+  .userText { min-width: 0; }
+  .userName {
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .header { padding: 0 12px; }
+  .right { gap: 8px; }
+  .user { gap: 6px; }
+  .userInfo { padding: 4px; }
+  .userLeague { display: none; }
+  .logoutBtn {
+    padding: 6px 9px;
+    font-size: 0.76rem;
+  }
+}

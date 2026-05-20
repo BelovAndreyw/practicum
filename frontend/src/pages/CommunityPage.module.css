@@ -1,0 +1,92 @@
+.center { display: flex; justify-content: center; padding: 60px; }
+
+.page {}
+
+.topRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+  margin-bottom: 22px;
+}
+
+.tabBtn {
+  padding: 8px 22px;
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--radius-sm) - 2px);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.tabBtn:hover { color: var(--text); }
+.tabActive {
+  background: var(--surface);
+  color: var(--accent-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+/* News — 2 column grid */
+.newsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.newsCard {}
+.newsDate { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
+.newsTitle { font-size: 1.1rem; margin-bottom: 10px; }
+.newsBody { font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
+
+/* Knowledge */
+.knFilter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.knLabel { font-size: 0.82rem; color: var(--muted); }
+
+.knGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.knCard {}
+.knHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.knTime { font-size: 0.75rem; color: var(--muted); }
+.knTitle { font-size: 0.95rem; margin-bottom: 6px; }
+.knDesc { font-size: 0.83rem; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+.knTags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.knFoot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+.knAuthor { font-size: 0.8rem; color: var(--muted); }
+
+/* Form */
+.formGrid { display: flex; flex-direction: column; gap: 14px; }
+.typeRow { display: flex; flex-direction: column; gap: 6px; }
+.typeLabel { font-size: 0.82rem; font-weight: 600; }
+.typeBtns { display: flex; gap: 8px; }
+.typeBtn { padding: 7px 14px; border: 1.5px solid var(--border); background: var(--surface-soft); border-radius: var(--radius-sm); font-size: 0.85rem; cursor: pointer; transition: all var(--transition); }
+.typeActive { border-color: var(--accent); background: #eef1ff; color: var(--accent-strong); font-weight: 600; }
+
+@media (max-width: 1100px) {
+  .knGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 860px) {
+  .newsGrid { grid-template-columns: 1fr; }
+  .knGrid { grid-template-columns: 1fr; }
+}
