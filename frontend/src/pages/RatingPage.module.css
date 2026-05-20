@@ -1,0 +1,244 @@
+﻿.center { display: flex; justify-content: center; padding: 60px; }
+.content {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+.table th {
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+.top td { background: linear-gradient(90deg, #f6f8ff, transparent); }
+
+.placeHeader,
+.placeCell { width: 110px; text-align: center !important; }
+
+.placeWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 56px;
+}
+
+.medal { font-size: 1.05rem; line-height: 1; }
+.placeNum {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.teamName { font-weight: 600; }
+.scoreHeader { text-align: left !important; }
+.krkCell {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--accent-strong);
+  text-align: left;
+  font-size: 1rem;
+}
+.teamLabel { color: var(--muted); font-size: 0.82rem; }
+.userCell { display: flex; align-items: center; gap: 8px; }
+
+.filtersRow {
+  margin-top: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filterField {
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.select {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.select:focus {
+  border-color: var(--accent);
+}
+
+/* Top 10 */
+.topGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px;
+  margin-top: 0;
+}
+
+.topCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.topRank { font-size: 1.5rem; }
+.topName { font-size: 0.88rem; font-weight: 600; line-height: 1.3; margin: 0; }
+.topScore { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--accent-strong); margin: 0; }
+
+/* Leagues */
+.leaguesGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.leagueHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.leagueName { font-size: 1rem; margin: 0; }
+.leagueDesc { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; line-height: 1.55; }
+
+.leagueTeam {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.leagueTeam:last-child { border-bottom: none; }
+
+.leaguePlace {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #f1f4ff;
+  color: var(--accent-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 860px) {
+  .leaguesGrid { grid-template-columns: 1fr; }
+  .topGrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .placeHeader,
+  .placeCell { width: 74px; }
+}
+
+@media (max-width: 640px) {
+  .center { padding: 28px 12px; }
+  .content {
+    overflow-x: visible;
+  }
+
+  .table,
+  .table thead,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+  }
+
+  .table {
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .table tr {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .table tr:last-child { border-bottom: none; }
+
+  .table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 6px 0;
+    border-bottom: none;
+    text-align: right;
+  }
+
+  .table td::before {
+    content: '';
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+  }
+
+  .teamsTable td:nth-child(1)::before,
+  .usersTable td:nth-child(1)::before { content: 'Место'; }
+  .teamsTable td:nth-child(2)::before { content: 'Команда'; }
+  .teamsTable td:nth-child(3)::before,
+  .usersTable td:nth-child(4)::before { content: 'Лига'; }
+  .teamsTable td:nth-child(4)::before { content: 'Баллы КРК'; }
+  .usersTable td:nth-child(2)::before { content: 'Студент'; }
+  .usersTable td:nth-child(3)::before { content: 'Команда'; }
+  .usersTable td:nth-child(5)::before { content: 'Баллы'; }
+
+  .placeHeader,
+  .placeCell {
+    width: auto;
+    text-align: right !important;
+  }
+
+  .userCell {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .filtersRow { gap: 10px; }
+  .filterField {
+    min-width: min(100%, 210px);
+    flex: 1 1 170px;
+  }
+
+  .topGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .leaguesGrid { gap: 12px; }
+  .leagueTeam { grid-template-columns: 42px minmax(0, 1fr) auto; gap: 8px; }
+  .leaguePlace { width: 30px; height: 30px; }
+}

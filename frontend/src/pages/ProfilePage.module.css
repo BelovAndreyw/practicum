@@ -1,0 +1,140 @@
+﻿.layout {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.leftCol { display: flex; flex-direction: column; gap: 18px; }
+.rightCol { display: flex; flex-direction: column; gap: 18px; }
+
+.avatarBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.name { font-size: 1.05rem; margin: 0; }
+.studentId { font-size: 0.75rem; color: var(--muted); margin: 0; }
+.email { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 6px;
+  background: var(--surface-soft);
+  gap: 3px;
+}
+
+.statVal { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--accent-strong); }
+.statLabel { font-size: 0.68rem; color: var(--muted); text-align: center; }
+
+.ratingSectionHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ratingLabel { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.ratingNum { font-size: 0.82rem; color: var(--muted); }
+
+.ratingBar {
+  height: 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.ratingFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--violet));
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.sectionTitle { font-size: 0.95rem; margin: 4px 0 12px; }
+.emptyFeed { font-size: 0.82rem; color: var(--muted); }
+.feedList { display: flex; flex-direction: column; gap: 8px; }
+.feedItem { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface-soft); border: 1px solid var(--line); }
+.feedTitle { font-size: 0.82rem; font-weight: 500; }
+.feedTime { font-size: 0.72rem; color: var(--muted); }
+
+.achGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 14px;
+}
+
+.achCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 18px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(246,248,253,0.98));
+}
+
+.achLocked { opacity: 0.45; filter: grayscale(0.5); }
+.achIcon { font-size: 1.8rem; }
+.achTitle { font-weight: 700; font-size: 0.85rem; margin: 0; }
+.achDesc { font-size: 0.75rem; color: var(--muted); line-height: 1.45; margin: 0; }
+.achDate { font-size: 0.7rem; color: var(--muted); margin: 0; }
+
+.ratingDetailNote { font-size: 0.84rem; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+.ratingComponents { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.ratingCompHead { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.ratingCompLabel { font-size: 0.82rem; font-weight: 600; }
+.ratingCompVal { font-size: 0.78rem; color: var(--muted); }
+
+.ratingTotal { font-size: 0.9rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+.ratingTotal strong { font-family: var(--font-display); font-size: 1.2rem; color: var(--accent-strong); margin-left: 6px; }
+.ratingTotalLabel { font-size: 0.82rem; }
+
+.formGrid { display: flex; flex-direction: column; gap: 12px; }
+
+@media (max-width: 1000px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .layout,
+  .leftCol,
+  .rightCol {
+    gap: 14px;
+  }
+
+  .stats { grid-template-columns: 1fr; }
+  .feedItem {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .achGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ratingSectionHead,
+  .ratingCompHead {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 420px) {
+  .achGrid { grid-template-columns: minmax(0, 1fr); }
+}
