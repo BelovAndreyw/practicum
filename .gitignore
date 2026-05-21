@@ -8,6 +8,11 @@ AGENT.md
 secrets/
 .secrets
 
+# TLS test certs (генерируются: bash infra/ssl/generate-self-signed.sh)
+infra/ssl/certs/*.key
+infra/ssl/certs/*.crt
+!infra/ssl/certs/.gitkeep
+
 # Но шаблоны окружения можно хранить в репо
 !.env.example
 !.env.test.example
