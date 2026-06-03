@@ -35,7 +35,7 @@
 |-----------|-----------|--------------|--------|-------|
 | **dev** | Локальная разработка | `infra/docker-compose.dev.yml` | Разработчики (localhost) | Нет (HTTP) |
 | **test** | CI/CD, QA | `infra/docker-compose.test.yml` | DevSecOps, тестировщики | Да (self-signed) |
-| **pilot** | Реальные пользователи | TBD (Этап 4) | Студенты, организаторы | Да (Let's Encrypt) |
+| **pilot** | Реальные пользователи | `infra/docker-compose.pilot.yml` | Студенты, организаторы | Локально — self-signed; на сервере — Let's Encrypt |
 
 ## Сервисы и порты
 
@@ -54,6 +54,19 @@
 |--------|------|-----------|
 | Nginx | 80, 443 | Единственная точка входа |
 | Остальные | — | Только внутренняя Docker-сеть |
+
+### Pilot-окружение
+
+Структура портов та же, что в test (только nginx 80/443 наружу). Дополнительно:
+
+- `restart: unless-stopped` на всех сервисах — автоподъём после падения/перезагрузки
+- ротация логов: `json-file` driver, `max-size=10m`, `max-file=3`
+- nginx: HSTS, `server_tokens off`, gzip, rate-limit на `/api/auth/`, http2
+- отдельные volume `pgdata-pilot` и сеть `teamzachet-pilot` — не пересекаются с dev/test
+- `.well-known/acme-challenge/` в http-блоке nginx уже зарезервирован под Let's Encrypt
+
+Локально pilot запускается так же, как на сервере, отличается только источник cert-а
+(self-signed vs Let's Encrypt) и источник `.env.pilot` (рука vs GitHub Secrets).
 
 ## CI/CD Flow
 
