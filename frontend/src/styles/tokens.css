@@ -1,0 +1,56 @@
+:root {
+  /* Palette — взята из prototype/roadmap.css */
+  --bg: #eef3f9;
+  --surface: #ffffff;
+  --surface-soft: #f6f8fc;
+  --border: #d8e0ec;
+  --line: #e7edf5;
+  --text: #33445f;
+  --muted: #74839a;
+  --accent: #5f79d8;
+  --accent-strong: #435ec0;
+  --accent-hover: #3a52b0;
+  --violet: #837edf;
+  --blue: #8eb1e8;
+  --shell: #2f3541;
+  --danger: #e05252;
+  --danger-soft: #fdeaea;
+  --success: #3fad74;
+  --success-soft: #e6f7ef;
+  --warning: #e0943a;
+  --warning-soft: #fef3e3;
+
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(44, 58, 84, 0.06);
+  --shadow: 0 18px 48px rgba(44, 58, 84, 0.08);
+  --shadow-md: 0 8px 24px rgba(44, 58, 84, 0.10);
+
+  /* Radii */
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+
+  /* Typography */
+  --font-base: "Candara", "Trebuchet MS", sans-serif;
+  --font-display: "Bahnschrift", "Franklin Gothic Medium", sans-serif;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Sidebar */
+  --sidebar-width: 240px;
+  --header-height: 60px;
+
+  /* Transition */
+  --transition: 0.18s ease;
+}

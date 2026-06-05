@@ -41,6 +41,39 @@ curl -s http://localhost:8000/
 docker compose -f infra/docker-compose.dev.yml --env-file .env down
 ```
 
+## Локальный прогон pilot-контура
+
+Pilot — тот же compose, который потом поедет на сервер. Локально проверяем под self-signed TLS.
+
+```bash
+# 1) Скопировать шаблон окружения
+cp .env.pilot.example .env.pilot
+# Отредактировать: заменить CHANGE_ME на сильные значения
+
+# 2) Сгенерировать self-signed cert для pilot (с SAN на localhost)
+bash infra/ssl/generate-self-signed.sh pilot
+
+# 3) Запуск
+docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot up -d --build
+
+# 4) Проверка (cert self-signed → -k)
+curl -kI https://localhost/                  # 200 OK от фронтенда
+curl -kI http://localhost/                   # 301 -> https
+curl -k  https://localhost/api/              # ответ backend
+
+# 5) Логи (ротация: max 10MB × 3 файла на сервис)
+docker compose -f infra/docker-compose.pilot.yml logs -f nginx backend
+
+# 6) Остановка
+docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot down
+```
+
+Отличия pilot от test:
+- `restart: unless-stopped` на всех сервисах
+- ротация логов через `json-file` driver
+- HSTS, `server_tokens off`, gzip и rate-limit на `/api/auth/` в nginx
+- `http2 on` и таймауты на backend-прокси
+
 ## CI: что проверяется (DevOps часть)
 
 На push/PR в `master` workflow `.github/workflows/ci.yml`:

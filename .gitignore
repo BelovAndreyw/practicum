@@ -5,6 +5,7 @@ AGENT.md
 .env
 .env.*
 *.env
+*.local
 secrets/
 .secrets
 
@@ -16,6 +17,7 @@ infra/ssl/certs/*.crt
 # Но шаблоны окружения можно хранить в репо
 !.env.example
 !.env.test.example
+!.env.pilot.example
 
 # Зависимости
 node_modules/
@@ -26,9 +28,15 @@ venv/
 
 # Сборки
 dist/
+dist-ssr/
 build/
 .next/
 out/
+.vite/
+*.tsbuildinfo
+
+# Логи
+*.log
 
 # IDE и OS
 .vscode/

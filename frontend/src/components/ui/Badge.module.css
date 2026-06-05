@@ -1,0 +1,15 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.default  { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--border); }
+.accent   { background: #e8eeff; color: var(--accent-strong); }
+.success  { background: var(--success-soft); color: var(--success); }
+.warning  { background: var(--warning-soft); color: var(--warning); }
+.danger   { background: var(--danger-soft); color: var(--danger); }
+.violet   { background: #eeeeff; color: var(--violet); }
