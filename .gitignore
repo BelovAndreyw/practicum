@@ -17,6 +17,7 @@ infra/ssl/certs/*.crt
 # Но шаблоны окружения можно хранить в репо
 !.env.example
 !.env.test.example
+!.env.pilot.example
 
 # Зависимости
 node_modules/

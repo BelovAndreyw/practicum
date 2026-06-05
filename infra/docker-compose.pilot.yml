@@ -57,6 +57,8 @@ services:
     environment:
       BACKEND_DEBUG: "false"
     # Порты НЕ открыты наружу
+    volumes:
+      - uploads-pilot:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -119,6 +121,7 @@ services:
 
 volumes:
   pgdata-pilot:
+  uploads-pilot:
 
 networks:
   teamzachet-pilot:

@@ -23,20 +23,4 @@ RUN mkdir -p /app/uploads/posts
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-FROM python:3.12-alpine
-
-# Для bcrypt/cryptography/asyncpg иногда нужны системные библиотеки
-RUN apk add --no-cache gcc musl-dev libffi-dev openssl-dev
-
-WORKDIR /app
-
-COPY requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Поднимаем FastAPI приложение
-COPY app ./app
-
-EXPOSE 8000
-
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${BACKEND_PORT:-8000}"]
