@@ -35,7 +35,7 @@
 |-----------|-----------|--------------|--------|-------|
 | **dev** | Локальная разработка | `infra/docker-compose.dev.yml` | Разработчики (localhost) | Нет (HTTP) |
 | **test** | CI/CD, QA | `infra/docker-compose.test.yml` | DevSecOps, тестировщики | Да (self-signed) |
-| **pilot** | Реальные пользователи | `infra/docker-compose.pilot.yml` | Студенты, организаторы | Локально — self-signed; на сервере — Let's Encrypt |
+| **pilot** | Реальные пользователи | `infra/docker-compose.pilot.yml` | Студенты, организаторы | `https://teamzachet.ru` (Let's Encrypt) |
 
 ## Сервисы и порты
 
@@ -73,15 +73,15 @@
 ```
 Push в master ──► GitHub Actions (ci.yml)
                     │
-                    ├─ Build Docker images
-                    ├─ Start services + health check
-                    └─ Deploy на test сервер (TODO)
+                    ├─ Build Docker images (test compose)
+                    ├─ pytest + pip-audit
+                    └─ Deploy pilot на teamzachet.ru (SSH)
 
 Push в DevOps ──► GitHub Actions (infra-deploy.yml)
                     │
                     ├─ Validate compose configs
                     ├─ Check nginx syntax
-                    └─ Deploy инфры на test (TODO)
+                    └─ Validate compose + nginx (deploy — в ci.yml)
 
 Push в любую ветку ──► GitHub Actions (secret-scan.yml)
                          │
@@ -100,7 +100,17 @@ Push в любую ветку ──► GitHub Actions (secret-scan.yml)
 **Правила:**
 - `.env` файлы **никогда** не коммитятся (в `.gitignore`)
 - `.env.example` — шаблон без реальных значений
-- На сервере `.env` создаётся CI из GitHub Secrets
+- На сервере `.env.pilot` создаётся вручную при bootstrap (см. `.env.pilot.example`)
+
+## Pilot-сервер (teamzachet.ru)
+
+- **IP:** `77.91.93.156`
+- **Домены:** `teamzachet.ru` (canonical), `www.teamzachet.ru` → redirect
+- **Путь:** `/opt/teamzachet`
+- **Compose:** `infra/docker-compose.pilot.yml --env-file .env.pilot`
+- **TLS:** Let's Encrypt, обновление — `infra/ssl/renew-letsencrypt.sh`
+
+См. [`docs/pilot-server-bootstrap.md`](docs/pilot-server-bootstrap.md) и [`docs/pilot-github-setup.md`](docs/pilot-github-setup.md).
 
 ## Быстрый старт (dev)
 
