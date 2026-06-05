@@ -24,7 +24,7 @@
 - [ ] Test-окружение: HTTP -> HTTPS redirect
 - [ ] Test-окружение: открыты только порты 80 и 443 (nginx)
 - [ ] Все остальные сервисы — только внутренняя Docker-сеть
-- [ ] Production (будущее): TLS через Let's Encrypt
+- [ ] Pilot (teamzachet.ru): TLS через Let's Encrypt
 
 ## Заголовки безопасности (Nginx)
 
@@ -40,7 +40,7 @@
 Настройка через переменную окружения `BACKEND_CORS_ORIGINS`:
 - **Dev:** `http://localhost:3000,http://localhost`
 - **Test:** `https://test.teamzachet.local`
-- **Prod:** `https://teamzachet.urfu.ru` (или фактический домен)
+- **Pilot/Prod:** `https://teamzachet.ru`
 
 **Backend-разработчику:** использовать CORS middleware с `allow_origins` из env.
 Никогда не ставить `allow_origins=*` в test/prod.

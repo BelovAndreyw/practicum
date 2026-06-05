@@ -1,6 +1,6 @@
 # CI/CD — основной пайплайн
 # Триггер: push/PR в master
-# Сборка Docker-образов + деплой на test (TODO: активировать при получении сервера)
+# Сборка Docker-образов + деплой pilot на teamzachet.ru
 
 name: CI
 
@@ -110,22 +110,29 @@ jobs:
         run: |
           pip-audit -r backend/requirements.txt
 
-  # TODO: раскомментировать и настроить при получении сервера
-  # deploy:
-  #   name: Deploy to test server
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-  #
-  #   steps:
-  #     - name: Deploy via SSH
-  #       uses: appleboy/ssh-action@v0.1.10
-  #       with:
-  #         host: ${{ secrets.TEST_SERVER_HOST }}
-  #         username: ${{ secrets.TEST_SERVER_USER }}
-  #         key: ${{ secrets.TEST_SERVER_SSH_KEY }}
-  #         script: |
-  #           cd /opt/teamzachet
-  #           git pull origin master
-  #           docker compose -f infra/docker-compose.test.yml --env-file .env up -d --build
-  #           docker compose -f infra/docker-compose.test.yml ps
+  deploy:
+    name: Deploy pilot to server
+    needs: [build, pytest]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PILOT_SERVER_HOST }}
+          username: ${{ secrets.PILOT_SERVER_USER }}
+          key: ${{ secrets.PILOT_SERVER_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/teamzachet
+            git fetch origin master
+            git reset --hard origin/master
+            docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot up -d --build --remove-orphans
+            docker compose -f infra/docker-compose.pilot.yml ps
+            for i in $(seq 1 30); do
+              status=$(docker inspect -f '{{.State.Health.Status}}' tz-pilot-backend 2>/dev/null || echo starting)
+              [ "$status" = "healthy" ] && break
+              sleep 5
+            done
+            curl -fsS -o /dev/null https://${{ secrets.PILOT_DOMAIN }}/api/ || exit 1
