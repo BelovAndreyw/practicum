@@ -117,22 +117,32 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.PILOT_SERVER_HOST }}
-          username: ${{ secrets.PILOT_SERVER_USER }}
-          key: ${{ secrets.PILOT_SERVER_SSH_KEY }}
-          script: |
-            set -e
-            cd /opt/teamzachet
-            git fetch origin master
-            git reset --hard origin/master
-            docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot up -d --build --remove-orphans
-            docker compose -f infra/docker-compose.pilot.yml ps
-            for i in $(seq 1 30); do
-              status=$(docker inspect -f '{{.State.Health.Status}}' tz-pilot-backend 2>/dev/null || echo starting)
-              [ "$status" = "healthy" ] && break
-              sleep 5
-            done
-            curl -fsS -o /dev/null https://${{ secrets.PILOT_DOMAIN }}/ || exit 1
+          ssh-private-key: ${{ secrets.PILOT_SERVER_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: ssh-keyscan -H "${{ secrets.PILOT_SERVER_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        env:
+          PILOT_HOST: ${{ secrets.PILOT_SERVER_HOST }}
+          PILOT_USER: ${{ secrets.PILOT_SERVER_USER }}
+        run: |
+          ssh "${PILOT_USER}@${PILOT_HOST}" bash -s <<'ENDSSH'
+          set -e
+          cd /opt/teamzachet
+          git fetch origin master
+          git reset --hard origin/master
+          docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot up -d --build --remove-orphans
+          docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot ps
+          for i in $(seq 1 30); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' tz-pilot-backend 2>/dev/null || echo starting)
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          ENDSSH
+
+      - name: Smoke check
+        run: curl -fsS -o /dev/null "https://${{ secrets.PILOT_DOMAIN }}/"
