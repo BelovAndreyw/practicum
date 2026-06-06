@@ -6,21 +6,18 @@
 |--------|----------|
 | `PILOT_SERVER_HOST` | `77.91.93.156` |
 | `PILOT_SERVER_USER` | `deploy` |
-| `PILOT_SERVER_SSH_KEY` | приватный ключ ed25519 (см. ниже) |
+| `PILOT_SERVER_SSH_KEY` | **одна строка base64** приватного ключа (см. `setup-ci-ssh-key.sh` на сервере) |
 | `PILOT_DOMAIN` | `teamzachet.ru` |
 
-### SSH-ключ для CI (на сервере под root или deploy)
+### SSH-ключ для CI (на сервере)
 
 ```bash
-ssh-keygen -t ed25519 -f /home/deploy/.ssh/github_actions -N ""
-cat /home/deploy/.ssh/github_actions.pub >> /home/deploy/.ssh/authorized_keys
-chown -R deploy:deploy /home/deploy/.ssh
-chmod 700 /home/deploy/.ssh
-chmod 600 /home/deploy/.ssh/authorized_keys /home/deploy/.ssh/github_actions
-chmod 644 /home/deploy/.ssh/github_actions.pub
+FORCE=1 bash /root/setup-ci-ssh-key.sh
 ```
 
-Содержимое `/home/deploy/.ssh/github_actions` (приватный ключ) → secret `PILOT_SERVER_SSH_KEY`.
+Скрипт выведет **одну строку base64** → secret `PILOT_SERVER_SSH_KEY` (без переносов, без `BEGIN/END`).
+
+Проверка на сервере: `ssh-keygen -y -f /home/deploy/.ssh/github_actions`
 
 ### Deploy key для git pull на сервере
 
