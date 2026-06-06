@@ -135,4 +135,4 @@ jobs:
               [ "$status" = "healthy" ] && break
               sleep 5
             done
-            curl -fsS -o /dev/null https://${{ secrets.PILOT_DOMAIN }}/api/ || exit 1
+            curl -fsS -o /dev/null https://${{ secrets.PILOT_DOMAIN }}/ || exit 1
