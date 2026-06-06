@@ -99,6 +99,7 @@ if [ ! -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
   docker rm -f acme-nginx 2>/dev/null || true
   docker run -d --name acme-nginx -p 80:80 \
     -v "${APP_DIR}/infra/ssl/certbot-webroot:/var/www/certbot" \
+    -v "${APP_DIR}/infra/ssl/acme-nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
     nginx:1.25-alpine
 
   certbot certonly --webroot \

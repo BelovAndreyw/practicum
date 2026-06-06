@@ -17,6 +17,12 @@ scp infra/scripts/bootstrap-pilot-server.sh root@77.91.93.156:/root/
 scp infra/scripts/setup-ci-ssh-key.sh root@77.91.93.156:/root/
 ```
 
+**На сервере** убрать Windows-переводы строк (CRLF), иначе bash выдаст `$'\r': command not found`:
+
+```bash
+sed -i 's/\r$//' /root/bootstrap-pilot-server.sh /root/setup-ci-ssh-key.sh
+```
+
 ## 2. Запустить bootstrap на сервере
 
 ```bash
