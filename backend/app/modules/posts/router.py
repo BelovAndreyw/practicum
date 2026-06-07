@@ -44,6 +44,7 @@ def build_post_response(post) -> PostResponse:
         PostImageResponse(
             id=img.id,
             filename=img.filename,
+            file_path=img.file_path,
             file_size=img.file_size,
             content_type=img.content_type,
             uploaded_at=img.uploaded_at,

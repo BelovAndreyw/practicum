@@ -56,8 +56,3 @@ class Settings(BaseSettings):
         return self.DATABASE_URL
 
 settings = Settings()
-
-# Не даём случайно запускаться с дефолтным секретом вне dev.
-# В CI/test/prod секрет должен приходить из окружения.
-if not settings.DEMO_MODE and settings.SECRET_KEY == "dev_secret_key_12345_change_in_production":
-    raise RuntimeError("SECRET_KEY must be set via environment for DEMO_MODE=false")

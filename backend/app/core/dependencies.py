@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 async def get_current_user(
         token: str = Depends(oauth2_scheme),
@@ -54,4 +54,14 @@ async def get_current_captain(
     return current_user
 
 #пока не знаю, что делают преподаватели и администраторы (и отдельно ли они?), поэтому на них еще нет запроса
-#потмо добавлю, как будет ясность, но так они в файлах встречаются
+
+async def get_current_admin_or_teacher(
+        current_user: User = Depends(get_current_user)
+) -> User:
+    """Проверяет, что пользователь является админом или преподавателем"""
+    if current_user.role not in ("admin", "teacher"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Только администратор или преподаватель может выполнять это действие"
+        )
+    return current_user

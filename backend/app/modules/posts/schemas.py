@@ -7,6 +7,7 @@ class PostImageResponse(BaseModel):
     """Информация об изображении"""
     id: int
     filename: str
+    file_path: str
     file_size: int
     content_type: str
     uploaded_at: datetime
