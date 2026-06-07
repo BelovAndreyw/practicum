@@ -7,8 +7,8 @@ import styles from './LoginPage.module.css';
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('a.petrov@urfu.ru');
-  const [password, setPassword] = useState('password');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +18,7 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(username, password);
       navigate('/', { replace: true });
     } catch (err) {
       if (err instanceof Error) {
@@ -48,15 +48,16 @@ export function LoginPage() {
           </div>
         </div>
 
-        <p className={styles.hint}>Войдите с учётной записью УрФУ</p>
+        <p className={styles.hint}>Войдите с никнеймом, который вы указали при регистрации</p>
 
         <form onSubmit={onSubmit} className={styles.form}>
           <Input
-            label="Email / логин УрФУ"
+            label="Никнейм"
             type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="student@urfu.ru"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="ivanov_test"
+            autoComplete="username"
             required
           />
           <Input

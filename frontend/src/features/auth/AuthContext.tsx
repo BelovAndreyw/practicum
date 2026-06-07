@@ -6,7 +6,7 @@ import type { User } from '@/types';
 interface AuthState {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'avatarUrl'>>) => Promise<void>;
 }
@@ -20,12 +20,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     authApi.me()
       .then(setUser)
-      .catch(() => setUser(null))
+      .catch(() => {
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { user } = await authApi.login({ email, password });
+  const login = async (username: string, password: string) => {
+    const { user } = await authApi.login({ username, password });
     setUser(user);
   };
 

@@ -50,5 +50,6 @@ async def get_me(
     return UserResponse(
         username=current_user.username,
         student_id=current_user.student_id,
-        full_name=full_name
+        full_name=full_name,
+        role=current_user.role,
     )

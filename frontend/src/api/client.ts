@@ -9,6 +9,37 @@
 
 export const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
+const TOKEN_KEY = 'access_token';
+
+export function getAuthToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setAuthToken(token: string | null): void {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+function parseErrorMessage(body: unknown, fallback: string): string {
+  if (!body || typeof body !== 'object') return fallback;
+  const record = body as Record<string, unknown>;
+  if (typeof record.message === 'string') return record.message;
+  if (typeof record.detail === 'string') return record.detail;
+  if (Array.isArray(record.detail)) {
+    return record.detail
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object' && 'msg' in item) {
+          return String((item as { msg: unknown }).msg);
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .join('; ') || fallback;
+  }
+  return fallback;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -21,10 +52,17 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(init?.headers as Record<string, string> | undefined),
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-    credentials: 'include', // JWT-cookie или session cookie
     ...init,
+    headers,
+    credentials: 'include',
   });
 
   if (!res.ok) {
@@ -32,8 +70,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     let details: Record<string, string> | undefined;
     try {
       const body = await res.json();
-      message = body.message ?? message;
-      details = body.details;
+      message = parseErrorMessage(body, message);
+      if (body && typeof body === 'object' && 'details' in body) {
+        details = (body as { details?: Record<string, string> }).details;
+      }
     } catch {
       // no json body
     }

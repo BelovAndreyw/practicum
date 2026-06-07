@@ -38,3 +38,4 @@ class UserResponse(BaseModel):
     username: str
     student_id: int
     full_name: str
+    role: str
