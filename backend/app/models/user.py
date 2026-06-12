@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
+from datetime import datetime
 from app.core.database import Base
 import enum
 
@@ -34,7 +34,7 @@ class User(Base):
     student_id = Column(Integer, ForeignKey("students.id"), unique=True, index=True)
     password_hash = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)
     role = Column(String, default=UserRole.STUDENT.value)
 
     student = relationship("Student", back_populates="user")
