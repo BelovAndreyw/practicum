@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
+from app.core.datetime_utils import to_naive_utc
 
 
 class EventCreateRequest(BaseModel):
@@ -14,6 +15,11 @@ class EventCreateRequest(BaseModel):
     ends_at: Optional[datetime] = None
     max_participants: Optional[int] = Field(None, ge=1)
     is_public: bool = True
+
+    @field_validator("starts_at", "ends_at", mode="after")
+    @classmethod
+    def normalize_datetimes(cls, value: datetime | None) -> datetime | None:
+        return to_naive_utc(value)
 
 
 class EventResponse(BaseModel):

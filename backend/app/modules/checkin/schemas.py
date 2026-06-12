@@ -1,12 +1,18 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
+from app.core.datetime_utils import to_naive_utc
 
 
 class CheckinCreateRequest(BaseModel):
     """Создание check-in"""
     week_start_date: datetime
     content: Optional[str] = None
+
+    @field_validator("week_start_date", mode="after")
+    @classmethod
+    def normalize_week_start(cls, value: datetime) -> datetime:
+        return to_naive_utc(value)
 
 
 class CheckinTaskRequest(BaseModel):

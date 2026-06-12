@@ -101,7 +101,18 @@ async def create_report(
         membership.team_id, current_user.id,
         title, description, challenge_id, db
     )
-    return build_report_response(report)
+    return ReportResponse(
+        id=report.id,
+        team_id=report.team_id,
+        challenge_id=report.challenge_id,
+        title=report.title,
+        description=report.description,
+        created_by=report.created_by,
+        created_at=report.created_at,
+        is_approved=report.is_approved,
+        files=[],
+        tasks=[],
+    )
 
 
 @router.post("/{report_id}/files")
