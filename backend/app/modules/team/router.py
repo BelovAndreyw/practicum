@@ -18,10 +18,12 @@ from app.modules.team.logic import (
     leave_team_logic,
     disband_team_logic,
     get_my_invite_links_logic,
-    revoke_invite_link_logic
+    revoke_invite_link_logic,
+    update_user_profile_logic,
 )
 from app.modules.team.schemas import (
     UserProfileResponse,
+    ProfileUpdateRequest,
     TeamCreateRequest,
     TeamResponse,
     InviteLinkCreateRequest,
@@ -47,6 +49,22 @@ async def get_profile(
 ):
     """Получение данных личного кабинета"""
     return await get_user_profile_logic(current_user, db)
+
+
+@router.patch("/profile", response_model=UserProfileResponse)
+async def update_profile(
+    data: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Обновление ФИО в профиле"""
+    return await update_user_profile_logic(
+        current_user,
+        data.surname,
+        data.name,
+        data.patronymic,
+        db,
+    )
 
 
 @router.post("/create", response_model=TeamResponse)

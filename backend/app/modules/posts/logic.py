@@ -52,8 +52,8 @@ async def _load_post_with_relations(post_id: int, db: AsyncSession) -> Post:
         .where(Post.id == post_id)
         .options(
             selectinload(Post.images),
-            selectinload(Post.author),
-            selectinload(Post.team)
+            selectinload(Post.author).selectinload(User.student),
+            selectinload(Post.team),
         )
     )
     post = result.scalar_one_or_none()
@@ -134,8 +134,8 @@ async def get_all_posts_logic(
         select(Post)
         .options(
             selectinload(Post.images),
-            selectinload(Post.author),
-            selectinload(Post.team)
+            selectinload(Post.author).selectinload(User.student),
+            selectinload(Post.team),
         )
         .order_by(Post.created_at.desc())
         .offset(offset)

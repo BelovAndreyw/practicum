@@ -2,6 +2,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.core.database import engine, Base, AsyncSessionLocal
+from app.core.schema_patch import apply_schema_patches
 from app.core.config import settings
 from app.modules.auth.router import router as auth_router
 from app.modules.team.router import router as team_router
@@ -30,6 +31,7 @@ async def lifespan(app: FastAPI):
     """Функция жизненного цикла приложения"""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await apply_schema_patches(conn)
 
     if settings.DEMO_MODE:
         async with AsyncSessionLocal() as session:

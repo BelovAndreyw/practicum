@@ -13,6 +13,13 @@ class UserProfileResponse(BaseModel):
     team_id: Optional[int] = None
 
 
+class ProfileUpdateRequest(BaseModel):
+    """Обновление ФИО студента в профиле"""
+    surname: Optional[str] = Field(None, min_length=1, max_length=100)
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    patronymic: Optional[str] = Field(None, max_length=100)
+
+
 class TeamCreateRequest(BaseModel):
     """Запрос на создание команды"""
     name: str = Field(..., min_length=3, max_length=50)

@@ -27,11 +27,15 @@ export function DashboardPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Promise.all([newsApi.list(), knowledgeApi.list({ resolved: false }), activityApi.getFeed(8)])
-      .then(([n, k, a]) => {
-        setNews(n);
-        setKnowledge(k);
-        setActivity(a);
+    Promise.allSettled([
+      newsApi.list(),
+      knowledgeApi.list({ resolved: false }),
+      activityApi.getFeed(8),
+    ])
+      .then(([newsResult, knowledgeResult, activityResult]) => {
+        if (newsResult.status === 'fulfilled') setNews(newsResult.value);
+        if (knowledgeResult.status === 'fulfilled') setKnowledge(knowledgeResult.value);
+        if (activityResult.status === 'fulfilled') setActivity(activityResult.value);
       })
       .finally(() => setLoading(false));
   }, []);

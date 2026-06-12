@@ -1,3 +1,5 @@
+import { http } from '../client';
+import { authApi } from './auth';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 import { MOCK_USERS } from '../mock/data';
@@ -25,6 +27,13 @@ export const usersApi = {
       MOCK_USERS[idx] = { ...MOCK_USERS[idx], ...data };
       return MOCK_USERS[idx];
     }
-    throw new ApiError(501, 'Редактирование профиля пока недоступно на сервере');
+
+    await http.patch('/team/profile', {
+      surname: data.lastName,
+      name: data.firstName,
+      patronymic: data.middleName,
+    });
+
+    return authApi.me();
   },
 };

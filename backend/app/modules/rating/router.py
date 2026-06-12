@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from typing import Optional
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
@@ -56,16 +57,18 @@ async def get_leaderboard(
     rankings = []
     for r in ratings:
         user_result = await db.execute(
-            select(User).where(User.id == r.user_id)
+            select(User)
+            .where(User.id == r.user_id)
+            .options(selectinload(User.team_membership))
         )
         user = user_result.scalar_one_or_none()
         username = user.username if user else "Unknown"
 
-        # Получаем команду
         team_name = None
-        if user and user.team_membership:
+        membership = user.team_membership if user else None
+        if membership:
             team_result = await db.execute(
-                select(Team).where(Team.id == user.team_membership.team_id)
+                select(Team).where(Team.id == membership.team_id)
             )
             team = team_result.scalar_one_or_none()
             team_name = team.name if team else None

@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from app.models.user import User, UserRole, Student
 from app.models.team import Team, TeamMember, TeamInviteLink, TeamJoinRequest
@@ -46,11 +47,25 @@ async def get_user_profile_logic(user: User, db: AsyncSession) -> dict:
 
 async def create_team_logic(user: User, data: TeamCreateRequest, db: AsyncSession) -> Team:
     """Создание новой команды"""
-    membership = await db.execute(
+    membership_result = await db.execute(
         select(TeamMember).where(TeamMember.user_id == user.id)
     )
-    if membership.scalar_one_or_none():
+    if membership_result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Вы уже состоите в команде")
+
+    captain_team_result = await db.execute(
+        select(Team).where(Team.captain_id == user.id)
+    )
+    captain_team = captain_team_result.scalar_one_or_none()
+    if captain_team:
+        db.add(TeamMember(user_id=user.id, team_id=captain_team.id))
+        user.role = UserRole.CAPTAIN.value
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+        await db.refresh(captain_team)
+        return captain_team
 
     existing = await db.execute(select(Team).where(Team.name == data.name))
     if existing.scalar_one_or_none():
@@ -59,20 +74,48 @@ async def create_team_logic(user: User, data: TeamCreateRequest, db: AsyncSessio
     team = Team(
         name=data.name,
         description=data.description,
-        captain_id=user.id
+        captain_id=user.id,
     )
     db.add(team)
     await db.flush()
 
-    membership = TeamMember(user_id=user.id, team_id=team.id)
-    db.add(membership)
-
+    db.add(TeamMember(user_id=user.id, team_id=team.id))
     user.role = UserRole.CAPTAIN.value
 
-    await db.commit()
-    await db.refresh(team)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Не удалось создать команду. Возможно, название занято.")
 
+    await db.refresh(team)
     return team
+
+
+async def update_user_profile_logic(
+    user: User,
+    surname: str | None,
+    name: str | None,
+    patronymic: str | None,
+    db: AsyncSession,
+) -> dict:
+    """Обновление ФИО студента в профиле"""
+    if not user.student_id:
+        raise HTTPException(status_code=400, detail="Профиль студента не найден")
+
+    student = await db.get(Student, user.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Студент не найден")
+
+    if surname is not None:
+        student.surname = surname
+    if name is not None:
+        student.name = name
+    if patronymic is not None:
+        student.patronymic = patronymic
+
+    await db.commit()
+    return await get_user_profile_logic(user, db)
 
 
 async def search_teams_logic(query: str, db: AsyncSession) -> list:

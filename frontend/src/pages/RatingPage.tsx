@@ -20,10 +20,10 @@ export function RatingPage() {
   const [teamFilter, setTeamFilter] = useState('all');
 
   useEffect(() => {
-    Promise.all([ratingApi.getTeamRating(), ratingApi.getUserRating()])
-      .then(([tr, ur]) => {
-        setTeamRating(tr);
-        setUserRating(ur);
+    Promise.allSettled([ratingApi.getTeamRating(), ratingApi.getUserRating()])
+      .then(([teams, users]) => {
+        if (teams.status === 'fulfilled') setTeamRating(teams.value);
+        if (users.status === 'fulfilled') setUserRating(users.value);
       })
       .finally(() => setLoading(false));
   }, []);

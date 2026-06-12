@@ -8,6 +8,7 @@ interface AuthState {
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   updateProfile: (data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'avatarUrl'>>) => Promise<void>;
 }
 
@@ -36,6 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    const me = await authApi.me();
+    setUser(me);
+  };
+
   const updateProfile = async (data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'avatarUrl'>>) => {
     if (!user) return;
     const updated = await usersApi.updateUser(user.id, data);
@@ -43,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

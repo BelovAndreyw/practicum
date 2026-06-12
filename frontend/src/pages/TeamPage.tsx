@@ -24,7 +24,7 @@ interface CalendarCell {
 }
 
 export function TeamPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   const [team, setTeam] = useState<Team | null>(null);
   const [krk, setKrk] = useState<KrkBreakdown | null>(null);
@@ -75,7 +75,9 @@ export function TeamPage() {
     setBusy(true);
     setError('');
     try {
-      setTeam(await teamsApi.createTeam(newName.trim()));
+      const created = await teamsApi.createTeam(newName.trim());
+      await refreshUser();
+      setTeam(created);
     } catch (event) {
       setError(event instanceof Error ? event.message : 'Ошибка');
     } finally {
@@ -88,7 +90,9 @@ export function TeamPage() {
     setBusy(true);
     setError('');
     try {
-      setTeam(await teamsApi.joinByCode(joinCode.trim()));
+      const joined = await teamsApi.joinByCode(joinCode.trim());
+      await refreshUser();
+      setTeam(joined);
     } catch (event) {
       setError(event instanceof Error ? event.message : 'Команда не найдена');
     } finally {
