@@ -45,27 +45,57 @@ async def get_user_profile_logic(user: User, db: AsyncSession) -> dict:
     }
 
 
-async def create_team_logic(user: User, data: TeamCreateRequest, db: AsyncSession) -> Team:
-    """Создание новой команды"""
+async def _cleanup_stale_membership(user: User, db: AsyncSession) -> None:
+    """Удаляет участника, если команда уже не существует."""
     membership_result = await db.execute(
         select(TeamMember).where(TeamMember.user_id == user.id)
     )
-    if membership_result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Вы уже состоите в команде")
+    membership = membership_result.scalar_one_or_none()
+    if not membership:
+        return
+    team = await db.get(Team, membership.team_id)
+    if team is None:
+        await db.delete(membership)
+        await db.flush()
+
+
+async def _ensure_captain_membership(user: User, team: Team, db: AsyncSession) -> Team:
+    """Восстанавливает связь капитана с его командой."""
+    existing = await db.execute(
+        select(TeamMember).where(
+            TeamMember.user_id == user.id,
+            TeamMember.team_id == team.id,
+        )
+    )
+    if not existing.scalar_one_or_none():
+        db.add(TeamMember(user_id=user.id, team_id=team.id))
+        user.role = UserRole.CAPTAIN.value
+        await db.commit()
+    await db.refresh(team)
+    return team
+
+
+async def create_team_logic(user: User, data: TeamCreateRequest, db: AsyncSession) -> Team:
+    """Создание новой команды"""
+    await _cleanup_stale_membership(user, db)
+
+    membership_result = await db.execute(
+        select(TeamMember).where(TeamMember.user_id == user.id)
+    )
+    membership = membership_result.scalar_one_or_none()
+    if membership:
+        team = await db.get(Team, membership.team_id)
+        if team:
+            raise HTTPException(status_code=400, detail="Вы уже состоите в команде")
+        await db.delete(membership)
+        await db.flush()
 
     captain_team_result = await db.execute(
         select(Team).where(Team.captain_id == user.id)
     )
     captain_team = captain_team_result.scalar_one_or_none()
     if captain_team:
-        db.add(TeamMember(user_id=user.id, team_id=captain_team.id))
-        user.role = UserRole.CAPTAIN.value
-        try:
-            await db.commit()
-        except IntegrityError:
-            await db.rollback()
-        await db.refresh(captain_team)
-        return captain_team
+        return await _ensure_captain_membership(user, captain_team, db)
 
     existing = await db.execute(select(Team).where(Team.name == data.name))
     if existing.scalar_one_or_none():
@@ -86,6 +116,10 @@ async def create_team_logic(user: User, data: TeamCreateRequest, db: AsyncSessio
         await db.commit()
     except IntegrityError:
         await db.rollback()
+        orphan = await db.execute(select(Team).where(Team.captain_id == user.id))
+        captain_team = orphan.scalar_one_or_none()
+        if captain_team:
+            return await _ensure_captain_membership(user, captain_team, db)
         raise HTTPException(status_code=400, detail="Не удалось создать команду. Возможно, название занято.")
 
     await db.refresh(team)

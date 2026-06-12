@@ -52,12 +52,19 @@ def build_post_response(post) -> PostResponse:
         for img in post.images
     ]
 
+    created_at = post.created_at
+    updated_at = post.updated_at or created_at
+    if created_at is None:
+        from datetime import datetime, timezone
+        created_at = datetime.now(timezone.utc)
+        updated_at = created_at
+
     return PostResponse(
         id=post.id,
         title=post.title,
         content=post.content,
-        created_at=post.created_at,
-        updated_at=post.updated_at,
+        created_at=created_at,
+        updated_at=updated_at,
         author=author_info,
         team=team_info,
         images=images,
