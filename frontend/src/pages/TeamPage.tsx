@@ -49,25 +49,37 @@ export function TeamPage() {
 
     setLoading(true);
     setError('');
-    Promise.all([
+    Promise.allSettled([
       teamsApi.getTeam(user.teamId),
       teamsApi.getKrkBreakdown(user.teamId),
       challengesApi.list(),
       eventsApi.list(),
       activityApi.getFeed(40),
     ])
-      .then(([teamData, krkData, challengeData, eventData, activityData]) => {
+      .then((results) => {
+        const [teamResult, krkResult, challengesResult, eventsResult, activityResult] = results;
+
+        if (teamResult.status !== 'fulfilled') {
+          throw teamResult.reason;
+        }
+
+        const teamData = teamResult.value;
         setTeam(teamData);
-        setKrk(krkData);
-        setChallenges(challengeData.filter((item) => item.status === 'active').slice(0, 5));
+        setKrk(krkResult.status === 'fulfilled' ? krkResult.value : null);
+        setChallenges(
+          challengesResult.status === 'fulfilled'
+            ? challengesResult.value.filter((item) => item.status === 'active').slice(0, 5)
+            : [],
+        );
         setEvents(
-          eventData
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+          eventsResult.status === 'fulfilled'
+            ? eventsResult.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            : [],
         );
         setActivity(
-          activityData
-            .filter((item) => item.teamId === teamData.id)
-            .slice(0, 8),
+          activityResult.status === 'fulfilled'
+            ? activityResult.value.filter((item) => item.teamId === teamData.id).slice(0, 8)
+            : [],
         );
       })
       .catch((event) => {

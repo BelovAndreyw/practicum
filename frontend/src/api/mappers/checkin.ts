@@ -38,14 +38,16 @@ export function toBackendCheckinCreate(data: {
   blockers?: string;
 }) {
   const parts = [
+    data.weekLabel && `Период: ${data.weekLabel}`,
     data.summary && `Итоги: ${data.summary}`,
     data.achievements && `Достижения: ${data.achievements}`,
     data.blockers && `Блокеры: ${data.blockers}`,
   ].filter(Boolean);
 
-  const weekStart = data.weekLabel
-    ? new Date(data.weekLabel).toISOString()
-    : new Date().toISOString();
+  const parsedWeek = data.weekLabel ? new Date(data.weekLabel) : new Date();
+  const weekStart = Number.isNaN(parsedWeek.getTime())
+    ? new Date().toISOString()
+    : parsedWeek.toISOString();
 
   return {
     week_start_date: weekStart,

@@ -28,6 +28,8 @@ export function CheckInPage() {
       setShowForm(false);
       setSuccess(true);
       setForm({ weekLabel: '', summary: '', achievements: '', blockers: '' });
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось отправить check-in');
     } finally { setSaving(false); }
   };
 

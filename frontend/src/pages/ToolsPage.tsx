@@ -70,6 +70,8 @@ export function ToolsPage() {
       setShowCiForm(false);
       setCiSuccess(true);
       setCiForm({ weekLabel: '', summary: '', achievements: '', blockers: '' });
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось отправить check-in');
     } finally { setCiSaving(false); }
   };
 

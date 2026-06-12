@@ -19,7 +19,12 @@ async def get_team_profile_logic(team_id: int, db: AsyncSession) -> TeamProfileR
     if not team:
         raise HTTPException(status_code=404, detail="Команда не найдена")
 
-    captain = await db.get(User, team.captain_id)
+    captain_result = await db.execute(
+        select(User)
+        .where(User.id == team.captain_id)
+        .options(selectinload(User.student))
+    )
+    captain = captain_result.scalar_one_or_none()
     captain_name = None
     if captain and captain.student:
         captain_name = f"{captain.student.surname} {captain.student.name}"
@@ -39,7 +44,6 @@ async def get_team_profile_logic(team_id: int, db: AsyncSession) -> TeamProfileR
         .where(Activity.team_id == team_id)
         .order_by(Activity.created_at.desc())
         .limit(10)
-        .options(selectinload(Activity.user))
     )
     activities = acts_result.scalars().all()
 
@@ -76,7 +80,7 @@ async def get_team_profile_logic(team_id: int, db: AsyncSession) -> TeamProfileR
                 event_type=act.event_type,
                 title=act.title,
                 description=act.description,
-                metadata=act.metadata,
+                metadata=act.event_metadata,
                 created_at=act.created_at
             )
             for act in activities
