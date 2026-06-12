@@ -42,10 +42,13 @@ export function TeamPage() {
 
   useEffect(() => {
     if (!user?.teamId) {
+      setTeam(null);
       setLoading(false);
       return;
     }
 
+    setLoading(true);
+    setError('');
     Promise.all([
       teamsApi.getTeam(user.teamId),
       teamsApi.getKrkBreakdown(user.teamId),
@@ -67,8 +70,12 @@ export function TeamPage() {
             .slice(0, 8),
         );
       })
+      .catch((event) => {
+        setError(event instanceof Error ? event.message : 'Не удалось загрузить команду');
+        setTeam(null);
+      })
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user?.teamId]);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -152,7 +159,7 @@ export function TeamPage() {
 
   if (loading) return <div className={styles.center}><Spinner size="lg" /></div>;
 
-  if (!team) {
+  if (!user?.teamId) {
     return (
       <div>
         <PageHeader eyebrow="Команда" title="Моя команда" />
@@ -193,6 +200,18 @@ export function TeamPage() {
               </div>
             </div>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!team) {
+    return (
+      <div>
+        <PageHeader eyebrow="Команда" title="Моя команда" />
+        <div className={styles.center}>
+          <Empty icon="⚠️" message="Не удалось загрузить команду" hint={error || 'Попробуйте обновить страницу'} />
+          <Button onClick={() => refreshUser()} style={{ marginTop: 16 }}>Обновить</Button>
         </div>
       </div>
     );

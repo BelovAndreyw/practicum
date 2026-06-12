@@ -1,6 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from app.models.activity import Activity
 from app.models.rating import TeamRatingLog
@@ -27,7 +26,7 @@ async def create_activity_logic(
         event_type=event_type,
         title=title,
         description=description,
-        metadata=metadata
+        event_metadata=metadata,
     )
     db.add(activity)
     await db.commit()
@@ -57,7 +56,6 @@ async def get_personalized_feed_logic(
         .order_by(Activity.created_at.desc())
         .offset(offset)
         .limit(limit)
-        .options(selectinload(Activity.user))
     )
     activities = result.scalars().all()
 
@@ -75,12 +73,12 @@ async def get_personalized_feed_logic(
                 event_type=act.event_type,
                 title=act.title,
                 description=act.description,
-                metadata=act.metadata,
-                created_at=act.created_at
+                metadata=act.event_metadata,
+                created_at=act.created_at,
             )
             for act in activities
         ],
-        total=total
+        total=total,
     )
 
 
@@ -97,7 +95,6 @@ async def get_team_activity_feed_logic(
         .order_by(Activity.created_at.desc())
         .offset(offset)
         .limit(limit)
-        .options(selectinload(Activity.user))
     )
     activities = result.scalars().all()
 
@@ -115,10 +112,10 @@ async def get_team_activity_feed_logic(
                 event_type=act.event_type,
                 title=act.title,
                 description=act.description,
-                metadata=act.metadata,
-                created_at=act.created_at
+                metadata=act.event_metadata,
+                created_at=act.created_at,
             )
             for act in activities
         ],
-        total=total
+        total=total,
     )

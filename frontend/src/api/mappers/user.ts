@@ -16,6 +16,7 @@ export function mapLeague(league?: string): string {
 }
 
 export interface BackendUserResponse {
+  id: number;
   username: string;
   student_id: number;
   full_name: string;
@@ -33,7 +34,7 @@ export function mapBackendUser(
 ): User {
   const [lastName = '', firstName = '', middleName] = data.full_name.split(' ');
   return {
-    id: String(data.student_id),
+    id: String(data.id),
     firstName,
     lastName,
     middleName: middleName || undefined,

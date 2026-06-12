@@ -52,6 +52,11 @@ export function ToolsPage() {
       setRescues(rs);
       setRound(vr);
       setMembers(team.members.filter((m) => m.userId !== user.id));
+    }).catch(() => {
+      setCheckins([]);
+      setRescues([]);
+      setRound(null);
+      setMembers([]);
     }).finally(() => setLoading(false));
   }, [user]);
 

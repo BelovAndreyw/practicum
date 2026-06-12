@@ -8,6 +8,7 @@ export interface BackendTeamSummary {
   captain_id: number;
   captain_name?: string | null;
   members_count: number;
+  rating?: number;
   created_at: string;
 }
 
@@ -50,13 +51,20 @@ function mapMember(member: BackendTeamMember, captainId: number): TeamMember {
   };
 }
 
-export function mapTeamSummary(data: BackendTeamSummary, krk = 0, league = ''): Team {
+export function mapTeamSummary(data: BackendTeamSummary, krk?: number, league = ''): Team {
+  const teamKrk = krk ?? data.rating ?? 0;
   return {
     id: String(data.id),
     name: data.name,
     captainId: String(data.captain_id),
-    members: [],
-    krk,
+    members: Array.from({ length: data.members_count }, (_, index) => ({
+      userId: `${data.id}-m${index}`,
+      firstName: '',
+      lastName: '',
+      role: 'student' as const,
+      personalRating: 0,
+    })),
+    krk: teamKrk,
     league: league || 'Новичок',
     inviteCode: '',
     activityHistory: [],

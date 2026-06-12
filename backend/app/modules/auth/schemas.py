@@ -35,6 +35,7 @@ class Token(BaseModel):
 
 class UserResponse(BaseModel):
     """Информация о пользователе для профиля"""
+    id: int
     username: str
     student_id: int
     full_name: str

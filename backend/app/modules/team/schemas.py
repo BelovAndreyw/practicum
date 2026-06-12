@@ -5,6 +5,7 @@ from datetime import datetime
 
 class UserProfileResponse(BaseModel):
     """Ответ с данными профиля пользователя"""
+    id: int
     username: str
     student_id: int
     full_name: str

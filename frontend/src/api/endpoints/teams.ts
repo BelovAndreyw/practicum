@@ -32,7 +32,7 @@ export const teamsApi = {
       await mockDelay();
       return MOCK_TEAMS;
     }
-    const data = await http.get<BackendTeamSummary[]>('/team/search?query=%');
+    const data = await http.get<BackendTeamSummary[]>('/team/search?query=*');
     return data.map((t) => mapTeamSummary(t));
   },
 

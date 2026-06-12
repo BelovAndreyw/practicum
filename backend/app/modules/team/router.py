@@ -123,7 +123,8 @@ async def search_teams(
             "captain_id": team.captain_id,
             "captain_name": captain_name,
             "members_count": len(team.members),
-            "created_at": team.created_at
+            "rating": team.rating,
+            "created_at": team.created_at,
         })
 
     return result

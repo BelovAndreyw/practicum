@@ -37,8 +37,8 @@ class UserRating(Base):
     # Динамика (изменение за неделю)
     rank_change = Column(Integer, default=0)  # +1 вверх, -1 вниз, 0 без изменений
 
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="rating")
     logs = relationship("RatingLog", back_populates="user", cascade="all, delete-orphan", primaryjoin="UserRating.id==RatingLog.user_id", foreign_keys="RatingLog.user_id")

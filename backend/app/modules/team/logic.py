@@ -36,12 +36,13 @@ async def get_user_profile_logic(user: User, db: AsyncSession) -> dict:
                 team_id = team.id
 
     return {
+        "id": user.id,
         "username": user.username,
         "student_id": user.student_id,
         "full_name": full_name,
         "role": user.role,
         "team_name": team_name,
-        "team_id": team_id
+        "team_id": team_id,
     }
 
 
@@ -153,12 +154,11 @@ async def update_user_profile_logic(
 
 
 async def search_teams_logic(query: str, db: AsyncSession) -> list:
-    """Поиск команд по названию"""
-    result = await db.execute(
-        select(Team)
-        .where(Team.name.ilike(f"%{query}%"))
-        .options(selectinload(Team.members))
-    )
+    """Поиск команд по названию (* — все команды)"""
+    stmt = select(Team).options(selectinload(Team.members))
+    if query and query != "*":
+        stmt = stmt.where(Team.name.ilike(f"%{query}%"))
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
@@ -303,7 +303,12 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
     if not team:
         raise HTTPException(status_code=404, detail="Команда не найдена")
 
-    captain = await db.get(User, team.captain_id)
+    captain_result = await db.execute(
+        select(User)
+        .where(User.id == team.captain_id)
+        .options(selectinload(User.student))
+    )
+    captain = captain_result.scalar_one_or_none()
     captain_name = None
     if captain and captain.student:
         captain_name = f"{captain.student.surname} {captain.student.name}"
