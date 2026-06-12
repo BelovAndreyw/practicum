@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text, Float
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
+from datetime import datetime
 from app.core.database import Base
 
 
@@ -11,7 +11,7 @@ class Team(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)
     captain_id = Column(Integer, ForeignKey("users.id"), unique=True, index=True)
     rating = Column(Float, default=3.0, nullable=False)
 
@@ -46,7 +46,7 @@ class TeamInviteLink(Base):
     id = Column(Integer, primary_key=True, index=True)
     team_id = Column(Integer, ForeignKey("teams.id"), index=True, nullable=False)
     token = Column(String, unique=True, index=True, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)
     expires_at = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
     max_uses = Column(Integer, nullable=True)
@@ -62,7 +62,7 @@ class TeamJoinRequest(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
     team_id = Column(Integer, ForeignKey("teams.id"), index=True, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)
     status = Column(String, default="pending")
 
     team = relationship("Team", back_populates="join_requests")

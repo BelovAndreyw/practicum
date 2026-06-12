@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
+from datetime import datetime
 from app.core.database import Base
 
 
@@ -11,9 +11,8 @@ class Post(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
-                        onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     author = relationship("User", foreign_keys=[author_id], lazy="select")
@@ -34,6 +33,6 @@ class PostImage(Base):
     file_path = Column(String, nullable=False)
     file_size = Column(Integer, nullable=False)
     content_type = Column(String, default="image/jpeg")
-    uploaded_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     post = relationship("Post", back_populates="images", lazy="select")
