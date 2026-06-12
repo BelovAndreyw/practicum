@@ -2,6 +2,7 @@ import { http } from '../client';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 import { MOCK_TEAM_RATING, MOCK_USER_RATING } from '../mock/data';
+import { mapTeamRatingList, mapUserRatingList } from '../mappers/rating';
 import type { TeamRatingEntry, UserRatingEntry } from '@/types';
 
 const USE_MOCK = shouldUseMock();
@@ -13,7 +14,8 @@ export const ratingApi = {
       return MOCK_TEAM_RATING;
     }
 
-    return http.get<TeamRatingEntry[]>('/rating/teams');
+    const data = await http.get<Parameters<typeof mapTeamRatingList>[0]>('/rating/top-teams?limit=100');
+    return mapTeamRatingList(data);
   },
 
   async getUserRating(filters?: { teamId?: string; stream?: string }): Promise<UserRatingEntry[]> {
@@ -27,7 +29,11 @@ export const ratingApi = {
       return list;
     }
 
-    const params = new URLSearchParams(filters as Record<string, string>).toString();
-    return http.get<UserRatingEntry[]>(`/rating/users${params ? `?${params}` : ''}`);
+    const params = new URLSearchParams({ limit: '100' });
+    if (filters?.teamId) params.set('team_id', filters.teamId);
+    const data = await http.get<Parameters<typeof mapUserRatingList>[0]>(`/rating/leaderboard?${params}`);
+    let list = mapUserRatingList(data);
+    if (filters?.stream) list = list.filter((entry) => entry.stream === filters.stream);
+    return list;
   },
 };

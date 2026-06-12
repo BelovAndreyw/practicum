@@ -2,6 +2,7 @@ import { http } from '../client';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 import { MOCK_NEWS } from '../mock/data';
+import { mapPost, mapPostList } from '../mappers/posts';
 import type { NewsItem } from '@/types';
 
 const USE_MOCK = shouldUseMock();
@@ -9,7 +10,8 @@ const USE_MOCK = shouldUseMock();
 export const newsApi = {
   async list(): Promise<NewsItem[]> {
     if (USE_MOCK) { await mockDelay(); return [...MOCK_NEWS].reverse(); }
-    return http.get<NewsItem[]>('/news');
+    const data = await http.get<Parameters<typeof mapPostList>[0]>('/posts/');
+    return mapPostList(data);
   },
 
   async create(data: Pick<NewsItem, 'title' | 'body'>): Promise<NewsItem> {
@@ -19,6 +21,10 @@ export const newsApi = {
       MOCK_NEWS.push(n);
       return n;
     }
-    return http.post<NewsItem>('/news', data);
+    const form = new FormData();
+    form.append('title', data.title);
+    form.append('content', data.body);
+    const post = await http.postForm<Parameters<typeof mapPost>[0]>('/posts/', form);
+    return mapPost(post);
   },
 };

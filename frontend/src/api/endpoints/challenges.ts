@@ -2,6 +2,7 @@ import { http } from '../client';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 import { MOCK_CHALLENGES } from '../mock/data';
+import { mapChallengeList, toBackendChallengeCreate } from '../mappers/challenges';
 import type { Challenge, ChallengeReport } from '@/types';
 
 const USE_MOCK = shouldUseMock();
@@ -9,15 +10,19 @@ const USE_MOCK = shouldUseMock();
 export const challengesApi = {
   async list(): Promise<Challenge[]> {
     if (USE_MOCK) { await mockDelay(); return MOCK_CHALLENGES; }
-    return http.get<Challenge[]>('/challenges');
+    const data = await http.get<Parameters<typeof mapChallengeList>[0]>('/challenges');
+    return mapChallengeList(data);
   },
 
   async submitReport(report: Omit<ChallengeReport, 'submittedAt'>): Promise<void> {
     if (USE_MOCK) { await mockDelay(600); return; }
-    return http.post('/challenges/reports', report);
+    const form = new FormData();
+    form.append('title', `Отчёт по челленджу #${report.challengeId}`);
+    form.append('description', report.comment);
+    if (report.challengeId) form.append('challenge_id', report.challengeId);
+    await http.postForm('/reports', form);
   },
 
-  // Организатор
   async create(data: Pick<Challenge, 'title' | 'description' | 'points' | 'deadline' | 'acceptsReport'>): Promise<Challenge> {
     if (USE_MOCK) {
       await mockDelay();
@@ -25,6 +30,10 @@ export const challengesApi = {
       MOCK_CHALLENGES.push(c);
       return c;
     }
-    return http.post<Challenge>('/challenges', data);
+    const created = await http.post<Parameters<typeof mapChallengeList>[0]['challenges'][0]>(
+      '/challenges',
+      toBackendChallengeCreate(data),
+    );
+    return mapChallengeList({ challenges: [created], total: 1 })[0];
   },
 };

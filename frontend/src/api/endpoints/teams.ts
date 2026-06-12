@@ -2,6 +2,15 @@ import { http } from '../client';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 import { MOCK_TEAMS } from '../mock/data';
+import {
+  mapKrkFromRating,
+  mapTeamDetail,
+  mapTeamSummary,
+  type BackendInviteLink,
+  type BackendTeamDetail,
+  type BackendTeamProfile,
+  type BackendTeamSummary,
+} from '../mappers/team';
 import type { Team, KrkBreakdown } from '@/types';
 
 const USE_MOCK = shouldUseMock();
@@ -14,7 +23,8 @@ export const teamsApi = {
       if (!t) throw new Error('Team not found');
       return t;
     }
-    return http.get<Team>(`/teams/${id}`);
+    const data = await http.get<BackendTeamDetail>(`/team/${id}`);
+    return mapTeamDetail(data);
   },
 
   async listTeams(): Promise<Team[]> {
@@ -22,7 +32,8 @@ export const teamsApi = {
       await mockDelay();
       return MOCK_TEAMS;
     }
-    return http.get<Team[]>('/teams');
+    const data = await http.get<BackendTeamSummary[]>('/team/search?query=%');
+    return data.map((t) => mapTeamSummary(t));
   },
 
   async createTeam(name: string): Promise<Team> {
@@ -45,7 +56,8 @@ export const teamsApi = {
       MOCK_TEAMS.push(newTeam);
       return newTeam;
     }
-    return http.post<Team>('/teams', { name });
+    const data = await http.post<BackendTeamSummary>('/team/create', { name });
+    return mapTeamSummary(data);
   },
 
   async joinByCode(code: string): Promise<Team> {
@@ -55,7 +67,10 @@ export const teamsApi = {
       if (!t) throw new Error('Команда с таким кодом не найдена');
       return t;
     }
-    return http.post<Team>('/teams/join', { inviteCode: code });
+    await http.post('/team/join-by-link', { token: code });
+    const profile = await http.get<{ team_id?: number | null }>('/team/profile');
+    if (!profile.team_id) throw new Error('Не удалось вступить в команду');
+    return teamsApi.getTeam(String(profile.team_id));
   },
 
   async getKrkBreakdown(teamId: string): Promise<KrkBreakdown> {
@@ -63,17 +78,10 @@ export const teamsApi = {
       await mockDelay();
       const t = MOCK_TEAMS.find((team) => team.id === teamId);
       if (!t) throw new Error('Team not found');
-      const base = t.krk * 0.6;
-      const cohesion = t.krk * 0.3;
-      const bonus = t.krk * 0.1;
-      return {
-        baseRating: +base.toFixed(1),
-        cohesionCoeff: +cohesion.toFixed(1),
-        bonusCoeff: +bonus.toFixed(1),
-        total: t.krk,
-      };
+      return mapKrkFromRating(t.krk);
     }
-    return http.get<KrkBreakdown>(`/teams/${teamId}/krk`);
+    const data = await http.get<BackendTeamProfile>(`/teams/${teamId}/profile`);
+    return mapKrkFromRating(data.rating);
   },
 
   async regenerateInviteCode(teamId: string): Promise<{ inviteCode: string; inviteCodeUpdatedAt: string; inviteCodeExpiresAt: string }> {
@@ -94,6 +102,12 @@ export const teamsApi = {
         inviteCodeExpiresAt: t.inviteCodeExpiresAt,
       };
     }
-    return http.post<{ inviteCode: string; inviteCodeUpdatedAt: string; inviteCodeExpiresAt: string }>(`/teams/${teamId}/invite-code`);
+    const data = await http.post<BackendInviteLink>(`/team/${teamId}/invite`, {});
+    const updatedAt = new Date().toISOString();
+    return {
+      inviteCode: data.token,
+      inviteCodeUpdatedAt: updatedAt,
+      inviteCodeExpiresAt: data.expires_at ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    };
   },
 };
