@@ -16,6 +16,7 @@ from app.modules.help.schemas import (
     HelpRequestCreate,
     HelpResponseCreate,
     HelpRequestResponse,
+    HelpResponseResponse,
     HelpRequestDetailResponse
 )
 from sqlalchemy import select
@@ -107,7 +108,17 @@ async def get_help_request(
         created_at=request.created_at,
         fulfilled_by_team_id=request.fulfilled_by_team_id,
         fulfilled_at=request.fulfilled_at,
-        responses=[]
+        responses=[
+            HelpResponseResponse(
+                id=resp.id,
+                help_request_id=resp.help_request_id,
+                responding_team_id=resp.responding_team_id,
+                message=resp.message,
+                status=resp.status,
+                responded_at=resp.responded_at,
+            )
+            for resp in request.responses
+        ]
     )
 
 

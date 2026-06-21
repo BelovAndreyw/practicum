@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from datetime import datetime
 from app.models.reports import HelpRequest, HelpResponse
@@ -180,8 +181,13 @@ async def get_help_request_detail_logic(
     request_id: int,
     db: AsyncSession
 ) -> HelpRequest:
-    """Детали заявки"""
-    request = await db.get(HelpRequest, request_id)
+    """Детали заявки вместе с откликами"""
+    result = await db.execute(
+        select(HelpRequest)
+        .where(HelpRequest.id == request_id)
+        .options(selectinload(HelpRequest.responses))
+    )
+    request = result.scalar_one_or_none()
     if not request:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
     return request
