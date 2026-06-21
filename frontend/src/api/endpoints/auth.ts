@@ -4,6 +4,7 @@ import { shouldUseMock } from '../mock/config';
 import { MOCK_ME, MOCK_USERS } from '../mock/data';
 import {
   mapBackendUser,
+  mapLeague,
   type BackendUserProfileResponse,
   type BackendUserResponse,
 } from '../mappers/user';
@@ -34,7 +35,7 @@ async function enrichUserFromProfile(base: User): Promise<User> {
     return mapBackendUser(profile, {
       teamId: profile.team_id != null ? String(profile.team_id) : undefined,
       personalRating: rating?.total_krk ?? base.personalRating,
-      league: rating?.league ?? base.league,
+      league: rating?.league ? mapLeague(rating.league) : base.league,
     });
   } catch {
     return base;

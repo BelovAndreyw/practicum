@@ -1,5 +1,5 @@
 import type { TeamRatingEntry, UserRatingEntry } from '@/types';
-import { mapLeague, splitFullName } from './user';
+import { mapLeague } from './user';
 
 interface BackendTeamRating {
   team_id: number;
@@ -41,18 +41,17 @@ export function mapTeamRatingList(data: BackendTeamLeaderboard): TeamRatingEntry
 }
 
 export function mapUserRatingList(data: BackendLeaderboard): UserRatingEntry[] {
-  return data.rankings.map((r) => {
-    const { firstName, lastName } = splitFullName(r.username);
-    return {
-      rank: r.global_rank,
-      user: {
-        id: String(r.user_id),
-        firstName: firstName || r.username,
-        lastName,
-        personalRating: r.total_krk,
-        league: mapLeague(r.league),
-      },
-      teamName: r.team_name ?? undefined,
-    };
-  });
+  // Бэкенд отдаёт только username (без ФИО), поэтому показываем его как есть,
+  // не разбивая по пробелам (иначе имя дублировалось: «username username»).
+  return data.rankings.map((r) => ({
+    rank: r.global_rank,
+    user: {
+      id: String(r.user_id),
+      firstName: r.username,
+      lastName: '',
+      personalRating: r.total_krk,
+      league: mapLeague(r.league),
+    },
+    teamName: r.team_name ?? undefined,
+  }));
 }
