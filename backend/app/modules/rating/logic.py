@@ -242,9 +242,13 @@ class RatingService:
         # Пагинация
         query = query.offset(offset).limit(limit)
         result = await self.db.execute(query)
-        ratings = result.scalars().all()
+        ratings = list(result.scalars().all())
 
-        return list(ratings), total
+        # Проставляем место в общем зачёте (для выдачи, без сохранения)
+        for index, rating in enumerate(ratings):
+            rating.global_rank = offset + index + 1
+
+        return ratings, total
 
     async def get_user_rank_with_sticky(
         self,

@@ -174,9 +174,12 @@ class TeamRatingService:
         # Пагинация
         query = query.offset(offset).limit(limit)
         result = await self.db.execute(query)
-        ratings = result.scalars().all()
+        ratings = list(result.scalars().all())
 
-        return list(ratings), total
+        for index, rating in enumerate(ratings):
+            rating.global_rank = offset + index + 1
+
+        return ratings, total
 
     async def get_top_teams(self, limit: int = 10) -> List[TeamRating]:
         """Получить ТОП-N команд"""
@@ -185,4 +188,9 @@ class TeamRatingService:
             .order_by(TeamRating.average_krk.desc())
             .limit(limit)
         )
-        return list(result.scalars().all())
+        ratings = list(result.scalars().all())
+
+        for index, rating in enumerate(ratings):
+            rating.global_rank = index + 1
+
+        return ratings

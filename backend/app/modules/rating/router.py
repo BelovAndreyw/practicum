@@ -83,9 +83,14 @@ async def get_leaderboard(
             team_name=team_name
         ))
 
+    higher_count_result = await db.execute(
+        select(func.count()).where(UserRating.total_krk > current_rating.total_krk)
+    )
+    current_user_rank = higher_count_result.scalar() + 1
+
     return LeaderboardResponse(
         rankings=rankings,
-        current_user_rank=current_rating.global_rank,
+        current_user_rank=current_user_rank,
         current_user_rating=RatingResponse(
             user_id=current_rating.user_id,
             base_score=current_rating.base_score,
