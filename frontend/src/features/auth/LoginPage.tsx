@@ -48,11 +48,11 @@ export function LoginPage() {
           </div>
         </div>
 
-        <p className={styles.hint}>Войдите с никнеймом, который вы указали при регистрации</p>
+        <p className={styles.hint}>Войдите с данными от личного кабинета УрФУ</p>
 
         <form onSubmit={onSubmit} className={styles.form}>
           <Input
-            label="Никнейм"
+            label="Логин личного кабинета УрФУ"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
