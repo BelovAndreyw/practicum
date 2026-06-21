@@ -12,8 +12,10 @@
 .content {
   padding: calc(var(--header-height) + 28px) 28px 40px;
   width: 100%;
+  min-width: 0;
   max-width: 1440px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 @media (max-width: 860px) {
