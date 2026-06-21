@@ -92,7 +92,7 @@ class RatingService:
 
         # Создаем лог изменений
         log = RatingLog(
-            user_id=user_id,
+            user_id=rating.id,
             old_base=old_base,
             new_base=rating.base_score,
             old_unity=old_unity,
@@ -189,7 +189,7 @@ class RatingService:
 
         # Создаем запись о переопределении
         overwrite = RatingAdminOverwrite(
-            user_id=user_id,
+            user_id=rating.id,
             admin_user_id=admin_user_id,
             new_base=base,
             new_unity=unity,
@@ -202,7 +202,7 @@ class RatingService:
 
         # Лог изменений
         log = RatingLog(
-            user_id=user_id,
+            user_id=rating.id,
             old_total=old_total,
             new_total=new_total,
             event_type="admin_overwrite",

@@ -319,9 +319,18 @@ async def get_rating_history(
     if current_user.role != "admin" and current_user.id != user_id:
         raise HTTPException(status_code=403, detail="Нет доступа к истории")
 
+    # RatingLog.user_id ссылается на user_ratings.id, поэтому переводим User.id
+    user_rating_result = await db.execute(
+        select(UserRating).where(UserRating.user_id == user_id)
+    )
+    user_rating = user_rating_result.scalar_one_or_none()
+    if not user_rating:
+        return RatingHistoryResponse(user_id=user_id, logs=[], total=0)
+    rating_id = user_rating.id
+
     result = await db.execute(
         select(RatingLog)
-        .where(RatingLog.user_id == user_id)
+        .where(RatingLog.user_id == rating_id)
         .order_by(RatingLog.created_at.desc())
         .offset(offset)
         .limit(limit)
@@ -330,7 +339,7 @@ async def get_rating_history(
 
     # Общее количество
     count_result = await db.execute(
-        select(func.count()).select_from(select(RatingLog).where(RatingLog.user_id == user_id).subquery())
+        select(func.count()).select_from(select(RatingLog).where(RatingLog.user_id == rating_id).subquery())
     )
     total = count_result.scalar()
 
