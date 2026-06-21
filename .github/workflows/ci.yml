@@ -1,6 +1,6 @@
 # CI/CD — основной пайплайн
 # Триггер: push/PR в master
-# Сборка Docker-образов + деплой на test (TODO: активировать при получении сервера)
+# Сборка Docker-образов + деплой pilot на teamzachet.ru
 
 name: CI
 
@@ -110,22 +110,45 @@ jobs:
         run: |
           pip-audit -r backend/requirements.txt
 
-  # TODO: раскомментировать и настроить при получении сервера
-  # deploy:
-  #   name: Deploy to test server
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-  #
-  #   steps:
-  #     - name: Deploy via SSH
-  #       uses: appleboy/ssh-action@v0.1.10
-  #       with:
-  #         host: ${{ secrets.TEST_SERVER_HOST }}
-  #         username: ${{ secrets.TEST_SERVER_USER }}
-  #         key: ${{ secrets.TEST_SERVER_SSH_KEY }}
-  #         script: |
-  #           cd /opt/teamzachet
-  #           git pull origin master
-  #           docker compose -f infra/docker-compose.test.yml --env-file .env up -d --build
-  #           docker compose -f infra/docker-compose.test.yml ps
+  deploy:
+    name: Deploy pilot to server
+    needs: [build, pytest]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Setup SSH key
+        env:
+          SSH_KEY_B64: ${{ secrets.PILOT_SERVER_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/pilot_deploy_key
+          chmod 600 ~/.ssh/pilot_deploy_key
+          ssh-keygen -y -f ~/.ssh/pilot_deploy_key >/dev/null
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/pilot_deploy_key
+
+      - name: Add server to known_hosts
+        run: ssh-keyscan -H "${{ secrets.PILOT_SERVER_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        env:
+          PILOT_HOST: ${{ secrets.PILOT_SERVER_HOST }}
+          PILOT_USER: ${{ secrets.PILOT_SERVER_USER }}
+        run: |
+          ssh "${PILOT_USER}@${PILOT_HOST}" bash -s <<'ENDSSH'
+          set -e
+          cd /opt/teamzachet
+          git fetch origin master
+          git reset --hard origin/master
+          docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot up -d --build --remove-orphans
+          docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot ps
+          for i in $(seq 1 30); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' tz-pilot-backend 2>/dev/null || echo starting)
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          ENDSSH
+
+      - name: Smoke check
+        run: curl -fsS -o /dev/null "https://${{ secrets.PILOT_DOMAIN }}/"
