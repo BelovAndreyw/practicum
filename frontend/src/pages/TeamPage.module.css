@@ -13,6 +13,11 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   align-items: start;
+  min-width: 0;
+}
+
+.grid > * {
+  min-width: 0;
 }
 
 .krkCard { grid-column: span 1; }
@@ -38,18 +43,29 @@
 .krkRowVal { font-size: 0.75rem; color: var(--muted); width: 72px; text-align: right; }
 
 .inviteHint { font-size: 0.82rem; color: var(--muted); margin: 8px 0 10px; }
-.inviteTop { display: flex; align-items: center; gap: 10px; }
+.inviteTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
 .inviteCode {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   font-family: 'Courier New', monospace;
-  font-size: 1.6rem;
+  font-size: clamp(1.15rem, 4vw, 1.6rem);
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: clamp(0.06em, 0.7vw, 0.14em);
+  line-height: 1.2;
   color: var(--accent-strong);
   background: #eef1ff;
   border-radius: var(--radius-md);
   padding: 14px 16px;
   text-align: center;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .inviteExpires { margin-top: 10px; font-size: 0.8rem; color: var(--muted); }
@@ -275,8 +291,9 @@
     flex: none;
   }
   .inviteCode {
-    font-size: 1.25rem;
-    letter-spacing: 0.1em;
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+    padding: 12px 14px;
   }
   .panelHead {
     align-items: stretch;
