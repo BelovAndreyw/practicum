@@ -2,8 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
-from app.models.activity import Challenge, TeamChallenge, Activity
-from app.models.rating import TeamRatingLog
+from app.models.activity import Challenge, TeamChallenge, Activity, TeamActivityLog
 from app.models.team import Team
 from app.models.user import User
 from app.modules.challenges.schemas import ChallengeResponse, TeamChallengeResponse
@@ -124,7 +123,7 @@ async def complete_challenge_logic(
     new_rating = min(MAX_RATING, old_rating + delta)
     team.rating = new_rating
 
-    rating_log = TeamRatingLog(
+    rating_log = TeamActivityLog(
         team_id=team_id,
         event_type="challenge_completed",
         old_rating=old_rating,
@@ -138,7 +137,7 @@ async def complete_challenge_logic(
         event_type="challenge_completed",
         title=f'Челлендж завершён: {challenge.title}',
         description=f'Получено {challenge.reward_points} баллов, рейтинг: {old_rating:.2f} → {new_rating:.2f}',
-        metadata={"challenge_id": challenge_id, "reward_points": challenge.reward_points}
+        event_metadata={"challenge_id": challenge_id, "reward_points": challenge.reward_points}
     )
     db.add(activity)
 
