@@ -37,6 +37,7 @@ export interface BackendInviteLink {
   token: string;
   team_name: string;
   expires_at?: string | null;
+  is_active?: boolean;
 }
 
 function mapMember(member: BackendTeamMember, captainId: number): TeamMember {

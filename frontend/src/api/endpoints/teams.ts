@@ -1,4 +1,5 @@
 import { http } from '../client';
+import { ratingApi } from './rating';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 import { MOCK_TEAMS } from '../mock/data';
@@ -24,7 +25,30 @@ export const teamsApi = {
       return t;
     }
     const data = await http.get<BackendTeamDetail>(`/team/${id}`);
-    return mapTeamDetail(data);
+    const team = mapTeamDetail(data);
+
+    // КРК и лига приходят из общего рейтинга команд (average_krk, шкала 0–100)
+    try {
+      const ratings = await ratingApi.getTeamRating();
+      const entry = ratings.find((r) => r.team.id === id);
+      if (entry) {
+        team.krk = entry.team.krk;
+        team.league = entry.team.league;
+      }
+    } catch {
+      // рейтинг недоступен — оставляем значения по умолчанию
+    }
+
+    // Активный инвайт-код (доступен капитану); для остальных эндпоинт вернёт 403
+    try {
+      const invites = await http.get<{ links: BackendInviteLink[] }>(`/team/${id}/invites`);
+      const active = invites.links.find((l) => l.is_active) ?? invites.links[0];
+      if (active) team.inviteCode = active.token;
+    } catch {
+      // нет прав или ссылок — код останется пустым
+    }
+
+    return team;
   },
 
   async listTeams(): Promise<Team[]> {
@@ -80,6 +104,16 @@ export const teamsApi = {
       if (!t) throw new Error('Team not found');
       return mapKrkFromRating(t.krk);
     }
+
+    // Предпочитаем КРК (0–100) из общего рейтинга команд
+    try {
+      const ratings = await ratingApi.getTeamRating();
+      const entry = ratings.find((r) => r.team.id === teamId);
+      if (entry) return mapKrkFromRating(entry.team.krk);
+    } catch {
+      // упадём на профиль ниже
+    }
+
     const data = await http.get<BackendTeamProfile>(`/teams/${teamId}/profile`);
     return mapKrkFromRating(data.rating);
   },
