@@ -3,8 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from app.models.team import Team, TeamMember
-from app.models.activity import Activity
-from app.models.rating import TeamRatingLog
+from app.models.activity import Activity, TeamActivityLog
 from app.models.user import User
 from app.modules.team_profile.schemas import (
     TeamProfileResponse,
@@ -31,9 +30,9 @@ async def get_team_profile_logic(team_id: int, db: AsyncSession) -> TeamProfileR
 
     # Rating history
     logs_result = await db.execute(
-        select(TeamRatingLog)
-        .where(TeamRatingLog.team_id == team_id)
-        .order_by(TeamRatingLog.created_at.desc())
+        select(TeamActivityLog)
+        .where(TeamActivityLog.team_id == team_id)
+        .order_by(TeamActivityLog.created_at.desc())
         .limit(20)
     )
     rating_logs = logs_result.scalars().all()
