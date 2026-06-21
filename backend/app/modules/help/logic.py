@@ -160,7 +160,7 @@ async def get_help_requests_logic(
     db: AsyncSession = None
 ) -> tuple[list[HelpRequest], int]:
     """Список заявок"""
-    query = select(HelpRequest)
+    query = select(HelpRequest).options(selectinload(HelpRequest.responses))
     if status:
         query = query.where(HelpRequest.status == status)
     if help_type:

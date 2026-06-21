@@ -47,7 +47,8 @@ async def list_help_requests(
                 status=r.status,
                 created_at=r.created_at,
                 fulfilled_by_team_id=r.fulfilled_by_team_id,
-                fulfilled_at=r.fulfilled_at
+                fulfilled_at=r.fulfilled_at,
+                responses_count=len(r.responses)
             )
             for r in requests
         ],
@@ -108,6 +109,7 @@ async def get_help_request(
         created_at=request.created_at,
         fulfilled_by_team_id=request.fulfilled_by_team_id,
         fulfilled_at=request.fulfilled_at,
+        responses_count=len(request.responses),
         responses=[
             HelpResponseResponse(
                 id=resp.id,

@@ -30,6 +30,7 @@ class HelpRequestResponse(BaseModel):
     created_at: datetime
     fulfilled_by_team_id: Optional[int] = None
     fulfilled_at: Optional[datetime] = None
+    responses_count: int = 0
 
 
 class HelpResponseResponse(BaseModel):

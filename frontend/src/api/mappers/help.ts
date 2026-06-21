@@ -10,6 +10,7 @@ export interface BackendHelpRequest {
   created_at: string;
   fulfilled_by_team_id?: number | null;
   fulfilled_at?: string | null;
+  responses_count?: number;
 }
 
 interface BackendHelpList {
@@ -27,9 +28,10 @@ interface BackendHelpDetail extends BackendHelpRequest {
   responses: BackendHelpResponse[];
 }
 
-function mapHelpStatusToRescue(status: string): RescueStatus {
+function mapHelpStatusToRescue(status: string, responsesCount = 0): RescueStatus {
   if (status === 'fulfilled') return 'confirmed';
   if (status === 'cancelled') return 'rejected';
+  if (status === 'open' && responsesCount > 0) return 'accepted';
   return 'pending';
 }
 
@@ -62,7 +64,7 @@ export function mapRescueRequest(item: BackendHelpRequest, teamName?: string): R
     helperTeamId: item.fulfilled_by_team_id != null ? String(item.fulfilled_by_team_id) : undefined,
     topic: item.title,
     description: item.description ?? '',
-    status: mapHelpStatusToRescue(item.status),
+    status: mapHelpStatusToRescue(item.status, item.responses_count ?? 0),
     bonusPoints: 40,
     createdAt: item.created_at,
     confirmedAt: item.fulfilled_at ?? undefined,
