@@ -70,7 +70,7 @@ export function ChallengesPage() {
         teamId: currentTeamId,
         comment,
         fileUrls: reportFiles.map((file) => file.name),
-      });
+      }, reportFiles);
 
       setSubmitted((prev) => new Set(prev).add(selected.id));
       closeReportModal();

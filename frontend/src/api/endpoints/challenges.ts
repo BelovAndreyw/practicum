@@ -14,13 +14,19 @@ export const challengesApi = {
     return mapChallengeList(data);
   },
 
-  async submitReport(report: Omit<ChallengeReport, 'submittedAt'>): Promise<void> {
+  async submitReport(report: Omit<ChallengeReport, 'submittedAt'>, files: File[] = []): Promise<void> {
     if (USE_MOCK) { await mockDelay(600); return; }
     const form = new FormData();
     form.append('title', `Отчёт по челленджу #${report.challengeId}`);
     form.append('description', report.comment);
     if (report.challengeId) form.append('challenge_id', report.challengeId);
-    await http.postForm('/reports', form);
+    const created = await http.postForm<{ id: number }>('/reports', form);
+
+    if (files.length) {
+      const filesForm = new FormData();
+      for (const file of files) filesForm.append('files', file);
+      await http.postForm(`/reports/${created.id}/files`, filesForm);
+    }
   },
 
   async create(data: Pick<Challenge, 'title' | 'description' | 'points' | 'deadline' | 'acceptsReport'>): Promise<Challenge> {
