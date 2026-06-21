@@ -210,6 +210,8 @@ async def update_rating(
         admin_user_id=current_user.id if current_user.role == "admin" else None
     )
 
+    await db.commit()
+
     return RatingResponse(
         user_id=rating.user_id,
         base_score=rating.base_score,
@@ -243,6 +245,8 @@ async def apply_penalty(
         reason=data.reason,
         admin_user_id=current_user.id
     )
+
+    await db.commit()
 
     return RatingResponse(
         user_id=rating.user_id,
@@ -285,6 +289,8 @@ async def admin_overwrite_rating(
         bonus=data.bonus,
         penalty=data.penalty
     )
+
+    await db.commit()
 
     return RatingResponse(
         user_id=rating.user_id,
@@ -377,6 +383,8 @@ async def archive_period(
 
     rating_service = RatingService(db)
     archived_count = await rating_service.archive_period(data.year, data.month)
+
+    await db.commit()
 
     return PeriodArchiveResponse(
         period_year=data.year,
