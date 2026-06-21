@@ -13,6 +13,7 @@ export function VotingPage() {
   const [scores, setScores] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user?.teamId) { setRound(null); return; }
@@ -20,6 +21,10 @@ export function VotingPage() {
       .then(([r, t]) => {
         setRound(r);
         setMembers(t.members.filter((m) => m.userId !== user.id));
+      })
+      .catch(() => {
+        setRound(null);
+        setMembers([]);
       });
   }, [user]);
 
@@ -30,6 +35,7 @@ export function VotingPage() {
   const handleSubmit = async () => {
     if (!round) return;
     setSubmitting(true);
+    setError('');
     try {
       await Promise.all(
         members.map((m) =>
@@ -37,6 +43,8 @@ export function VotingPage() {
         )
       );
       setSubmitted(true);
+    } catch (event) {
+      setError(event instanceof Error ? event.message : 'Не удалось отправить оценки');
     } finally { setSubmitting(false); }
   };
 
@@ -104,6 +112,7 @@ export function VotingPage() {
             {members.some((m) => !scores[m.userId]) && (
               <p className={styles.hint}>Оцените всех участников перед отправкой</p>
             )}
+            {error && <p className={styles.hint}>{error}</p>}
           </div>
         </>
       )}
