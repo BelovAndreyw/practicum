@@ -14,7 +14,7 @@ from app.modules.rating.schemas import (
     RatingUpdateRequest, PenaltyRequest, AdminOverwriteRequest,
     RatingResponse, LeaderboardResponse, TopUsersResponse,
     TeamLeaderboardResponse, LeagueDistributionResponse,
-    RatingHistoryResponse, PeriodArchiveRequest, PeriodArchiveResponse,
+    RatingHistoryResponse, RatingHistoryItem, PeriodArchiveRequest, PeriodArchiveResponse,
     RankingItemResponse, TeamRatingResponse
 )
 
