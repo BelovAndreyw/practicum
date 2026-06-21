@@ -23,7 +23,7 @@
 import asyncio
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import secrets
 
 # Делаем пакет `app` импортируемым независимо от того, откуда запущен скрипт:
@@ -44,7 +44,7 @@ def _utcnow() -> datetime:
     (в Postgres это ``TIMESTAMP WITHOUT TIME ZONE``). asyncpg отвергает
     timezone-aware значения для таких колонок, поэтому работаем с наивным UTC.
     """
-    return datetime.utcnow()
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 from sqlalchemy import select, func
 from app.core.database import engine, Base, AsyncSessionLocal
@@ -546,8 +546,10 @@ async def create_team_ratings(session, teams):
     created = []
     for trd in TEAM_RATINGS_DATA:
         team = teams[trd["team_index"]]
+        now = _utcnow()
         tr = TeamRating(team_id=team.id, average_krk=trd["average_krk"], member_count=trd["member_count"],
-                        global_rank=trd["rank"], rank_change=trd["change"])
+                        global_rank=trd["rank"], rank_change=trd["change"],
+                        created_at=now, updated_at=now)
         session.add(tr); await session.flush()
         created.append(tr)
     return created
@@ -595,7 +597,7 @@ async def create_join_requests(session, users, teams):
 
 async def create_invite_links(session, teams):
     for il in INVITE_LINKS_DATA:
-        expires = datetime.utcnow() + timedelta(hours=il["expires_hours"])
+        expires = _utcnow() + timedelta(hours=il["expires_hours"])
         token = secrets.token_urlsafe(32)
         link = TeamInviteLink(team_id=teams[il["team_index"]].id, token=token, expires_at=expires,
                               max_uses=il["max_uses"], uses_count=il["uses_count"], is_active=il["is_active"])
@@ -609,7 +611,8 @@ async def create_league_settings(session):
         if result.scalar_one_or_none():
             continue
         setting = LeagueSettings(tier=ls["tier"], min_score=ls["min_score"],
-                                max_score=ls["max_score"], is_active=ls["is_active"])
+                                max_score=ls["max_score"], is_active=ls["is_active"],
+                                updated_at=_utcnow())
         session.add(setting)
     await session.flush()
 
@@ -619,7 +622,8 @@ async def create_archives(session, users, teams):
         archive = RatingPeriodArchive(period_year=ar["year"], period_month=ar["month"],
                                        user_id=users[ar["user_index"]].id,
                                        team_id=teams[ar["team_index"]].id if ar["team_index"] is not None else None,
-                                       final_krk=ar["krk"], final_rank=ar["rank"], league=ar["league"])
+                                       final_krk=ar["krk"], final_rank=ar["rank"], league=ar["league"],
+                                       created_at=_utcnow())
         session.add(archive)
     await session.flush()
 
