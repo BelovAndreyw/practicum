@@ -71,7 +71,7 @@ export function KnowledgePage() {
             )}
             <div className={styles.cardFoot}>
               <span className={styles.author}>{k.teamName ?? k.authorName}</span>
-              {k.authorId === user?.id && (
+              {(k.authorId === user?.id || (!!user?.teamId && k.teamId === user.teamId)) && (
                 <Button size="sm" variant="ghost" onClick={() => handleResolve(k.id)}>вњ“ Р—Р°РєСЂС‹С‚СЊ</Button>
               )}
             </div>

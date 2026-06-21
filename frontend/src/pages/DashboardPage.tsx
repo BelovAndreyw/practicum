@@ -167,7 +167,7 @@ export function DashboardPage() {
 
                   <div className={styles.knowledgeFoot}>
                     <span>{item.teamName ?? item.authorName}</span>
-                    {item.authorId === user?.id && (
+                    {(item.authorId === user?.id || (!!user?.teamId && item.teamId === user.teamId)) && (
                       <Button size="sm" variant="ghost" onClick={() => handleResolve(item.id)}>
                         ✓ Закрыть
                       </Button>

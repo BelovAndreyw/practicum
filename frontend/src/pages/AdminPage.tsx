@@ -28,8 +28,13 @@ export function AdminPage() {
   const [savingNews, setSavingNews] = useState(false);
 
   useEffect(() => {
-    Promise.all([checkinApi.listAll(), challengesApi.list(), rescueApi.list(), newsApi.list()])
-      .then(([ci, ch, rs, nw]) => { setCheckins(ci); setChallenges(ch); setRescues(rs); setNews(nw); })
+    Promise.allSettled([checkinApi.listAll(), challengesApi.list(), rescueApi.list(), newsApi.list()])
+      .then(([ci, ch, rs, nw]) => {
+        if (ci.status === 'fulfilled') setCheckins(ci.value);
+        if (ch.status === 'fulfilled') setChallenges(ch.value);
+        if (rs.status === 'fulfilled') setRescues(rs.value);
+        if (nw.status === 'fulfilled') setNews(nw.value);
+      })
       .finally(() => setLoading(false));
   }, []);
 

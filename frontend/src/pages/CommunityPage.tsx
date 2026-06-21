@@ -19,8 +19,11 @@ export function CommunityPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Promise.all([newsApi.list(), knowledgeApi.list({ resolved: false })])
-      .then(([n, k]) => { setNews(n); setKnowledge(k); })
+    Promise.allSettled([newsApi.list(), knowledgeApi.list({ resolved: false })])
+      .then(([n, k]) => {
+        if (n.status === 'fulfilled') setNews(n.value);
+        if (k.status === 'fulfilled') setKnowledge(k.value);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -114,7 +117,7 @@ export function CommunityPage() {
                 )}
                 <div className={styles.knFoot}>
                   <span className={styles.knAuthor}>{k.teamName ?? k.authorName}</span>
-                  {k.authorId === user?.id && (
+                  {(k.authorId === user?.id || (!!user?.teamId && k.teamId === user.teamId)) && (
                     <Button size="sm" variant="ghost" onClick={() => handleResolve(k.id)}>вњ“ Р—Р°РєСЂС‹С‚СЊ</Button>
                   )}
                 </div>
