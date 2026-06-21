@@ -5,8 +5,7 @@ from fastapi import HTTPException
 from datetime import datetime
 from app.models.reports import HelpRequest, HelpResponse
 from app.models.team import Team
-from app.models.activity import Activity
-from app.models.rating import TeamRatingLog
+from app.models.activity import Activity, TeamActivityLog
 
 
 HELP_BONUS = 0.5
@@ -114,7 +113,7 @@ async def accept_help_logic(
         (requesting_team, old_req_rating, requesting_team.rating),
         (responding_team, old_res_rating, responding_team.rating)
     ]:
-        rating_log = TeamRatingLog(
+        rating_log = TeamActivityLog(
             team_id=team.id,
             event_type="help_fulfilled",
             old_rating=old_rating,
@@ -128,7 +127,7 @@ async def accept_help_logic(
             event_type="achievement",
             title="Помощь оказана",
             description=f"Команда помогла другой команде, рейтинг: {old_rating:.2f} → {new_rating:.2f}",
-            metadata={"help_request_id": request_id}
+            event_metadata={"help_request_id": request_id}
         )
         db.add(activity)
 
