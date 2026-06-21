@@ -15,10 +15,23 @@ export function TeamsListPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([teamsApi.listTeams(), ratingApi.getTeamRating()])
-      .then(([ts, r]) => {
-        setTeams(ts);
-        setRanking(new Map(r.map((e) => [e.team.id, e.rank])));
+    Promise.allSettled([teamsApi.listTeams(), ratingApi.getTeamRating()])
+      .then(([teamsResult, ratingResult]) => {
+        if (teamsResult.status !== 'fulfilled') return;
+
+        const ratingByTeamId = ratingResult.status === 'fulfilled'
+          ? new Map(ratingResult.value.map((e) => [e.team.id, e]))
+          : null;
+
+        setTeams(teamsResult.value.map((team) => {
+          const rating = ratingByTeamId?.get(team.id);
+          if (!rating) return team;
+          return { ...team, krk: rating.team.krk, league: rating.team.league };
+        }));
+
+        if (ratingResult.status === 'fulfilled') {
+          setRanking(new Map(ratingResult.value.map((e) => [e.team.id, e.rank])));
+        }
       })
       .finally(() => setLoading(false));
   }, []);

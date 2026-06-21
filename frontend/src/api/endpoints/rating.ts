@@ -14,7 +14,7 @@ export const ratingApi = {
       return MOCK_TEAM_RATING;
     }
 
-    const data = await http.get<Parameters<typeof mapTeamRatingList>[0]>('/rating/top-teams?limit=100');
+    const data = await http.get<Parameters<typeof mapTeamRatingList>[0]>('/rating/top-teams?limit=50');
     return mapTeamRatingList(data);
   },
 
