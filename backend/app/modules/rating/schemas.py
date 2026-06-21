@@ -79,6 +79,7 @@ class TeamRatingResponse(BaseModel):
     member_count: int
     global_rank: int
     rank_change: int
+    league: Optional[str] = None
 
     class Config:
         from_attributes = True

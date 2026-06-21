@@ -116,6 +116,20 @@ async def search_teams(
             if captain and captain.student:
                 captain_name = f"{captain.student.surname} {captain.student.name}"
 
+        members = []
+        for m in team.members:
+            full_name = "Unknown"
+            member_user = m.user
+            if member_user and member_user.student:
+                s = member_user.student
+                full_name = f"{s.surname} {s.name} {s.patronymic}".strip()
+            members.append({
+                "user_id": m.user_id,
+                "username": member_user.username if member_user else "",
+                "full_name": full_name,
+                "joined_at": m.joined_at,
+            })
+
         result.append({
             "id": team.id,
             "name": team.name,
@@ -123,6 +137,7 @@ async def search_teams(
             "captain_id": team.captain_id,
             "captain_name": captain_name,
             "members_count": len(team.members),
+            "members": members,
             "rating": team.rating,
             "created_at": team.created_at,
         })

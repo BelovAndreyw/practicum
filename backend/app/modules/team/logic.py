@@ -9,6 +9,22 @@ from app.modules.team.schemas import TeamCreateRequest
 from datetime import datetime, timedelta
 import secrets
 
+# Алфавит без визуально похожих символов (0/O, 1/I/L) — код удобно вводить вручную
+INVITE_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
+async def _generate_unique_invite_code(db: AsyncSession, length: int = 6) -> str:
+    """Генерирует короткий уникальный код приглашения."""
+    for _ in range(10):
+        code = "".join(secrets.choice(INVITE_CODE_ALPHABET) for _ in range(length))
+        existing = await db.execute(
+            select(TeamInviteLink).where(TeamInviteLink.token == code)
+        )
+        if existing.scalar_one_or_none() is None:
+            return code
+    # Маловероятный случай череды коллизий — удлиняем код
+    return "".join(secrets.choice(INVITE_CODE_ALPHABET) for _ in range(length + 4))
+
 
 async def get_user_profile_logic(user: User, db: AsyncSession) -> dict:
     """Получение данных профиля пользователя"""
@@ -155,7 +171,11 @@ async def update_user_profile_logic(
 
 async def search_teams_logic(query: str, db: AsyncSession) -> list:
     """Поиск команд по названию (* — все команды)"""
-    stmt = select(Team).options(selectinload(Team.members))
+    stmt = select(Team).options(
+        selectinload(Team.members)
+        .selectinload(TeamMember.user)
+        .selectinload(User.student)
+    )
     if query and query != "*":
         stmt = stmt.where(Team.name.ilike(f"%{query}%"))
     result = await db.execute(stmt)
@@ -165,7 +185,7 @@ async def search_teams_logic(query: str, db: AsyncSession) -> list:
 async def create_invite_link_logic(team: Team, expires_hours: int = 24,
                                    max_uses: int = None, db: AsyncSession = None) -> TeamInviteLink:
     """Создание пригласительной ссылки"""
-    token = secrets.token_urlsafe(32)
+    token = await _generate_unique_invite_code(db)
 
     expires_at = None
     if expires_hours:

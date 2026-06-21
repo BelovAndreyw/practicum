@@ -595,10 +595,13 @@ async def create_join_requests(session, users, teams):
     await session.flush()
 
 
+_INVITE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
 async def create_invite_links(session, teams):
     for il in INVITE_LINKS_DATA:
         expires = _utcnow() + timedelta(hours=il["expires_hours"])
-        token = secrets.token_urlsafe(32)
+        token = "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(6))
         link = TeamInviteLink(team_id=teams[il["team_index"]].id, token=token, expires_at=expires,
                               max_uses=il["max_uses"], uses_count=il["uses_count"], is_active=il["is_active"])
         session.add(link)

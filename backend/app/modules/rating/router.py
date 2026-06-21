@@ -21,6 +21,15 @@ from app.modules.rating.schemas import (
 router = APIRouter(prefix="/rating", tags=["Rating"])
 
 
+def _league_for_krk(krk: float) -> str:
+    """Лига по значению КРК (согласовано с LeagueTier)."""
+    if krk >= 100:
+        return "legend"
+    if krk >= 50:
+        return "pro"
+    return "newbie"
+
+
 @router.get("/leaderboard", response_model=LeaderboardResponse)
 async def get_leaderboard(
     limit: int = Query(50, ge=1, le=200),
@@ -157,7 +166,8 @@ async def get_top_teams(
             average_krk=tr.average_krk,
             member_count=tr.member_count,
             global_rank=tr.global_rank,
-            rank_change=tr.rank_change
+            rank_change=tr.rank_change,
+            league=_league_for_krk(tr.average_krk)
         ))
 
     _, total = await team_service.get_team_rankings()
