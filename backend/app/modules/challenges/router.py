@@ -100,7 +100,15 @@ async def complete_challenge(
     db: AsyncSession = Depends(get_db)
 ):
     """Завершение челленджа (капитан)"""
-    enrollment = await complete_challenge_logic(challenge_id, current_user.id, db)
+    from app.models.team import TeamMember
+    membership_result = await db.execute(
+        select(TeamMember).where(TeamMember.user_id == current_user.id)
+    )
+    membership = membership_result.scalar_one_or_none()
+    if not membership:
+        raise HTTPException(status_code=400, detail="Вы не состоите в команде")
+
+    enrollment = await complete_challenge_logic(challenge_id, membership.team_id, db)
     return {"message": "Челлендж завершён", "enrollment_id": enrollment.id}
 
 
