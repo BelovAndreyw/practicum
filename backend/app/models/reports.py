@@ -31,6 +31,7 @@ class ReportFile(Base):
     file_path = Column(String, nullable=False)
     file_size = Column(Integer, nullable=False)
     content_type = Column(String, default="application/octet-stream")
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     report = relationship("TeamReport", back_populates="files")
 

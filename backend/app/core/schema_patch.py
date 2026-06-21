@@ -27,6 +27,10 @@ async def apply_schema_patches(conn: AsyncConnection) -> None:
         "ALTER TABLE posts ADD COLUMN IF NOT EXISTS team_id INTEGER"
     ))
 
+    await conn.execute(text(
+        "ALTER TABLE report_files ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMPTZ DEFAULT NOW()"
+    ))
+
     # Удалить «висячие» записи участников без команды
     await conn.execute(text("""
         DELETE FROM team_members tm

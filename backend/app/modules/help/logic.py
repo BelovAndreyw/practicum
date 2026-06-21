@@ -4,12 +4,27 @@ from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from datetime import datetime
 from app.models.reports import HelpRequest, HelpResponse
-from app.models.team import Team
+from app.models.team import Team, TeamMember
 from app.models.activity import Activity, TeamActivityLog
 
 
 HELP_BONUS = 0.5
 MAX_RATING = 5.0
+
+
+async def _ensure_member_of_team(team_id: int, user_id: int, db: AsyncSession) -> None:
+    """Проверяет, что пользователь состоит в указанной команде"""
+    result = await db.execute(
+        select(TeamMember).where(
+            TeamMember.user_id == user_id,
+            TeamMember.team_id == team_id,
+        )
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Только участник команды-инициатора может управлять заявкой",
+        )
 
 
 async def create_help_request_logic(
@@ -81,12 +96,14 @@ async def respond_to_help_logic(
 async def accept_help_logic(
     request_id: int,
     response_id: int,
+    user_id: int,
     db: AsyncSession
 ) -> HelpRequest:
     """Принятие помощи — начисление баллов обеим командам"""
     request = await db.get(HelpRequest, request_id)
     if not request:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
+    await _ensure_member_of_team(request.requesting_team_id, user_id, db)
     if request.status != "open":
         raise HTTPException(status_code=400, detail="Заявка уже закрыта")
 
@@ -138,12 +155,14 @@ async def accept_help_logic(
 
 async def cancel_help_request_logic(
     request_id: int,
+    user_id: int,
     db: AsyncSession
 ) -> HelpRequest:
     """Отмена заявки"""
     request = await db.get(HelpRequest, request_id)
     if not request:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
+    await _ensure_member_of_team(request.requesting_team_id, user_id, db)
     if request.status != "open":
         raise HTTPException(status_code=400, detail="Заявка уже закрыта")
 

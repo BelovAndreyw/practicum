@@ -151,7 +151,7 @@ async def accept_help(
     db: AsyncSession = Depends(get_db)
 ):
     """Принять помощь — начислить баллы"""
-    request = await accept_help_logic(request_id, response_id, db)
+    request = await accept_help_logic(request_id, response_id, current_user.id, db)
     return {"message": "Помощь принята, +0.5 к рейтингу обеих команд"}
 
 
@@ -162,5 +162,5 @@ async def cancel_help_request(
     db: AsyncSession = Depends(get_db)
 ):
     """Отменить заявку"""
-    request = await cancel_help_request_logic(request_id, db)
+    request = await cancel_help_request_logic(request_id, current_user.id, db)
     return {"message": "Заявка отменена"}

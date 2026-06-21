@@ -44,16 +44,17 @@ export function ProfilePage() {
     });
   }, [user]);
 
+  const personalRating = user?.personalRating ?? 0;
+  const ratingParts = useMemo(() => [
+    { label: 'Оценка коллег', val: Math.round(personalRating * 0.6) },
+    { label: 'Личная активность', val: Math.round(personalRating * 0.3) },
+    { label: 'Бонусы', val: Math.round(personalRating * 0.1) },
+  ], [personalRating]);
+
   if (!user) return null;
 
   const fullName = [user.lastName, user.firstName, user.middleName].filter(Boolean).join(' ');
   const unlockedIds = new Set(user.achievements.map((item) => item.id));
-
-  const ratingParts = useMemo(() => [
-    { label: 'Оценка коллег', val: Math.round(user.personalRating * 0.6) },
-    { label: 'Личная активность', val: Math.round(user.personalRating * 0.3) },
-    { label: 'Бонусы', val: Math.round(user.personalRating * 0.1) },
-  ], [user.personalRating]);
 
   const handleSave = async () => {
     if (!form.firstName.trim() || !form.lastName.trim()) return;
