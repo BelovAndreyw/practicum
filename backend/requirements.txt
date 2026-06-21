@@ -4,10 +4,10 @@ uvicorn==0.44.0
 SQLAlchemy==2.0.49
 asyncpg==0.31.0
 pydantic==2.13.0
-pydantic-settings==2.13.1
+pydantic-settings==2.14.2
 python-jose[cryptography]==3.5.0
 bcrypt==5.0.0
-python-multipart==0.0.27
+python-multipart==0.0.31
 
 # Тесты
 pytest==9.0.3
