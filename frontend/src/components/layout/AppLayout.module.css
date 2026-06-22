@@ -21,7 +21,7 @@
 @media (max-width: 860px) {
   .main { margin-left: 0; }
   .content {
-    padding: calc(var(--header-height) + 16px) 16px calc(92px + env(safe-area-inset-bottom));
+    padding: calc(var(--header-height) + 16px) 16px calc(124px + env(safe-area-inset-bottom));
   }
 }
 
@@ -29,6 +29,5 @@
   .content {
     padding-left: 12px;
     padding-right: 12px;
-    padding-bottom: calc(136px + env(safe-area-inset-bottom));
   }
 }
