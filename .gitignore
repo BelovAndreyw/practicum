@@ -23,6 +23,9 @@ infra/ssl/certs/*.crt
 !.env.test.example
 !.env.pilot.example
 
+# Локальные загрузки (отчёты, картинки постов)
+backend/uploads/
+
 # Зависимости
 node_modules/
 __pycache__/

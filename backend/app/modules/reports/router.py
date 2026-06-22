@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from app.core.database import get_db
@@ -12,7 +13,9 @@ from app.modules.reports.logic import (
     complete_task_logic,
     get_team_reports_logic,
     get_pending_reports_logic,
+    get_report_file_logic,
     approve_report_logic,
+    reject_report_logic,
 )
 from app.modules.reports.schemas import (
     ReportCreateRequest,
@@ -24,7 +27,6 @@ from app.modules.reports.schemas import (
 from sqlalchemy import select
 from pathlib import Path
 import uuid
-import shutil
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
@@ -36,17 +38,16 @@ async def ensure_report_upload_dir():
     REPORT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_report_file(file: UploadFile, report_id: int) -> tuple[str, str, int]:
+def save_report_file(file: UploadFile, report_id: int, content: bytes) -> tuple[str, str, int]:
     """Сохраняет файл отчёта"""
     file_extension = Path(file.filename).suffix.lower() if file.filename else ""
     unique_filename = f"{uuid.uuid4().hex}{file_extension}"
     file_path = REPORT_UPLOAD_DIR / unique_filename
 
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(content)
 
-    file_size = file_path.stat().st_size
-    return file.filename or "unknown", str(file_path), file_size
+    return file.filename or "unknown", str(file_path), len(content)
 
 
 def build_report_response(report) -> ReportResponse:
@@ -132,9 +133,14 @@ async def upload_report_file(
         if not file.filename:
             continue
 
-        file.file.seek(0, 2)
-        file_size = file.file.tell()
-        file.file.seek(0)
+        content = await file.read()
+        file_size = len(content)
+
+        if file_size == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Файл {file.filename} пустой",
+            )
 
         if file_size > 10 * 1024 * 1024:
             raise HTTPException(
@@ -142,7 +148,7 @@ async def upload_report_file(
                 detail=f"Файл {file.filename} слишком большой (максимум 10MB)"
             )
 
-        filename, file_path, size = save_report_file(file, report_id)
+        filename, file_path, size = save_report_file(file, report_id, content)
         report_file = await add_report_file_logic(
             report_id, filename, file_path, size,
             file.content_type or "application/octet-stream", db
@@ -156,6 +162,26 @@ async def upload_report_file(
         ))
 
     return {"files": added}
+
+
+@router.get("/{report_id}/files/{file_id}")
+async def download_report_file(
+    report_id: int,
+    file_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Скачать или открыть файл отчёта"""
+    report_file = await get_report_file_logic(report_id, file_id, current_user, db)
+    file_path = Path(report_file.file_path)
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Файл не найден на диске")
+
+    return FileResponse(
+        path=file_path,
+        filename=report_file.filename,
+        media_type=report_file.content_type or "application/octet-stream",
+    )
 
 
 @router.get("/pending")
@@ -177,6 +203,17 @@ async def approve_report(
     """Одобрить отчёт и зачесть челлендж"""
     report = await approve_report_logic(report_id, db)
     return {"message": "Отчёт одобрен, челлендж зачтён", "report": build_report_response(report)}
+
+
+@router.post("/{report_id}/reject")
+async def reject_report(
+    report_id: int,
+    current_user: User = Depends(get_current_admin_or_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Отклонить отчёт — команда сможет отправить новый"""
+    await reject_report_logic(report_id, db)
+    return {"message": "Отчёт отклонён"}
 
 
 @router.get("/team/{team_id}")

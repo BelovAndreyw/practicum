@@ -14,6 +14,26 @@
 .ciField { font-size: 0.85rem; color: var(--muted); line-height: 1.55; margin-top: 4px; }
 .ciField strong { color: var(--text); }
 
+.fileList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fileListLabel {
+  font-size: 0.82rem;
+  color: var(--muted);
+  width: 100%;
+}
+
+.reportActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 /* Table */
 .table {
   width: 100%;

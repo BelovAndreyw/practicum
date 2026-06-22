@@ -307,9 +307,55 @@ async def test_challenge_flow_via_api(api_client):
     )
     assert pending_resp.status_code == 200
     assert len(pending_resp.json()["reports"]) == 1
+    file_id = pending_resp.json()["reports"][0]["files"][0]["id"]
+
+    file_resp = await client.get(
+        f"/reports/{report_id}/files/{file_id}",
+        headers={"Authorization": f"Bearer {teacher_token}"},
+    )
+    assert file_resp.status_code == 200
+    assert file_resp.content == b"done"
+
+    reject_resp = await client.post(
+        f"/reports/{report_id}/reject",
+        headers={"Authorization": f"Bearer {teacher_token}"},
+    )
+    assert reject_resp.status_code == 200
+
+    pending_after_reject = await client.get(
+        "/reports/pending",
+        headers={"Authorization": f"Bearer {teacher_token}"},
+    )
+    assert pending_after_reject.status_code == 200
+    assert len(pending_after_reject.json()["reports"]) == 0
+
+    my_after_reject = await client.get(
+        "/challenges/my",
+        headers={"Authorization": f"Bearer {captain_token}"},
+    )
+    assert my_after_reject.json()["challenges"][0]["has_pending_report"] is False
+
+    report_resp_2 = await client.post(
+        "/reports",
+        data={
+            "title": "E2E report retry",
+            "description": "Second attempt",
+            "challenge_id": str(challenge_id),
+        },
+        headers={"Authorization": f"Bearer {captain_token}"},
+    )
+    assert report_resp_2.status_code == 200
+    report_id_2 = report_resp_2.json()["id"]
+
+    files_resp_2 = await client.post(
+        f"/reports/{report_id_2}/files",
+        files={"files": ("proof2.txt", b"done again", "text/plain")},
+        headers={"Authorization": f"Bearer {captain_token}"},
+    )
+    assert files_resp_2.status_code == 200
 
     approve_resp = await client.post(
-        f"/reports/{report_id}/approve",
+        f"/reports/{report_id_2}/approve",
         headers={"Authorization": f"Bearer {teacher_token}"},
     )
     assert approve_resp.status_code == 200

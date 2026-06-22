@@ -94,3 +94,30 @@ export const http = {
   patch:  <T>(path: string, body?: unknown)   => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T>(path: string)                   => request<T>(path, { method: 'DELETE' }),
 };
+
+export async function openAuthenticatedFile(path: string): Promise<void> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { headers, credentials: 'include' });
+  if (!res.ok) {
+    let message = res.statusText;
+    try {
+      const body = await res.json();
+      message = parseErrorMessage(body, message);
+    } catch {
+      // no json body
+    }
+    throw new ApiError(res.status, message);
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const opened = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!opened) {
+    URL.revokeObjectURL(url);
+    throw new ApiError(0, 'Не удалось открыть файл. Разрешите всплывающие окна в браузере.');
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}

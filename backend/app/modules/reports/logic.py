@@ -3,8 +3,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from datetime import datetime
+from pathlib import Path
 from app.models.reports import TeamReport, ReportFile, ReportTask
-from app.models.team import Team
+from app.models.team import Team, TeamMember
+from app.models.user import User
 from app.modules.challenges.logic import ensure_enrollment_logic, complete_challenge_logic
 
 
@@ -124,6 +126,35 @@ async def get_pending_reports_logic(db: AsyncSession) -> list[TeamReport]:
     return result.scalars().all()
 
 
+async def get_report_file_logic(
+    report_id: int,
+    file_id: int,
+    current_user: User,
+    db: AsyncSession,
+) -> ReportFile:
+    """Возвращает файл отчёта с проверкой прав доступа"""
+    result = await db.execute(
+        select(ReportFile)
+        .where(ReportFile.id == file_id, ReportFile.report_id == report_id)
+        .options(selectinload(ReportFile.report))
+    )
+    report_file = result.scalar_one_or_none()
+    if not report_file:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+
+    if current_user.role in ("admin", "teacher"):
+        return report_file
+
+    membership_result = await db.execute(
+        select(TeamMember).where(TeamMember.user_id == current_user.id)
+    )
+    membership = membership_result.scalar_one_or_none()
+    if not membership or membership.team_id != report_file.report.team_id:
+        raise HTTPException(status_code=403, detail="Нет прав на просмотр файла")
+
+    return report_file
+
+
 async def approve_report_logic(
     report_id: int,
     db: AsyncSession,
@@ -153,3 +184,30 @@ async def approve_report_logic(
     await complete_challenge_logic(report.challenge_id, report.team_id, db)
     await db.refresh(report)
     return report
+
+
+async def reject_report_logic(
+    report_id: int,
+    db: AsyncSession,
+) -> None:
+    """Отклонение отчёта — команда сможет отправить новый"""
+    result = await db.execute(
+        select(TeamReport)
+        .where(TeamReport.id == report_id)
+        .options(selectinload(TeamReport.files))
+    )
+    report = result.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Отчёт не найден")
+    if report.is_approved:
+        raise HTTPException(status_code=400, detail="Нельзя отклонить уже одобренный отчёт")
+    if report.challenge_id is None:
+        raise HTTPException(status_code=400, detail="Отчёт не привязан к челленджу")
+
+    for report_file in report.files:
+        file_path = Path(report_file.file_path)
+        if file_path.is_file():
+            file_path.unlink()
+
+    await db.delete(report)
+    await db.commit()

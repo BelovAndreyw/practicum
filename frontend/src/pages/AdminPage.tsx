@@ -25,6 +25,8 @@ export function AdminPage() {
   const [challengeForm, setChallengeForm] = useState({ title: '', description: '', points: '30', deadline: '', acceptsReport: false });
   const [savingChallenge, setSavingChallenge] = useState(false);
   const [approvingReportId, setApprovingReportId] = useState<number | null>(null);
+  const [rejectingReportId, setRejectingReportId] = useState<number | null>(null);
+  const [openingFileKey, setOpeningFileKey] = useState<string | null>(null);
 
   const [showNewsForm, setShowNewsForm] = useState(false);
   const [newsForm, setNewsForm] = useState({ title: '', body: '' });
@@ -51,6 +53,26 @@ export function AdminPage() {
       setChallenges(updated);
     } finally {
       setApprovingReportId(null);
+    }
+  };
+
+  const handleRejectReport = async (reportId: number) => {
+    setRejectingReportId(reportId);
+    try {
+      await reportsApi.reject(reportId);
+      setPendingReports((prev) => prev.filter((report) => report.id !== reportId));
+    } finally {
+      setRejectingReportId(null);
+    }
+  };
+
+  const handleOpenReportFile = async (reportId: number, fileId: number) => {
+    const key = `${reportId}-${fileId}`;
+    setOpeningFileKey(key);
+    try {
+      await reportsApi.openFile(reportId, fileId);
+    } finally {
+      setOpeningFileKey(null);
     }
   };
 
@@ -120,16 +142,43 @@ export function AdminPage() {
                     </div>
                     <p className={styles.ciField}><strong>{report.title}</strong></p>
                     {report.description && <p className={styles.ciField}>{report.description}</p>}
-                    <p className={styles.ciField}>Файлов: {report.files.length}</p>
-                    <Button
-                      size="sm"
-                      onClick={() => handleApproveReport(report.id)}
-                      loading={approvingReportId === report.id}
-                      disabled={report.files.length === 0}
-                      style={{ marginTop: 8 }}
-                    >
-                      Зачесть
-                    </Button>
+                    {report.files.length > 0 ? (
+                      <div className={styles.fileList}>
+                        <span className={styles.fileListLabel}>Прикреплённые файлы:</span>
+                        {report.files.map((file) => (
+                          <Button
+                            key={file.id}
+                            size="sm"
+                            variant="secondary"
+                            loading={openingFileKey === `${report.id}-${file.id}`}
+                            onClick={() => handleOpenReportFile(report.id, file.id)}
+                          >
+                            📎 {file.filename}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={styles.ciField}>Файлы не прикреплены</p>
+                    )}
+                    <div className={styles.reportActions}>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleRejectReport(report.id)}
+                        loading={rejectingReportId === report.id}
+                        disabled={approvingReportId === report.id}
+                      >
+                        Не зачесть
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleApproveReport(report.id)}
+                        loading={approvingReportId === report.id}
+                        disabled={report.files.length === 0 || rejectingReportId === report.id}
+                      >
+                        Зачесть
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

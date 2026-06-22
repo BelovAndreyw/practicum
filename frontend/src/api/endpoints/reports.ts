@@ -1,4 +1,4 @@
-import { http } from '../client';
+import { http, openAuthenticatedFile } from '../client';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 
@@ -32,5 +32,15 @@ export const reportsApi = {
   async approve(reportId: number): Promise<void> {
     if (USE_MOCK) { await mockDelay(400); return; }
     await http.post(`/reports/${reportId}/approve`, {});
+  },
+
+  async reject(reportId: number): Promise<void> {
+    if (USE_MOCK) { await mockDelay(400); return; }
+    await http.post(`/reports/${reportId}/reject`, {});
+  },
+
+  async openFile(reportId: number, fileId: number): Promise<void> {
+    if (USE_MOCK) { await mockDelay(200); return; }
+    await openAuthenticatedFile(`/reports/${reportId}/files/${fileId}`);
   },
 };
