@@ -86,6 +86,8 @@ class TeamMemberResponse(BaseModel):
     username: str
     full_name: str
     joined_at: datetime
+    personal_krk: float = 0.0
+    league: Optional[str] = None
 
 
 class TeamDetailResponse(BaseModel):

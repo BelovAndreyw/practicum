@@ -309,8 +309,8 @@ export function TeamPage() {
                 <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatarUrl} size="lg" />
                 <p className={styles.memberName}>{member.firstName} {member.lastName}</p>
                 <p className={styles.memberRole}>{member.role === 'captain' ? '★ Капитан' : 'Участник'}</p>
-                <div className={styles.memberRatingBadge}>{member.personalRating}</div>
-                <span className={styles.memberRatingLabel}>рейтинг</span>
+                <div className={styles.memberRatingBadge}>{member.personalRating.toFixed(1)}</div>
+                <span className={styles.memberRatingLabel}>КРК</span>
               </div>
             ))}
           </div>

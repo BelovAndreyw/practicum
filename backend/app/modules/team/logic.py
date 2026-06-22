@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from app.models.user import User, UserRole, Student
 from app.models.team import Team, TeamMember, TeamInviteLink, TeamJoinRequest
+from app.models.rating import UserRating
 from app.modules.team.schemas import TeamCreateRequest
 from datetime import datetime, timedelta
 import secrets
@@ -340,17 +341,28 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
     )
     members = members_result.scalars().all()
 
+    user_ids = [m.user_id for m in members]
+    ratings_by_user: dict[int, UserRating] = {}
+    if user_ids:
+        ratings_result = await db.execute(
+            select(UserRating).where(UserRating.user_id.in_(user_ids))
+        )
+        ratings_by_user = {r.user_id: r for r in ratings_result.scalars().all()}
+
     members_list = []
     for m in members:
         user = m.user
         full_name = "Unknown"
         if user.student:
             full_name = f"{user.student.surname} {user.student.name} {user.student.patronymic}"
+        user_rating = ratings_by_user.get(user.id)
         members_list.append({
             "user_id": user.id,
             "username": user.username,
             "full_name": full_name,
-            "joined_at": m.joined_at
+            "joined_at": m.joined_at,
+            "personal_krk": user_rating.total_krk if user_rating else 0.0,
+            "league": user_rating.league if user_rating else None,
         })
 
     return {

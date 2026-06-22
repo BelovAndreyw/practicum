@@ -18,6 +18,8 @@ export interface BackendTeamMember {
   username: string;
   full_name: string;
   joined_at: string;
+  personal_krk?: number;
+  league?: string | null;
 }
 
 export interface BackendTeamDetail extends BackendTeamSummary {
@@ -49,7 +51,7 @@ function mapMember(member: BackendTeamMember, captainId: number): TeamMember {
     firstName,
     lastName,
     role,
-    personalRating: 0,
+    personalRating: member.personal_krk ?? 0,
   };
 }
 
