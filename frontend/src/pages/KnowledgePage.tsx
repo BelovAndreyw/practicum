@@ -35,7 +35,7 @@ export function KnowledgePage() {
   };
 
   const handleResolve = async (id: string) => {
-    await knowledgeApi.resolve(id);
+    await knowledgeApi.cancel(id);
     setItems((prev) => prev.filter((k) => k.id !== id));
   };
 

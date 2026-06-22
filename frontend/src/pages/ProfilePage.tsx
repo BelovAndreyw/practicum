@@ -45,11 +45,20 @@ export function ProfilePage() {
   }, [user]);
 
   const personalRating = user?.personalRating ?? 0;
-  const ratingParts = useMemo(() => [
-    { label: 'Оценка коллег', val: Math.round(personalRating * 0.6) },
-    { label: 'Личная активность', val: Math.round(personalRating * 0.3) },
-    { label: 'Бонусы', val: Math.round(personalRating * 0.1) },
-  ], [personalRating]);
+  const ratingParts = useMemo(() => {
+    if (user?.krkBreakdown) {
+      return [
+        { label: 'Базовый рейтинг', val: user.krkBreakdown.baseRating },
+        { label: 'Сплоченность', val: user.krkBreakdown.cohesionCoeff },
+        { label: 'Бонусы', val: user.krkBreakdown.bonusCoeff },
+      ];
+    }
+    return [
+      { label: 'Базовый рейтинг', val: 0 },
+      { label: 'Сплоченность', val: 0 },
+      { label: 'Бонусы', val: 0 },
+    ];
+  }, [user?.krkBreakdown, personalRating]);
 
   if (!user) return null;
 

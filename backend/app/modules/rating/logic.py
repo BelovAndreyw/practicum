@@ -414,3 +414,49 @@ class RatingService:
 
         await self.db.flush()
         return archived_count
+
+    async def get_team_krk_breakdown(self, team_id: int) -> dict:
+        """Средние компоненты КРК участников команды."""
+        members_result = await self.db.execute(
+            select(TeamMember).where(TeamMember.team_id == team_id)
+        )
+        members = members_result.scalars().all()
+        if not members:
+            return {
+                "team_id": team_id,
+                "base_score": 0.0,
+                "unity_score": 0.0,
+                "bonus_score": 0.0,
+                "total_krk": 0.0,
+                "member_count": 0,
+            }
+
+        user_ids = [m.user_id for m in members]
+        ratings_result = await self.db.execute(
+            select(UserRating).where(UserRating.user_id.in_(user_ids))
+        )
+        ratings = {r.user_id: r for r in ratings_result.scalars().all()}
+
+        base_sum = unity_sum = bonus_sum = total_sum = 0.0
+        count = len(members)
+        for member in members:
+            rating = ratings.get(member.user_id)
+            if rating:
+                base_sum += rating.base_score
+                unity_sum += rating.unity_score
+                bonus_sum += rating.bonus_score
+                total_sum += rating.total_krk
+
+        base_avg = self.round_krk(base_sum / count)
+        unity_avg = self.round_krk(unity_sum / count)
+        bonus_avg = self.round_krk(bonus_sum / count)
+        total_avg = self.round_krk(total_sum / count)
+
+        return {
+            "team_id": team_id,
+            "base_score": base_avg,
+            "unity_score": unity_avg,
+            "bonus_score": bonus_avg,
+            "total_krk": total_avg,
+            "member_count": count,
+        }

@@ -5,10 +5,11 @@ from app.modules.auth.logic import verify_student_logic, register_user_logic, lo
 from app.modules.auth.schemas import (
     VerifyRequest, VerifyResponse,
     RegisterRequest, LoginRequest,
-    Token, UserResponse
+    Token, UserResponse, AchievementResponse
 )
 from app.core.dependencies import get_current_user
 from app.models.user import User
+from app.modules.achievement.service import AchievementService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -47,10 +48,13 @@ async def get_me(
     else:
         full_name = "Unknown"
 
+    achievements = await AchievementService(db).get_user_achievements(current_user.id)
+
     return UserResponse(
         id=current_user.id,
         username=current_user.username,
         student_id=current_user.student_id,
         full_name=full_name,
         role=current_user.role,
+        achievements=[AchievementResponse(**item) for item in achievements],
     )

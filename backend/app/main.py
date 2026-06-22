@@ -18,12 +18,15 @@ from app.modules.events.router import router as events_router
 from app.modules.checkin.router import router as checkin_router
 from app.modules.help.router import router as help_router
 from app.modules.rating.router import router as rating_router
+from app.modules.voting.router import router as voting_router
+from app.models.voting import VoteRound, VoteBallot
 from app.models.reports import (
     TeamReport, ReportFile, ReportTask,
     TeamEvent, EventInvitation, EventParticipant,
     WeeklyCheckin, CheckinTask,
     HelpRequest, HelpResponse
 )
+from app.models.achievement import UserAchievement
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,6 +56,7 @@ app.include_router(events_router)
 app.include_router(checkin_router)
 app.include_router(help_router)
 app.include_router(rating_router)
+app.include_router(voting_router)
 
 
 @app.get("/")

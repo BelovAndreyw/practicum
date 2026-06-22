@@ -130,3 +130,13 @@ class PeriodArchiveResponse(BaseModel):
     period_year: int
     period_month: int
     archived_count: int
+
+
+class TeamKrkBreakdownResponse(BaseModel):
+    """Средние компоненты КРК по команде"""
+    team_id: int
+    base_score: float
+    unity_score: float
+    bonus_score: float
+    total_krk: float
+    member_count: int

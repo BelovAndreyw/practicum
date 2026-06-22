@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { checkinApi, challengesApi, newsApi, reportsApi, rescueApi } from '@/api';
-import type { CheckIn, Challenge, NewsItem, RescueRequest } from '@/types';
+import { checkinApi, challengesApi, newsApi, reportsApi, rescueApi, votingApi, teamsApi } from '@/api';
+import type { CheckIn, Challenge, NewsItem, RescueRequest, Team, VoteRound } from '@/types';
 import type { ChallengeReportItem } from '@/api/endpoints/reports';
 import { Card, Badge, Button, PageHeader, Tabs, Modal, Input, Textarea, Spinner } from '@/components/ui';
 import styles from './AdminPage.module.css';
@@ -9,8 +9,16 @@ const TABS = [
   { id: 'checkins',   label: '✅ Check-in' },
   { id: 'challenges', label: '⚡ Челленджи' },
   { id: 'rescues',    label: '🆘 Спасения' },
+  { id: 'voting',     label: '🗳️ Голосование' },
   { id: 'news',       label: '📰 Новости' },
 ];
+
+function defaultVoteClosesAt(): string {
+  const date = new Date();
+  date.setDate(date.getDate() + 7);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 export function AdminPage() {
   const [tab, setTab] = useState('checkins');
@@ -32,17 +40,46 @@ export function AdminPage() {
   const [newsForm, setNewsForm] = useState({ title: '', body: '' });
   const [savingNews, setSavingNews] = useState(false);
 
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [voteTeamId, setVoteTeamId] = useState('');
+  const [voteCycleLabel, setVoteCycleLabel] = useState('Цикл 1');
+  const [voteClosesAt, setVoteClosesAt] = useState('');
+  const [activeVoteRound, setActiveVoteRound] = useState<VoteRound | null>(null);
+  const [voteBusy, setVoteBusy] = useState(false);
+
+  const refreshActiveVoteRound = async (teamId: string) => {
+    try {
+      const round = await votingApi.getActiveRound(teamId);
+      setActiveVoteRound(round);
+    } catch {
+      setActiveVoteRound(null);
+    }
+  };
+
   useEffect(() => {
-    Promise.allSettled([checkinApi.listAll(), challengesApi.list(), reportsApi.listPending(), rescueApi.list(), newsApi.list()])
-      .then(([ci, ch, rp, rs, nw]) => {
+    Promise.allSettled([checkinApi.listAll(), challengesApi.list(), reportsApi.listPending(), rescueApi.list(), newsApi.list(), teamsApi.listTeams()])
+      .then(([ci, ch, rp, rs, nw, tm]) => {
         if (ci.status === 'fulfilled') setCheckins(ci.value);
         if (ch.status === 'fulfilled') setChallenges(ch.value);
         if (rp.status === 'fulfilled') setPendingReports(rp.value);
         if (rs.status === 'fulfilled') setRescues(rs.value);
         if (nw.status === 'fulfilled') setNews(nw.value);
+        if (tm.status === 'fulfilled') {
+          setTeams(tm.value);
+          if (tm.value.length > 0) setVoteTeamId(tm.value[0].id);
+          setVoteClosesAt((prev) => prev || defaultVoteClosesAt());
+        }
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!voteTeamId) {
+      setActiveVoteRound(null);
+      return;
+    }
+    refreshActiveVoteRound(voteTeamId);
+  }, [voteTeamId]);
 
   const handleApproveReport = async (reportId: number) => {
     setApprovingReportId(reportId);
@@ -94,6 +131,36 @@ export function AdminPage() {
       setShowNewsForm(false);
       setNewsForm({ title: '', body: '' });
     } finally { setSavingNews(false); }
+  };
+
+  const handleOpenVoteRound = async () => {
+    if (!voteTeamId || !voteClosesAt) return;
+    setVoteBusy(true);
+    try {
+      await votingApi.openRound({
+        teamId: voteTeamId,
+        cycleLabel: voteCycleLabel,
+        closesAt: new Date(voteClosesAt).toISOString(),
+      });
+      await refreshActiveVoteRound(voteTeamId);
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось открыть раунд');
+    } finally {
+      setVoteBusy(false);
+    }
+  };
+
+  const handleCloseVoteRound = async () => {
+    if (!activeVoteRound) return;
+    setVoteBusy(true);
+    try {
+      await votingApi.closeRound(activeVoteRound.id);
+      await refreshActiveVoteRound(voteTeamId);
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось закрыть раунд');
+    } finally {
+      setVoteBusy(false);
+    }
   };
 
   if (loading) return <div className={styles.center}><Spinner size="lg" /></div>;
@@ -220,6 +287,64 @@ export function AdminPage() {
                 ))}
               </tbody>
             </table>
+          </Card>
+        )}
+
+        {tab === 'voting' && (
+          <Card padding="lg">
+            <span className="eyebrow">Анонимное голосование</span>
+            <p className={styles.ciField} style={{ marginBottom: 16 }}>
+              Откройте раунд для команды. После закрытия оценки обновят компонент «Сплоченность» в КРК участников.
+            </p>
+            <div className={styles.formGrid} style={{ marginBottom: 16 }}>
+              <label>
+                Команда
+                <select
+                  value={voteTeamId}
+                  onChange={(e) => setVoteTeamId(e.target.value)}
+                  style={{ display: 'block', width: '100%', marginTop: 6, padding: '8px 12px' }}
+                >
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+              <Input
+                label="Название цикла"
+                value={voteCycleLabel}
+                onChange={(e) => setVoteCycleLabel(e.target.value)}
+              />
+              <Input
+                label="Закрывается"
+                type="datetime-local"
+                value={voteClosesAt}
+                onChange={(e) => setVoteClosesAt(e.target.value)}
+              />
+            </div>
+            {activeVoteRound ? (
+              <div>
+                <Badge variant="accent">{activeVoteRound.cycleLabel}</Badge>
+                <span style={{ marginLeft: 12 }}>
+                  Активен до {new Date(activeVoteRound.closesAt).toLocaleString('ru-RU')}
+                </span>
+                <div style={{ marginTop: 12 }}>
+                  <Button onClick={handleCloseVoteRound} loading={voteBusy} variant="danger">
+                    Закрыть раунд и пересчитать КРК
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Button onClick={handleOpenVoteRound} loading={voteBusy} disabled={!voteTeamId || !voteClosesAt}>
+                  Открыть раунд голосования
+                </Button>
+                {(!voteTeamId || !voteClosesAt) && (
+                  <p className={styles.ciField} style={{ marginTop: 8 }}>
+                    {!voteTeamId ? 'Выберите команду' : 'Укажите дату закрытия раунда'}
+                  </p>
+                )}
+              </>
+            )}
           </Card>
         )}
 

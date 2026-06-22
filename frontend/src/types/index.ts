@@ -18,6 +18,7 @@ export interface User {
   teamId?: string;
   personalRating: number;
   league: League;
+  krkBreakdown?: KrkBreakdown;
   achievements: Achievement[];
   createdAt: string; // ISO date
 }
@@ -175,6 +176,7 @@ export interface KnowledgeRequest {
   teamId?: string;
   teamName?: string;
   resolved: boolean;
+  responsesCount?: number;
   createdAt: string;
 }
 
@@ -214,9 +216,10 @@ export interface RescueRequest {
 export interface VoteRound {
   id: string;
   teamId: string;
-  cycleLabel: string; // РЅР°РїСЂ. В«Р¦РёРєР» 1В»
+  cycleLabel: string;
   isOpen: boolean;
   closesAt: string;
+  hasVoted?: boolean;
 }
 
 export interface VoteBallot {

@@ -1,4 +1,4 @@
-import type { User, UserRole } from '@/types';
+import type { User, UserRole, Achievement, KrkBreakdown } from '@/types';
 
 export function mapBackendRole(role: string): UserRole {
   if (role === 'captain') return 'captain';
@@ -15,12 +15,50 @@ export function mapLeague(league?: string): string {
   return league ? (map[league] ?? league) : '';
 }
 
+export interface BackendAchievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlocked_at: string;
+}
+
 export interface BackendUserResponse {
   id: number;
   username: string;
   student_id: number;
   full_name: string;
   role: string;
+  achievements?: BackendAchievement[];
+}
+
+export interface BackendMyRating {
+  total_krk: number;
+  base_score: number;
+  unity_score: number;
+  bonus_score: number;
+  penalty_score: number;
+  league: string;
+}
+
+function mapAchievements(items?: BackendAchievement[]): Achievement[] {
+  if (!items?.length) return [];
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    icon: item.icon,
+    unlockedAt: item.unlocked_at,
+  }));
+}
+
+export function mapKrkBreakdown(rating: BackendMyRating): KrkBreakdown {
+  return {
+    baseRating: rating.base_score,
+    cohesionCoeff: rating.unity_score,
+    bonusCoeff: rating.bonus_score,
+    total: rating.total_krk,
+  };
 }
 
 export interface BackendUserProfileResponse extends BackendUserResponse {
@@ -30,7 +68,12 @@ export interface BackendUserProfileResponse extends BackendUserResponse {
 
 export function mapBackendUser(
   data: BackendUserResponse,
-  extras?: { teamId?: string; personalRating?: number; league?: string },
+  extras?: {
+    teamId?: string;
+    personalRating?: number;
+    league?: string;
+    krkBreakdown?: KrkBreakdown;
+  },
 ): User {
   const [lastName = '', firstName = '', middleName] = data.full_name.split(' ');
   return {
@@ -44,7 +87,8 @@ export function mapBackendUser(
     teamId: extras?.teamId,
     personalRating: extras?.personalRating ?? 0,
     league: extras?.league ?? '',
-    achievements: [],
+    krkBreakdown: extras?.krkBreakdown,
+    achievements: mapAchievements(data.achievements),
     createdAt: new Date().toISOString(),
   };
 }

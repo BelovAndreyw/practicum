@@ -5,6 +5,7 @@ from datetime import datetime
 from app.models.reports import WeeklyCheckin, CheckinTask
 from app.models.team import Team, TeamMember
 from app.models.user import User
+from app.modules.achievement.service import AchievementService
 
 
 async def create_checkin_logic(
@@ -27,6 +28,10 @@ async def create_checkin_logic(
         status="pending"
     )
     db.add(checkin)
+    await db.flush()
+
+    await AchievementService(db).unlock_if_new(user_id, "ach_x1")
+
     await db.commit()
     await db.refresh(checkin)
     return checkin

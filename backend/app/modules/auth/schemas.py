@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import List
 from pydantic import BaseModel, Field
 
 
@@ -33,6 +35,14 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+class AchievementResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    icon: str
+    unlocked_at: datetime
+
+
 class UserResponse(BaseModel):
     """Информация о пользователе для профиля"""
     id: int
@@ -40,3 +50,4 @@ class UserResponse(BaseModel):
     student_id: int
     full_name: str
     role: str
+    achievements: List[AchievementResponse] = []

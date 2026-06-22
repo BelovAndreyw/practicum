@@ -11,6 +11,8 @@ from app.modules.help.logic import (
     cancel_help_request_logic,
     get_help_requests_logic,
     get_help_request_detail_logic,
+    serialize_help_request,
+    serialize_help_request_list,
     RESCUE_BONUS_POINTS,
 )
 from app.modules.challenges.logic import CHALLENGE_KRK_DIVISOR
@@ -36,25 +38,10 @@ async def list_help_requests(
 ):
     """Список заявок на помощь"""
     requests, total = await get_help_requests_logic(status, help_type, db)
+    serialized = await serialize_help_request_list(requests, db)
     return {
-        "requests": [
-            HelpRequestResponse(
-                id=r.id,
-                requesting_team_id=r.requesting_team_id,
-                title=r.title,
-                description=r.description,
-                help_type=r.help_type,
-                format=r.format,
-                estimated_effort_hours=r.estimated_effort_hours,
-                status=r.status,
-                created_at=r.created_at,
-                fulfilled_by_team_id=r.fulfilled_by_team_id,
-                fulfilled_at=r.fulfilled_at,
-                responses_count=len(r.responses)
-            )
-            for r in requests
-        ],
-        "total": total
+        "requests": [HelpRequestResponse(**item) for item in serialized],
+        "total": total,
     }
 
 
@@ -77,19 +64,7 @@ async def create_help_request(
         data.title, data.description, data.help_type,
         data.format, data.estimated_effort_hours, db
     )
-    return HelpRequestResponse(
-        id=request.id,
-        requesting_team_id=request.requesting_team_id,
-        title=request.title,
-        description=request.description,
-        help_type=request.help_type,
-        format=request.format,
-        estimated_effort_hours=request.estimated_effort_hours,
-        status=request.status,
-        created_at=request.created_at,
-        fulfilled_by_team_id=request.fulfilled_by_team_id,
-        fulfilled_at=request.fulfilled_at
-    )
+    return HelpRequestResponse(**await serialize_help_request(request, db))
 
 
 @router.get("/{request_id}")
@@ -99,19 +74,9 @@ async def get_help_request(
 ):
     """Детали заявки"""
     request = await get_help_request_detail_logic(request_id, db)
+    data = await serialize_help_request(request, db)
     return HelpRequestDetailResponse(
-        id=request.id,
-        requesting_team_id=request.requesting_team_id,
-        title=request.title,
-        description=request.description,
-        help_type=request.help_type,
-        format=request.format,
-        estimated_effort_hours=request.estimated_effort_hours,
-        status=request.status,
-        created_at=request.created_at,
-        fulfilled_by_team_id=request.fulfilled_by_team_id,
-        fulfilled_at=request.fulfilled_at,
-        responses_count=len(request.responses),
+        **data,
         responses=[
             HelpResponseResponse(
                 id=resp.id,
@@ -122,7 +87,7 @@ async def get_help_request(
                 responded_at=resp.responded_at,
             )
             for resp in request.responses
-        ]
+        ],
     )
 
 

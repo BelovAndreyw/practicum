@@ -15,7 +15,7 @@ from app.modules.rating.schemas import (
     RatingResponse, LeaderboardResponse, TopUsersResponse,
     TeamLeaderboardResponse, LeagueDistributionResponse,
     RatingHistoryResponse, RatingHistoryItem, PeriodArchiveRequest, PeriodArchiveResponse,
-    RankingItemResponse, TeamRatingResponse
+    RankingItemResponse, TeamRatingResponse, TeamKrkBreakdownResponse
 )
 
 router = APIRouter(prefix="/rating", tags=["Rating"])
@@ -196,6 +196,18 @@ async def get_my_rating(
         rank_change=rating.rank_change,
         updated_at=rating.updated_at
     )
+
+
+@router.get("/team/{team_id}/breakdown", response_model=TeamKrkBreakdownResponse)
+async def get_team_krk_breakdown(
+    team_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Средние компоненты КРК команды"""
+    rating_service = RatingService(db)
+    data = await rating_service.get_team_krk_breakdown(team_id)
+    return TeamKrkBreakdownResponse(**data)
 
 
 @router.post("/update", response_model=RatingResponse)

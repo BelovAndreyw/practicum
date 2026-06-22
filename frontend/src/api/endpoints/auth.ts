@@ -5,8 +5,10 @@ import { MOCK_ME, MOCK_USERS } from '../mock/data';
 import {
   mapBackendUser,
   mapLeague,
+  mapKrkBreakdown,
   type BackendUserProfileResponse,
   type BackendUserResponse,
+  type BackendMyRating,
 } from '../mappers/user';
 import type { User } from '@/types';
 
@@ -20,11 +22,6 @@ interface BackendLoginResponse {
   token_type?: string;
 }
 
-interface BackendMyRating {
-  total_krk: number;
-  league: string;
-}
-
 async function enrichUserFromProfile(base: User): Promise<User> {
   try {
     const [profile, rating] = await Promise.all([
@@ -32,11 +29,15 @@ async function enrichUserFromProfile(base: User): Promise<User> {
       http.get<BackendMyRating>('/rating/my-rating').catch(() => null),
     ]);
 
-    return mapBackendUser(profile, {
+    const krkBreakdown = rating ? mapKrkBreakdown(rating) : base.krkBreakdown;
+
+    const enriched = mapBackendUser(profile, {
       teamId: profile.team_id != null ? String(profile.team_id) : undefined,
       personalRating: Math.round((rating?.total_krk ?? base.personalRating) * 100) / 100,
       league: rating?.league ? mapLeague(rating.league) : base.league,
+      krkBreakdown,
     });
+    return { ...enriched, achievements: base.achievements };
   } catch {
     return base;
   }

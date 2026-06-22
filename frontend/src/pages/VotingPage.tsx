@@ -37,10 +37,12 @@ export function VotingPage() {
     setSubmitting(true);
     setError('');
     try {
-      await Promise.all(
-        members.map((m) =>
-          votingApi.submitBallot({ roundId: round.id, targetUserId: m.userId, score: scores[m.userId] ?? 3 })
-        )
+      await votingApi.submitBallots(
+        round.id,
+        members.map((m) => ({
+          targetUserId: m.userId,
+          score: scores[m.userId] ?? 3,
+        })),
       );
       setSubmitted(true);
     } catch (event) {

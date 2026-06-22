@@ -23,6 +23,11 @@ infra/ssl/certs/*.crt
 !.env.test.example
 !.env.pilot.example
 
+# Локальные SQLite (не для pilot)
+*.db
+backend/local_dev.db
+backend/university.db
+
 # Локальные загрузки (отчёты, картинки постов)
 backend/uploads/
 

@@ -3,6 +3,9 @@ import type { KnowledgeRequest, RescueRequest, RescueStatus, KnowledgeRequestTyp
 export interface BackendHelpRequest {
   id: number;
   requesting_team_id: number;
+  requesting_team_name?: string | null;
+  helper_team_id?: number | null;
+  helper_team_name?: string | null;
   title: string;
   description?: string | null;
   help_type: string;
@@ -53,16 +56,19 @@ export function mapKnowledgeRequest(item: BackendHelpRequest, teamName?: string)
     teamId: String(item.requesting_team_id),
     teamName: teamName ?? `Команда #${item.requesting_team_id}`,
     resolved: item.status === 'fulfilled' || item.status === 'cancelled',
+    responsesCount: item.responses_count ?? 0,
     createdAt: item.created_at,
   };
 }
 
 export function mapRescueRequest(item: BackendHelpRequest, teamName?: string): RescueRequest {
+  const helperTeamId = item.helper_team_id ?? item.fulfilled_by_team_id;
   return {
     id: String(item.id),
     requesterTeamId: String(item.requesting_team_id),
-    requesterTeamName: teamName ?? `Команда #${item.requesting_team_id}`,
-    helperTeamId: item.fulfilled_by_team_id != null ? String(item.fulfilled_by_team_id) : undefined,
+    requesterTeamName: item.requesting_team_name ?? teamName ?? `Команда #${item.requesting_team_id}`,
+    helperTeamId: helperTeamId != null ? String(helperTeamId) : undefined,
+    helperTeamName: item.helper_team_name ?? undefined,
     topic: item.title,
     description: item.description ?? '',
     status: mapHelpStatusToRescue(item.status, item.responses_count ?? 0),

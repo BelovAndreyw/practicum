@@ -16,7 +16,7 @@ const EVENT_ICON: Record<string, string> = {
 };
 
 export function DashboardPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [knowledge, setKnowledge] = useState<KnowledgeRequest[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
@@ -55,14 +55,24 @@ export function DashboardPage() {
       setKnowledge((prev) => [k, ...prev]);
       setShowForm(false);
       setForm({ type: 'need', title: '', description: '', tags: '' });
+      if (form.type === 'offer') await refreshUser();
     } finally {
       setSaving(false);
     }
   };
 
-  const handleResolve = async (id: string) => {
-    await knowledgeApi.resolve(id);
+  const handleCancel = async (id: string) => {
+    await knowledgeApi.cancel(id);
     setKnowledge((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleAccept = async (id: string) => {
+    try {
+      await knowledgeApi.accept(id);
+      setKnowledge((prev) => prev.filter((item) => item.id !== id));
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось подтвердить помощь');
+    }
   };
 
   if (loading) return <div className={styles.center}><Spinner size="lg" /></div>;
@@ -168,9 +178,16 @@ export function DashboardPage() {
                   <div className={styles.knowledgeFoot}>
                     <span>{item.teamName ?? item.authorName}</span>
                     {(item.authorId === user?.id || (!!user?.teamId && item.teamId === user.teamId)) && (
-                      <Button size="sm" variant="ghost" onClick={() => handleResolve(item.id)}>
-                        ✓ Закрыть
-                      </Button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {item.type === 'need' && (item.responsesCount ?? 0) > 0 && (
+                          <Button size="sm" variant="secondary" onClick={() => handleAccept(item.id)}>
+                            Подтвердить помощь
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => handleCancel(item.id)}>
+                          Отменить
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>

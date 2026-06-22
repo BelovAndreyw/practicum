@@ -13,6 +13,7 @@ from app.modules.help.logic import (
     create_help_request_logic,
     respond_to_help_logic,
     accept_help_logic,
+    serialize_help_request_list,
     RESCUE_BONUS_POINTS,
 )
 from app.modules.challenges.logic import CHALLENGE_KRK_DIVISOR
@@ -106,3 +107,34 @@ async def test_accept_help_awards_krk_to_both_teams(db_session):
 
     refreshed = await db_session.get(HelpRequest, request.id)
     assert refreshed.status == "fulfilled"
+
+
+@pytest.mark.asyncio
+async def test_help_list_includes_helper_team_name(db_session):
+    requester_captain = await _create_user(db_session, "list_req")
+    helper_captain = await _create_user(db_session, "list_help")
+
+    team_a = await _create_team(db_session, "Alpha", requester_captain, [])
+    team_b = await _create_team(db_session, "Beta", helper_captain, [])
+
+    request = await create_help_request_logic(
+        team_a.id,
+        requester_captain.id,
+        "Docker help",
+        "Container issue",
+        "receiving",
+        "both",
+        None,
+        db_session,
+    )
+    await respond_to_help_logic(request.id, team_b.id, "Ready to help", db_session)
+
+    from app.modules.help.logic import get_help_requests_logic
+
+    requests, _ = await get_help_requests_logic(help_type="receiving", db=db_session)
+    serialized = await serialize_help_request_list(requests, db_session)
+
+    target = next(item for item in serialized if item["id"] == request.id)
+    assert target["requesting_team_name"] == "Alpha"
+    assert target["helper_team_id"] == team_b.id
+    assert target["helper_team_name"] == "Beta"

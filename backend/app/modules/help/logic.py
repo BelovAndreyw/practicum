@@ -9,6 +9,7 @@ from app.models.activity import Activity, TeamActivityLog
 from app.modules.challenges.logic import CHALLENGE_KRK_DIVISOR
 from app.modules.rating.logic import RatingService
 from app.modules.rating.team_logic import TeamRatingService
+from app.modules.achievement.service import AchievementService
 
 
 RESCUE_BONUS_POINTS = 40
@@ -54,6 +55,11 @@ async def create_help_request_logic(
         status="open"
     )
     db.add(request)
+    await db.flush()
+
+    if help_type == "offering":
+        await AchievementService(db).unlock_if_new(user_id, "ach_x3")
+
     await db.commit()
     await db.refresh(request)
     return request
@@ -187,6 +193,10 @@ async def accept_help_logic(
             },
         ))
 
+    await AchievementService(db).unlock_for_team_members(
+        response.responding_team_id, "ach_x2"
+    )
+
     await db.commit()
     await db.refresh(request)
     return request
@@ -198,17 +208,93 @@ async def cancel_help_request_logic(
     db: AsyncSession
 ) -> HelpRequest:
     """Отмена заявки"""
-    request = await db.get(HelpRequest, request_id)
+    result = await db.execute(
+        select(HelpRequest)
+        .where(HelpRequest.id == request_id)
+        .options(selectinload(HelpRequest.responses))
+    )
+    request = result.scalar_one_or_none()
     if not request:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
     await _ensure_member_of_team(request.requesting_team_id, user_id, db)
-    if request.status != "open":
+    if request.status not in ("open", "in_progress"):
         raise HTTPException(status_code=400, detail="Заявка уже закрыта")
+
+    for response in request.responses:
+        if response.status == "pending":
+            response.status = "declined"
 
     request.status = "cancelled"
     await db.commit()
     await db.refresh(request)
     return request
+
+
+def resolve_helper_team_id(request: HelpRequest) -> int | None:
+    """Определяет команду-помощника: fulfilled или первый активный отклик."""
+    if request.fulfilled_by_team_id:
+        return request.fulfilled_by_team_id
+    for response in request.responses:
+        if response.status in ("pending", "accepted"):
+            return response.responding_team_id
+    return None
+
+
+async def load_team_names(team_ids: set[int], db: AsyncSession) -> dict[int, str]:
+    if not team_ids:
+        return {}
+    result = await db.execute(select(Team).where(Team.id.in_(team_ids)))
+    return {team.id: team.name for team in result.scalars().all()}
+
+
+async def serialize_help_request(
+    request: HelpRequest,
+    db: AsyncSession,
+    team_names: dict[int, str] | None = None,
+) -> dict:
+    """Сериализует заявку с именами команд."""
+    if team_names is None:
+        team_ids = {request.requesting_team_id}
+        helper_id = resolve_helper_team_id(request)
+        if helper_id:
+            team_ids.add(helper_id)
+        team_names = await load_team_names(team_ids, db)
+
+    helper_id = resolve_helper_team_id(request)
+    return {
+        "id": request.id,
+        "requesting_team_id": request.requesting_team_id,
+        "requesting_team_name": team_names.get(request.requesting_team_id),
+        "helper_team_id": helper_id,
+        "helper_team_name": team_names.get(helper_id) if helper_id else None,
+        "title": request.title,
+        "description": request.description,
+        "help_type": request.help_type,
+        "format": request.format,
+        "estimated_effort_hours": request.estimated_effort_hours,
+        "status": request.status,
+        "created_at": request.created_at,
+        "fulfilled_by_team_id": request.fulfilled_by_team_id,
+        "fulfilled_at": request.fulfilled_at,
+        "responses_count": len(request.responses),
+    }
+
+
+async def serialize_help_request_list(
+    requests: list[HelpRequest],
+    db: AsyncSession,
+) -> list[dict]:
+    team_ids: set[int] = set()
+    for request in requests:
+        team_ids.add(request.requesting_team_id)
+        helper_id = resolve_helper_team_id(request)
+        if helper_id:
+            team_ids.add(helper_id)
+    team_names = await load_team_names(team_ids, db)
+    return [
+        await serialize_help_request(request, db, team_names)
+        for request in requests
+    ]
 
 
 async def get_help_requests_logic(
@@ -224,7 +310,9 @@ async def get_help_requests_logic(
         query = query.where(HelpRequest.help_type == help_type)
 
     result = await db.execute(
-        query.where(HelpRequest.status != "fulfilled").order_by(HelpRequest.created_at.desc())
+        query.where(
+            HelpRequest.status.notin_(("fulfilled", "cancelled"))
+        ).order_by(HelpRequest.created_at.desc())
     )
     requests = result.scalars().all()
 

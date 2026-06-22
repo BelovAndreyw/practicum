@@ -41,7 +41,7 @@ export function CommunityPage() {
   };
 
   const handleResolve = async (id: string) => {
-    await knowledgeApi.resolve(id);
+    await knowledgeApi.cancel(id);
     setKnowledge((prev) => prev.filter((k) => k.id !== id));
   };
 

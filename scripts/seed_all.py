@@ -140,6 +140,7 @@ from app.models.reports import (
     WeeklyCheckin, CheckinTask,
     HelpRequest, HelpResponse
 )
+from app.models.voting import VoteRound
 from app.modules.rating.team_logic import TeamRatingService
 
 USERS_DATA = [
@@ -819,6 +820,21 @@ async def create_archives(session, users, teams):
     await session.flush()
 
 
+async def create_vote_rounds(session, teams):
+    """Открытый раунд голосования для первой команды (демо)."""
+    if not teams:
+        return
+    team = teams[0]
+    session.add(VoteRound(
+        team_id=team.id,
+        cycle_label="Цикл 1",
+        is_open=True,
+        closes_at=_utcnow() + timedelta(days=14),
+    ))
+    await session.flush()
+    return 1
+
+
 async def print_summary(session):
     counts = {
         "users": (await session.execute(select(func.count(User.id)))).scalar(),
@@ -979,6 +995,7 @@ async def main():
             print("🔗 Пригласительные ссылки..."); await create_invite_links(session, teams)
             print("⚙️ Настройки лиг..."); await create_league_settings(session)
             print("📦 Архивы рейтингов..."); await create_archives(session, users, teams)
+            print("🗳️ Голосование..."); await create_vote_rounds(session, teams)
 
         await session.commit()
         print("\n💾 Все данные сохранены")

@@ -6,11 +6,11 @@ import { getMockInviteOverride, setMockInviteOverride } from '../mock/inviteCode
 import { MOCK_TEAMS } from '../mock/data';
 import {
   mapKrkFromRating,
+  mapKrkFromComponents,
   mapTeamDetail,
   mapTeamSummary,
   type BackendInviteLink,
   type BackendTeamDetail,
-  type BackendTeamProfile,
   type BackendTeamSummary,
 } from '../mappers/team';
 import type { Team, KrkBreakdown } from '@/types';
@@ -127,17 +127,25 @@ export const teamsApi = {
       return mapKrkFromRating(t.krk);
     }
 
-    // Предпочитаем КРК (0–100) из общего рейтинга команд
     try {
+      const data = await http.get<{
+        base_score: number;
+        unity_score: number;
+        bonus_score: number;
+        total_krk: number;
+      }>(`/rating/team/${teamId}/breakdown`);
+      return mapKrkFromComponents(
+        data.base_score,
+        data.unity_score,
+        data.bonus_score,
+        data.total_krk,
+      );
+    } catch {
       const ratings = await ratingApi.getTeamRating();
       const entry = ratings.find((r) => r.team.id === teamId);
       if (entry) return mapKrkFromRating(entry.team.krk);
-    } catch {
-      // упадём на профиль ниже
+      throw new Error('Не удалось загрузить разбивку КРК');
     }
-
-    const data = await http.get<BackendTeamProfile>(`/teams/${teamId}/profile`);
-    return mapKrkFromRating(data.rating);
   },
 
   async regenerateInviteCode(teamId: string): Promise<{ inviteCode: string; inviteCodeUpdatedAt: string; inviteCodeExpiresAt: string }> {

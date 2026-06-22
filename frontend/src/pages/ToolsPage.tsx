@@ -31,6 +31,7 @@ export function ToolsPage() {
   const [rescueForm, setRescueForm] = useState({ topic: '', description: '' });
   const [rescueSaving, setRescueSaving] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
   // Voting state
   const [round, setRound] = useState<VoteRound | null | undefined>(undefined);
@@ -53,6 +54,7 @@ export function ToolsPage() {
       setRescues(rs);
       setRound(vr);
       setMembers(team.members.filter((m) => m.userId !== user.id));
+      if (vr?.hasVoted) setVoteSubmitted(true);
     }).catch(() => {
       setCheckins([]);
       setRescues([]);
@@ -71,6 +73,7 @@ export function ToolsPage() {
       setShowCiForm(false);
       setCiSuccess(true);
       setCiForm({ weekLabel: '', summary: '', achievements: '', blockers: '' });
+      await refreshUser();
     } catch (event) {
       alert(event instanceof Error ? event.message : 'Не удалось отправить check-in');
     } finally { setCiSaving(false); }
@@ -105,6 +108,18 @@ export function ToolsPage() {
     }
   };
 
+  const handleReject = async (id: string) => {
+    setRejectingId(id);
+    try {
+      await rescueApi.updateStatus(id, 'rejected');
+      setRescues((prev) => prev.filter((x) => x.id !== id));
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось отменить заявку');
+    } finally {
+      setRejectingId(null);
+    }
+  };
+
   // Voting handlers
   const handleScore = (userId: string, score: number) =>
     setScores((prev) => ({ ...prev, [userId]: score }));
@@ -113,12 +128,17 @@ export function ToolsPage() {
     if (!round) return;
     setVoteSaving(true);
     try {
-      await Promise.all(
-        members.map((m) =>
-          votingApi.submitBallot({ roundId: round.id, targetUserId: m.userId, score: scores[m.userId] ?? 3 }),
-        ),
+      await votingApi.submitBallots(
+        round.id,
+        members.map((m) => ({
+          targetUserId: m.userId,
+          score: scores[m.userId] ?? 3,
+        })),
       );
       setVoteSubmitted(true);
+      await refreshUser();
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось отправить оценки');
     } finally { setVoteSaving(false); }
   };
 
@@ -239,15 +259,26 @@ export function ToolsPage() {
                   {r.status === 'pending' && user?.teamId && r.requesterTeamId !== user.teamId && (
                     <Button size="sm" variant="secondary" onClick={() => handleAccept(r.id)} style={{ marginTop: 10 }}>Помочь</Button>
                   )}
-                  {r.status === 'accepted' && user?.teamId === r.requesterTeamId && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleConfirm(r.id)}
-                      loading={confirmingId === r.id}
-                      style={{ marginTop: 10 }}
-                    >
-                      ✅ Подтвердить
-                    </Button>
+                  {(r.status === 'pending' || r.status === 'accepted') && user?.teamId === r.requesterTeamId && (
+                    <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {r.status === 'accepted' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleConfirm(r.id)}
+                          loading={confirmingId === r.id}
+                        >
+                          ✅ Подтвердить
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleReject(r.id)}
+                        loading={rejectingId === r.id}
+                      >
+                        Отменить заявку
+                      </Button>
+                    </div>
                   )}
                 </Card>
               ))

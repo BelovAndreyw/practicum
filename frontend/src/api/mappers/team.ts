@@ -96,16 +96,26 @@ export function mapTeamDetail(data: BackendTeamDetail, krk = 0, league = ''): Te
   };
 }
 
-export function mapKrkFromRating(rating: number): KrkBreakdown {
-  const base = rating * 0.6;
-  const cohesion = rating * 0.3;
-  const bonus = rating * 0.1;
+export function mapKrkFromComponents(
+  base: number,
+  unity: number,
+  bonus: number,
+  total?: number,
+): KrkBreakdown {
+  const computedTotal = roundKrk(
+    base * 0.6 + unity * 0.3 + bonus * 0.1,
+  );
   return {
-    baseRating: +base.toFixed(2),
-    cohesionCoeff: +cohesion.toFixed(2),
-    bonusCoeff: +bonus.toFixed(2),
-    total: roundKrk(rating),
+    baseRating: roundKrk(base),
+    cohesionCoeff: roundKrk(unity),
+    bonusCoeff: roundKrk(bonus),
+    total: roundKrk(total ?? computedTotal),
   };
+}
+
+/** @deprecated Use mapKrkFromComponents with real API components */
+export function mapKrkFromRating(rating: number): KrkBreakdown {
+  return mapKrkFromComponents(rating, rating, rating, rating);
 }
 
 export function mapTeamProfile(data: BackendTeamProfile): Team {

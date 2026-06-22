@@ -6,7 +6,7 @@ import { Card, Button, PageHeader, Input, Textarea, Spinner, Empty, Badge } from
 import styles from './CheckInPage.module.css';
 
 export function CheckInPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [history, setHistory] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -28,6 +28,7 @@ export function CheckInPage() {
       setShowForm(false);
       setSuccess(true);
       setForm({ weekLabel: '', summary: '', achievements: '', blockers: '' });
+      await refreshUser();
     } catch (event) {
       alert(event instanceof Error ? event.message : 'Не удалось отправить check-in');
     } finally { setSaving(false); }

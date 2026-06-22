@@ -55,7 +55,17 @@ export const knowledgeApi = {
     return mapKnowledgeRequest(created);
   },
 
-  async resolve(id: string): Promise<void> {
+  async cancel(id: string): Promise<void> {
+    if (USE_MOCK) {
+      await mockDelay();
+      const k = MOCK_KNOWLEDGE.find((item) => item.id === id);
+      if (k) k.resolved = true;
+      return;
+    }
+    await http.post(`/help/${id}/cancel`);
+  },
+
+  async accept(id: string): Promise<void> {
     if (USE_MOCK) {
       await mockDelay();
       const k = MOCK_KNOWLEDGE.find((item) => item.id === id);
@@ -64,10 +74,9 @@ export const knowledgeApi = {
     }
     const detail = await http.get<BackendHelpDetail>(`/help/${id}`);
     const pending = detail.responses.find((r) => r.status === 'pending');
-    if (pending) {
-      await http.post(`/help/${id}/accept/${pending.id}`);
-      return;
+    if (!pending) {
+      throw new Error('Нет откликов для подтверждения');
     }
-    await http.post(`/help/${id}/cancel`);
+    await http.post(`/help/${id}/accept/${pending.id}`);
   },
 };

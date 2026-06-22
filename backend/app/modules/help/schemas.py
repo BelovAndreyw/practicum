@@ -21,6 +21,9 @@ class HelpRequestResponse(BaseModel):
     """Заявка на помощь"""
     id: int
     requesting_team_id: int
+    requesting_team_name: Optional[str] = None
+    helper_team_id: Optional[int] = None
+    helper_team_name: Optional[str] = None
     title: str
     description: Optional[str] = None
     help_type: str
