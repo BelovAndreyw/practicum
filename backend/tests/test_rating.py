@@ -432,7 +432,7 @@ class TestTeamRating:
         assert abs(initial_avg - 60.0) < 0.1
 
         # Изменяем рейтинг одного участника
-        new_rating = await rating_service.update_user_rating(
+        await rating_service.update_user_rating(
             user_id=test_users[3].id,
             base=200.0,  # Теперь 120
             unity=0,
@@ -440,10 +440,7 @@ class TestTeamRating:
         )
         await db_session.commit()
 
-        # Быстрое обновление
-        updated = await team_rating_service.on_member_rating_changed(
-            team.id, test_users[3].id, old_krk=60.0, new_krk=120.0
-        )
+        updated = await team_rating_service.get_or_create_team_rating(team.id)
 
         # Новый средний: (120+60)/2 = 90
         assert abs(updated.average_krk - 90.0) < 0.1

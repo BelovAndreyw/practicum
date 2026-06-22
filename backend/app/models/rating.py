@@ -72,7 +72,7 @@ class RatingLog(Base):
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=True, index=True)
     admin_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Если изменение админом
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("UserRating", back_populates="logs")
     team = relationship("Team", primaryjoin="RatingLog.team_id==Team.id", foreign_keys=[team_id])
@@ -116,8 +116,8 @@ class TeamRating(Base):
     global_rank = Column(Integer, default=0, index=True)
     rank_change = Column(Integer, default=0)
 
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     team = relationship("Team", back_populates="rating_rel")
     logs = relationship("TeamRatingLog", back_populates="team_rating", cascade="all, delete-orphan")
@@ -143,7 +143,7 @@ class TeamRatingLog(Base):
     # Кто вызвал изменение
     affected_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     team_rating = relationship("TeamRating", back_populates="logs")
     team = relationship("Team", primaryjoin="TeamRatingLog.team_id==Team.id", foreign_keys=[team_id])

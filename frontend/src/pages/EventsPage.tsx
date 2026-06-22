@@ -3,6 +3,7 @@ import { eventsApi } from '@/api';
 import type { CalendarEvent, EventFormat } from '@/types';
 import { Badge, Button, Card, Empty, Input, Modal, PageHeader, Spinner, Textarea } from '@/components/ui';
 import styles from './EventsPage.module.css';
+import { isPastEvent } from '@/utils/dates';
 
 const FORMAT_LABEL: Record<EventFormat, string> = {
   online: '🌐 Онлайн',
@@ -67,8 +68,13 @@ export function EventsPage() {
       <div className={styles.list}>
         {sorted.map((item) => {
           const eventDate = new Date(item.date);
+          const past = isPastEvent(item.date);
           return (
-            <Card key={item.id} padding="md" className={styles.eventCard}>
+            <Card
+              key={item.id}
+              padding="md"
+              className={[styles.eventCard, past ? styles.eventCardPast : ''].join(' ')}
+            >
               <div className={styles.dateBadge}>
                 <span className={styles.dateDay}>{eventDate.getDate()}</span>
                 <span className={styles.dateMon}>{eventDate.toLocaleDateString('ru-RU', { month: 'short' })}</span>

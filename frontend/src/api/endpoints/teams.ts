@@ -25,9 +25,9 @@ export const teamsApi = {
       return t;
     }
     const data = await http.get<BackendTeamDetail>(`/team/${id}`);
-    const team = mapTeamDetail(data);
+    const team = mapTeamDetail(data, data.average_krk ?? 0);
 
-    // КРК и лига приходят из общего рейтинга команд (average_krk, шкала 0–100)
+    // Лига и актуальный КРК из общего рейтинга (если доступен)
     try {
       const ratings = await ratingApi.getTeamRating();
       const entry = ratings.find((r) => r.team.id === id);
@@ -36,7 +36,7 @@ export const teamsApi = {
         team.league = entry.team.league;
       }
     } catch {
-      // рейтинг недоступен — оставляем значения по умолчанию
+      // рейтинг недоступен — используем average_krk из деталей команды
     }
 
     // Активный инвайт-код (доступен капитану); для остальных эндпоинт вернёт 403

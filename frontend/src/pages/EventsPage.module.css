@@ -8,6 +8,18 @@
 
 .eventCard { display: flex; align-items: flex-start; gap: 20px; }
 
+.eventCardPast {
+  opacity: 0.55;
+}
+
+.eventCardPast .dateBadge {
+  background: #f0f0f5;
+}
+
+.eventCardPast .eventTitle {
+  color: var(--muted);
+}
+
 .dateBadge {
   display: flex;
   flex-direction: column;

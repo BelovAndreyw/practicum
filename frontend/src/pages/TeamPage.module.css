@@ -197,6 +197,7 @@
 
 .dayEventOnline { color: #2b7bbd; }
 .dayEventOffline { color: #5f63c4; }
+.dayEventPast { opacity: 0.5; filter: grayscale(0.2); }
 .dayMore { font-size: 0.66rem; color: var(--muted); }
 
 .calendarHint {

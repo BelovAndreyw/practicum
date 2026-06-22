@@ -24,6 +24,7 @@ export interface BackendTeamMember {
 
 export interface BackendTeamDetail extends BackendTeamSummary {
   members: BackendTeamMember[];
+  average_krk?: number;
 }
 
 export interface BackendTeamProfile {
@@ -56,7 +57,8 @@ function mapMember(member: BackendTeamMember, captainId: number): TeamMember {
 }
 
 export function mapTeamSummary(data: BackendTeamSummary, krk?: number, league = ''): Team {
-  const teamKrk = krk ?? data.rating ?? 0;
+  const detailKrk = 'average_krk' in data ? (data as BackendTeamDetail).average_krk : undefined;
+  const teamKrk = krk ?? detailKrk ?? 0;
   const members = data.members && data.members.length > 0
     ? data.members.map((m) => mapMember(m, data.captain_id))
     : Array.from({ length: data.members_count }, (_, index) => ({

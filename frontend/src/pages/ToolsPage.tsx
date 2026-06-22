@@ -30,6 +30,7 @@ export function ToolsPage() {
   const [showRescueForm, setShowRescueForm] = useState(false);
   const [rescueForm, setRescueForm] = useState({ topic: '', description: '' });
   const [rescueSaving, setRescueSaving] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   // Voting state
   const [round, setRound] = useState<VoteRound | null | undefined>(undefined);
@@ -92,8 +93,15 @@ export function ToolsPage() {
   };
 
   const handleConfirm = async (id: string) => {
-    const r = await rescueApi.updateStatus(id, 'confirmed');
-    setRescues((prev) => prev.map((x) => (x.id === id ? r : x)));
+    setConfirmingId(id);
+    try {
+      const r = await rescueApi.updateStatus(id, 'confirmed');
+      setRescues((prev) => prev.map((x) => (x.id === id ? r : x)));
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось подтвердить помощь');
+    } finally {
+      setConfirmingId(null);
+    }
   };
 
   // Voting handlers
@@ -230,8 +238,15 @@ export function ToolsPage() {
                   {r.status === 'pending' && user?.teamId && r.requesterTeamId !== user.teamId && (
                     <Button size="sm" variant="secondary" onClick={() => handleAccept(r.id)} style={{ marginTop: 10 }}>Помочь</Button>
                   )}
-                  {r.status === 'accepted' && (
-                    <Button size="sm" onClick={() => handleConfirm(r.id)} style={{ marginTop: 10 }}>✅ Подтвердить</Button>
+                  {r.status === 'accepted' && user?.teamId === r.requesterTeamId && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleConfirm(r.id)}
+                      loading={confirmingId === r.id}
+                      style={{ marginTop: 10 }}
+                    >
+                      ✅ Подтвердить
+                    </Button>
                   )}
                 </Card>
               ))

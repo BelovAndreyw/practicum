@@ -22,6 +22,7 @@ export function RescuePage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ topic: '', description: '' });
   const [saving, setSaving] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(() => { rescueApi.list().then(setRescues).finally(() => setLoading(false)); }, []);
 
@@ -41,8 +42,15 @@ export function RescuePage() {
   };
 
   const handleConfirm = async (id: string) => {
-    const r = await rescueApi.updateStatus(id, 'confirmed');
-    setRescues((prev) => prev.map((x) => x.id === id ? r : x));
+    setConfirmingId(id);
+    try {
+      const r = await rescueApi.updateStatus(id, 'confirmed');
+      setRescues((prev) => prev.map((x) => x.id === id ? r : x));
+    } catch (event) {
+      alert(event instanceof Error ? event.message : 'Не удалось подтвердить помощь');
+    } finally {
+      setConfirmingId(null);
+    }
   };
 
   if (loading) return <div className={styles.center}><Spinner size="lg" /></div>;
@@ -79,9 +87,14 @@ export function RescuePage() {
                 РџРѕРјРѕС‡СЊ
               </Button>
             )}
-            {r.status === 'accepted' && (
-              <Button size="sm" onClick={() => handleConfirm(r.id)} style={{ marginTop: 12 }}>
-                вњ… РџРѕРґС‚РІРµСЂРґРёС‚СЊ Р·Р°РІРµСЂС€РµРЅРёРµ
+            {r.status === 'accepted' && user?.teamId === r.requesterTeamId && (
+              <Button
+                size="sm"
+                onClick={() => handleConfirm(r.id)}
+                loading={confirmingId === r.id}
+                style={{ marginTop: 12 }}
+              >
+                ✅ Подтвердить завершение
               </Button>
             )}
           </Card>

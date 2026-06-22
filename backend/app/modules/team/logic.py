@@ -6,6 +6,7 @@ from fastapi import HTTPException, status
 from app.models.user import User, UserRole, Student
 from app.models.team import Team, TeamMember, TeamInviteLink, TeamJoinRequest
 from app.models.rating import UserRating
+from app.modules.rating.team_logic import TeamRatingService
 from app.modules.team.schemas import TeamCreateRequest
 from datetime import datetime, timedelta
 import secrets
@@ -129,6 +130,7 @@ async def create_team_logic(user: User, data: TeamCreateRequest, db: AsyncSessio
 
     db.add(TeamMember(user_id=user.id, team_id=team.id))
     user.role = UserRole.CAPTAIN.value
+    await TeamRatingService(db).on_member_joined(team.id, user.id)
 
     try:
         await db.commit()
@@ -240,6 +242,7 @@ async def join_by_link_logic(token: str, user: User, db: AsyncSession) -> Team:
     if link.max_uses and link.uses_count >= link.max_uses:
         link.is_active = False
 
+    await TeamRatingService(db).on_member_joined(team.id, user.id)
     await db.commit()
 
     return team
@@ -306,6 +309,7 @@ async def process_join_request_logic(request_id: int, action: str, captain: User
         membership = TeamMember(user_id=request.user_id, team_id=team.id)
         db.add(membership)
         request.status = "approved"
+        await TeamRatingService(db).on_member_joined(team.id, request.user_id)
 
     elif action == "reject":
         request.status = "rejected"
@@ -365,6 +369,9 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
             "league": user_rating.league if user_rating else None,
         })
 
+    personal_scores = [m["personal_krk"] for m in members_list]
+    average_krk = sum(personal_scores) / len(personal_scores) if personal_scores else 0.0
+
     return {
         "id": team.id,
         "name": team.name,
@@ -373,6 +380,7 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
         "captain_name": captain_name,
         "members": members_list,
         "members_count": len(members_list),
+        "average_krk": average_krk,
         "created_at": team.created_at
     }
 
@@ -408,7 +416,8 @@ async def leave_team_logic(user: User, db: AsyncSession) -> None:
     if not membership:
         raise HTTPException(status_code=400, detail="Вы не состоите в команде")
 
-    team = await db.get(Team, membership.team_id)
+    team_id = membership.team_id
+    team = await db.get(Team, team_id)
     if team and team.captain_id == user.id:
         members_result = await db.execute(
             select(TeamMember).where(TeamMember.team_id == team.id)
@@ -418,6 +427,7 @@ async def leave_team_logic(user: User, db: AsyncSession) -> None:
             raise HTTPException(status_code=400, detail="Капитан не может покинуть команду. Назначьте нового капитана или распустите команду.")
 
     await db.delete(membership)
+    await TeamRatingService(db).on_member_left(team_id, user.id)
     await db.commit()
 
 

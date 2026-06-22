@@ -99,6 +99,7 @@ class TeamDetailResponse(BaseModel):
     captain_name: Optional[str] = None
     members: list[TeamMemberResponse]
     members_count: int
+    average_krk: float = 0.0
     created_at: datetime
 
 

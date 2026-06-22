@@ -10,6 +10,7 @@ from app.models.rating import (
 )
 from app.models.team import Team, TeamMember
 from app.models.user import User
+from app.modules.rating.team_logic import TeamRatingService
 
 
 class RatingService:
@@ -109,6 +110,16 @@ class RatingService:
             admin_user_id=admin_user_id
         )
         self.db.add(log)
+
+        if old_total != rating.total_krk:
+            membership_result = await self.db.execute(
+                select(TeamMember).where(TeamMember.user_id == user_id)
+            )
+            membership = membership_result.scalar_one_or_none()
+            if membership:
+                await TeamRatingService(self.db).on_member_rating_changed(
+                    membership.team_id, user_id, old_total, rating.total_krk
+                )
 
         await self.db.flush()
         return rating

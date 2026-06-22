@@ -4,8 +4,8 @@
 ================================================================================
 
 Наполняет ВСЕ таблицы проекта реалистичными тестовыми данными:
-  • 12 пользователей (студенты + админ + преподаватель)
-  • 3 команды с участниками, рейтингом
+  • 17 пользователей (студенты + админ + преподаватель)
+  • 3 команды по 5 участников с рейтингом
   • 15 постов (новости, события, отчёты, запросы помощи)
   • 6 событий (прошедшие и предстоящие)
   • 4 челленджа + записи команд
@@ -63,6 +63,7 @@ from app.models.reports import (
     WeeklyCheckin, CheckinTask,
     HelpRequest, HelpResponse
 )
+from app.modules.rating.team_logic import TeamRatingService
 
 USERS_DATA = [
     {"student_id": 201, "surname": "Смирнов", "name": "Алексей", "patronymic": "Петрович",
@@ -82,22 +83,32 @@ USERS_DATA = [
     {"student_id": 208, "surname": "Морозов", "name": "Павел", "patronymic": "Сергеевич",
      "username": "morozov_ps", "password": "pass208", "role": UserRole.STUDENT.value, "team": "Гамма"},
     {"student_id": 209, "surname": "Петров", "name": "Сергей", "patronymic": "Владимирович",
-     "username": "petrov_sv", "password": "pass209", "role": UserRole.STUDENT.value, "team": None},
+     "username": "petrov_sv", "password": "pass209", "role": UserRole.STUDENT.value, "team": "Альфа"},
     {"student_id": 210, "surname": "Лебедев", "name": "Константин", "patronymic": "Алексеевич",
-     "username": "lebedev_ka", "password": "pass210", "role": UserRole.STUDENT.value, "team": None},
+     "username": "lebedev_ka", "password": "pass210", "role": UserRole.STUDENT.value, "team": "Бета"},
     {"student_id": 301, "surname": "Администратор", "name": "Системный", "patronymic": "",
      "username": "admin", "password": "admin123", "role": UserRole.ADMIN.value, "team": None},
     {"student_id": 302, "surname": "Преподаватель", "name": "Иван", "patronymic": "Петрович",
      "username": "teacher_ip", "password": "teacher123", "role": UserRole.TEACHER.value, "team": None},
+    {"student_id": 211, "surname": "Фёдоров", "name": "Игорь", "patronymic": "Олегович",
+     "username": "fedorov_io", "password": "pass211", "role": UserRole.STUDENT.value, "team": "Альфа"},
+    {"student_id": 212, "surname": "Орлов", "name": "Роман", "patronymic": "Викторович",
+     "username": "orlov_rv", "password": "pass212", "role": UserRole.STUDENT.value, "team": "Бета"},
+    {"student_id": 213, "surname": "Зайцев", "name": "Егор", "patronymic": "Андреевич",
+     "username": "zaitsev_ea", "password": "pass213", "role": UserRole.STUDENT.value, "team": "Гамма"},
+    {"student_id": 214, "surname": "Соловьёв", "name": "Денис", "patronymic": "Михайлович",
+     "username": "soloviev_dm", "password": "pass214", "role": UserRole.STUDENT.value, "team": "Гамма"},
+    {"student_id": 215, "surname": "Виноградов", "name": "Артур", "patronymic": "Сергеевич",
+     "username": "vinogradov_as", "password": "pass215", "role": UserRole.STUDENT.value, "team": "Гамма"},
 ]
 
 TEAMS_DATA = [
     {"name": "Альфа", "description": "Команда веб-разработчиков. Стек: React, FastAPI, PostgreSQL.",
-     "captain_index": 0, "member_indices": [0, 1, 2], "rating": 1250.0},
+     "captain_index": 0, "member_indices": [0, 1, 2, 8, 12], "rating": 1250.0},
     {"name": "Бета", "description": "DevOps и инфраструктура. Docker, Kubernetes, CI/CD.",
-     "captain_index": 3, "member_indices": [3, 4, 5], "rating": 1180.0},
+     "captain_index": 3, "member_indices": [3, 4, 5, 9, 13], "rating": 1180.0},
     {"name": "Гамма", "description": "Data Science и ML. Python, PyTorch, pandas.",
-     "captain_index": 6, "member_indices": [6, 7], "rating": 980.0},
+     "captain_index": 6, "member_indices": [6, 7, 14, 15, 16], "rating": 980.0},
 ]
 
 POSTS_DATA = [
@@ -299,6 +310,11 @@ USER_RATINGS_DATA = [
     {"user_index": 7, "base": 30.0, "unity": 8.0, "bonus": 3.0, "penalty": 0.0, "rank": 8, "league": "pro", "change": 0},
     {"user_index": 8, "base": 15.0, "unity": 0.0, "bonus": 2.0, "penalty": 0.0, "rank": 9, "league": "newbie", "change": 0},
     {"user_index": 9, "base": 12.0, "unity": 0.0, "bonus": 1.0, "penalty": 0.0, "rank": 10, "league": "newbie", "change": 0},
+    {"user_index": 12, "base": 38.0, "unity": 10.0, "bonus": 4.0, "penalty": 0.0, "rank": 11, "league": "pro", "change": 0},
+    {"user_index": 13, "base": 34.0, "unity": 10.0, "bonus": 3.0, "penalty": 0.0, "rank": 12, "league": "pro", "change": 0},
+    {"user_index": 14, "base": 28.0, "unity": 7.0, "bonus": 2.0, "penalty": 0.0, "rank": 13, "league": "pro", "change": 0},
+    {"user_index": 15, "base": 26.0, "unity": 7.0, "bonus": 2.0, "penalty": 0.0, "rank": 14, "league": "pro", "change": 0},
+    {"user_index": 16, "base": 24.0, "unity": 6.0, "bonus": 1.0, "penalty": 0.0, "rank": 15, "league": "newbie", "change": 0},
 ]
 
 RATING_LOGS_DATA = [
@@ -310,9 +326,9 @@ RATING_LOGS_DATA = [
 ]
 
 TEAM_RATINGS_DATA = [
-    {"team_index": 0, "average_krk": 65.0, "member_count": 3, "rank": 1, "change": 0},
-    {"team_index": 1, "average_krk": 56.0, "member_count": 3, "rank": 2, "change": 0},
-    {"team_index": 2, "average_krk": 45.0, "member_count": 2, "rank": 3, "change": 1},
+    {"team_index": 0, "average_krk": 0.0, "member_count": 5, "rank": 1, "change": 0},
+    {"team_index": 1, "average_krk": 0.0, "member_count": 5, "rank": 2, "change": 0},
+    {"team_index": 2, "average_krk": 0.0, "member_count": 5, "rank": 3, "change": 1},
 ]
 
 TEAM_RATING_LOGS_DATA = [
@@ -340,10 +356,7 @@ TEAM_ACTIVITY_LOGS_DATA = [
 ]
 
 JOIN_REQUESTS_DATA = [
-    {"user_index": 8, "team_index": 0, "status": "pending", "days_ago": 2},
-    {"user_index": 9, "team_index": 1, "status": "pending", "days_ago": 4},
     {"user_index": 8, "team_index": 1, "status": "rejected", "days_ago": 12},
-    {"user_index": 9, "team_index": 2, "status": "approved", "days_ago": 15},
 ]
 
 INVITE_LINKS_DATA = [
@@ -555,6 +568,12 @@ async def create_team_ratings(session, teams):
     return created
 
 
+async def recalculate_all_team_ratings(session, teams):
+    service = TeamRatingService(session)
+    for team in teams:
+        await service.recalculate_team_rating(team.id)
+
+
 async def create_team_rating_logs(session, team_ratings, teams):
     for trl in TEAM_RATING_LOGS_DATA:
         tr = team_ratings[trl["team_index"]]
@@ -731,7 +750,7 @@ async def print_summary(session):
     print("\n  💡 Данные для входа:")
     print("     Админ:     admin / admin123")
     print("     Препод:    teacher_ip / teacher123")
-    print("     Студенты:  smirnov_ap / pass201 (и другие pass202–pass210)")
+    print("     Студенты:  smirnov_ap / pass201 (и другие pass202–pass215)")
     print()
 
 
@@ -759,6 +778,7 @@ async def main():
             print("⭐ Рейтинги пользователей..."); user_ratings = await create_user_ratings(session, users)
             print("📈 Логи рейтингов..."); await create_rating_logs(session, user_ratings)
             print("⭐ Рейтинги команд..."); team_ratings = await create_team_ratings(session, teams)
+            print("🔄 Пересчёт командного КРК..."); await recalculate_all_team_ratings(session, teams)
             print("📈 Логи командных рейтингов..."); await create_team_rating_logs(session, team_ratings, teams)
             print("🔥 Активности..."); await create_activities(session, users, teams)
             print("📈 Логи активности..."); await create_team_activity_logs(session, teams)

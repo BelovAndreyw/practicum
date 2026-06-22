@@ -48,9 +48,11 @@ export const rescueApi = {
       await http.post(`/help/${id}/respond`, { message: 'Готовы помочь' });
     } else if (status === 'confirmed') {
       const detail = await http.get<BackendHelpDetail>(`/help/${id}`);
-      const pending = detail.responses.find((r) => r.status === 'pending');
-      if (!pending) throw new Error('Нет отклика для подтверждения');
-      await http.post(`/help/${id}/accept/${pending.id}`);
+      const response = detail.responses.find(
+        (r) => r.status === 'pending' || r.status === 'accepted',
+      );
+      if (!response) throw new Error('Нет отклика для подтверждения');
+      await http.post(`/help/${id}/accept/${response.id}`);
     } else if (status === 'rejected') {
       await http.post(`/help/${id}/cancel`);
     }

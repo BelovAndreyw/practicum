@@ -31,6 +31,7 @@ interface BackendHelpDetail extends BackendHelpRequest {
 function mapHelpStatusToRescue(status: string, responsesCount = 0): RescueStatus {
   if (status === 'fulfilled') return 'confirmed';
   if (status === 'cancelled') return 'rejected';
+  if (status === 'in_progress') return 'accepted';
   if (status === 'open' && responsesCount > 0) return 'accepted';
   return 'pending';
 }

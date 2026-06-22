@@ -4,6 +4,7 @@ import { activityApi, challengesApi, eventsApi, teamsApi } from '@/api';
 import type { ActivityEvent, CalendarEvent, Challenge, KrkBreakdown, Team } from '@/types';
 import { Avatar, Badge, Button, Card, Empty, Input, PageHeader, Spinner } from '@/components/ui';
 import styles from './TeamPage.module.css';
+import { isPastEvent } from '@/utils/dates';
 
 const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
@@ -372,12 +373,14 @@ export function TeamPage() {
                       <div className={styles.dayEventList}>
                         {dayEvents.slice(0, 2).map((item) => {
                           const eventDate = new Date(item.date);
+                          const past = isPastEvent(item.date);
                           return (
                             <div
                               key={item.id}
                               className={[
                                 styles.dayEvent,
                                 item.format === 'online' ? styles.dayEventOnline : styles.dayEventOffline,
+                                past ? styles.dayEventPast : '',
                               ].join(' ')}
                               title={`${eventDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · ${item.title}`}
                             >

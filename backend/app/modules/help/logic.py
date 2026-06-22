@@ -104,7 +104,7 @@ async def accept_help_logic(
     if not request:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
     await _ensure_member_of_team(request.requesting_team_id, user_id, db)
-    if request.status != "open":
+    if request.status not in ("open", "in_progress"):
         raise HTTPException(status_code=400, detail="Заявка уже закрыта")
 
     response = await db.get(HelpResponse, response_id)
