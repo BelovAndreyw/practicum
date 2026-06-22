@@ -17,8 +17,15 @@
   • Активности + логи команд
   • Заявки на вступление + пригласительные ссылки
 
-Запуск с хоста (pilot compose пробрасывает Postgres на 127.0.0.1:5433):
+Запуск с хоста (Postgres должен быть проброшен на localhost):
   python scripts/seed_all.py
+
+  dev:   postgres на 127.0.0.1:5432  (infra/docker-compose.dev.yml)
+  pilot: postgres на 127.0.0.1:5433  (задайте SEED_POSTGRES_PORT=5433)
+
+  Если с Windows не подключается к порту Postgres — запускайте через Docker:
+  .\\scripts\\seed_dev.ps1
+  bash scripts/seed_dev.sh
 ================================================================================
 """
 import asyncio
@@ -44,22 +51,22 @@ for _candidate in (_here / "backend", _repo_root / "backend", _here, _repo_root)
 
 
 def _load_env_file() -> None:
-    """Загружает .env.pilot / .env в os.environ (если переменные ещё не заданы)."""
+    """Загружает .env.pilot и .env; значения из .env перекрывают pilot."""
     import os
 
     for name in (".env.pilot", ".env"):
         env_path = _repo_root / name
         if not env_path.exists():
             continue
+        override = name == ".env"
         for raw_line in env_path.read_text(encoding="utf-8").splitlines():
             line = raw_line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
             key, _, value = line.partition("=")
             key, value = key.strip(), value.strip().strip('"').strip("'")
-            if key and key not in os.environ:
+            if key and (override or key not in os.environ):
                 os.environ[key] = value
-        break
 
 
 def _database_url_for_host() -> str | None:
@@ -86,8 +93,8 @@ def _database_url_for_host() -> str | None:
     parsed = urlparse(url)
     if parsed.hostname == "postgres":
         host = os.environ.get("SEED_POSTGRES_HOST", "127.0.0.1")
-        # Внутри compose Postgres слушает 5432, с хоста — проброс на 5433 (см. docker-compose.pilot.yml)
-        port = int(os.environ.get("SEED_POSTGRES_PORT", "5433"))
+        # dev compose: 5432; pilot compose: 127.0.0.1:5433 (см. docker-compose.pilot.yml)
+        port = int(os.environ.get("SEED_POSTGRES_PORT", os.environ.get("POSTGRES_PORT", "5432")))
         netloc = f"{parsed.username}:{parsed.password}@{host}:{port}"
         url = urlunparse(parsed._replace(netloc=netloc))
         print(f"[seed] DB host from machine: postgres:5432 -> {host}:{port}")
@@ -476,20 +483,40 @@ async def create_teams(session, users):
     created = []
     for td in TEAMS_DATA:
         result = await session.execute(select(Team).where(Team.name == td["name"]))
-        if result.scalar_one_or_none():
-            team = (await session.execute(select(Team).where(Team.name == td["name"]))).scalar_one()
-            created.append(team)
-            continue
+        team = result.scalar_one_or_none()
         captain = users[td["captain_index"]]
-        team = Team(name=td["name"], description=td["description"], captain_id=captain.id, rating=td["rating"])
-        session.add(team); await session.flush()
+        if not team:
+            team = Team(name=td["name"], description=td["description"], captain_id=captain.id, rating=td["rating"])
+            session.add(team)
+            await session.flush()
+        else:
+            team.description = td["description"]
+            team.captain_id = captain.id
+            team.rating = td["rating"]
+
         created.append(team)
+        expected_user_ids = {users[idx].id for idx in td["member_indices"]}
+
+        result = await session.execute(select(TeamMember).where(TeamMember.team_id == team.id))
+        current_members = result.scalars().all()
+        current_user_ids = {m.user_id for m in current_members}
+
         for idx in td["member_indices"]:
             mu = users[idx]
-            existing = await session.execute(select(TeamMember).where(TeamMember.user_id == mu.id))
-            if existing.scalar_one_or_none():
+            if mu.id in current_user_ids:
                 continue
+            other_team = await session.execute(
+                select(TeamMember).where(TeamMember.user_id == mu.id, TeamMember.team_id != team.id)
+            )
+            for membership in other_team.scalars().all():
+                await session.delete(membership)
             session.add(TeamMember(user_id=mu.id, team_id=team.id))
+
+        for membership in current_members:
+            if membership.user_id not in expected_user_ids:
+                await session.delete(membership)
+
+    await session.flush()
     return created
 
 
@@ -918,11 +945,13 @@ async def main():
     except OSError as exc:
         print(
             "\n❌ Не удалось подключиться к PostgreSQL.\n"
-            "   Скрипт запущен с хоста, а БД доступна только внутри Docker.\n"
-            "   1) Пересоздайте postgres с пробросом порта:\n"
-            "      docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot up -d postgres\n"
-            "   2) Postgres проброшен на 127.0.0.1:5433 (или задайте SEED_POSTGRES_PORT)\n"
-            "   3) Проверьте, что в .env.pilot верные POSTGRES_* / DATABASE_URL\n"
+            "   Скрипт запущен с хоста — нужен проброс порта Postgres из Docker.\n"
+            "   dev:   docker compose -f infra/docker-compose.dev.yml --env-file .env up -d postgres\n"
+            "          подключение: 127.0.0.1:5432 (по умолчанию)\n"
+            "   pilot: SEED_POSTGRES_PORT=5433 python scripts/seed_all.py\n"
+            "   Windows + Docker: надёжный вариант — запуск внутри контейнера:\n"
+            "          .\\scripts\\seed_dev.ps1\n"
+            "   Проверьте POSTGRES_* / DATABASE_URL в .env\n"
             f"   Ошибка: {exc}\n"
         )
         raise SystemExit(1) from exc

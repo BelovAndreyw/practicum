@@ -56,7 +56,7 @@ export function LoginPage() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="ivanov_test"
+            placeholder="smirnov_ap"
             autoComplete="username"
             required
           />

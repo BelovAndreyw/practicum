@@ -16,7 +16,7 @@ const STATUS_VAR: Record<string, 'default' | 'accent' | 'warning' | 'success' | 
 };
 
 export function RescuePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [rescues, setRescues] = useState<RescueRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -46,6 +46,7 @@ export function RescuePage() {
     try {
       const r = await rescueApi.updateStatus(id, 'confirmed');
       setRescues((prev) => prev.map((x) => x.id === id ? r : x));
+      await refreshUser();
     } catch (event) {
       alert(event instanceof Error ? event.message : 'Не удалось подтвердить помощь');
     } finally {

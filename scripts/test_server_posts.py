@@ -38,7 +38,7 @@ def record(name: str, status: int, body: str, note: str = ""):
 def main():
     print(f"Testing POST endpoints at {BASE}\n")
 
-    status, body = call("POST", "/auth/login", json_body={"username": "ivanov_test", "password": "test123"})
+    status, body = call("POST", "/auth/login", json_body={"username": "smirnov_ap", "password": "pass201"})
     record("POST /auth/login", status, body)
     if status != 200:
         print("\nLogin failed, aborting.")

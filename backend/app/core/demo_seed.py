@@ -9,15 +9,6 @@ from app.models.user import Student, User, UserRole
 
 LEGACY_DEMO_USERS = [
     {
-        "student_id": 123,
-        "surname": "Иванов",
-        "name": "Иван",
-        "patronymic": "Иванович",
-        "username": "ivanov_test",
-        "password": "test123",
-        "role": UserRole.CAPTAIN.value,
-    },
-    {
         "student_id": 124,
         "surname": "Петров",
         "name": "Пётр",

@@ -10,8 +10,10 @@ from app.modules.help.logic import (
     accept_help_logic,
     cancel_help_request_logic,
     get_help_requests_logic,
-    get_help_request_detail_logic
+    get_help_request_detail_logic,
+    RESCUE_BONUS_POINTS,
 )
+from app.modules.challenges.logic import CHALLENGE_KRK_DIVISOR
 from app.modules.help.schemas import (
     HelpRequestCreate,
     HelpResponseCreate,
@@ -152,7 +154,13 @@ async def accept_help(
 ):
     """Принять помощь — начислить баллы"""
     request = await accept_help_logic(request_id, response_id, current_user.id, db)
-    return {"message": "Помощь принята, +0.5 к рейтингу обеих команд"}
+    krk_gain = round(RESCUE_BONUS_POINTS / CHALLENGE_KRK_DIVISOR, 2)
+    return {
+        "message": (
+            f"Помощь принята: +{krk_gain} КРК каждому участнику "
+            f"обеих команд (бонус {RESCUE_BONUS_POINTS} очков)"
+        ),
+    }
 
 
 @router.post("/{request_id}/cancel")

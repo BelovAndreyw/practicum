@@ -15,7 +15,7 @@ const STATUS_VAR: Record<string, 'default' | 'accent' | 'warning' | 'success' | 
 };
 
 export function ToolsPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [tab, setTab] = useState<Tab>('checkin');
 
   // Check-in state
@@ -97,6 +97,7 @@ export function ToolsPage() {
     try {
       const r = await rescueApi.updateStatus(id, 'confirmed');
       setRescues((prev) => prev.map((x) => (x.id === id ? r : x)));
+      await refreshUser();
     } catch (event) {
       alert(event instanceof Error ? event.message : 'Не удалось подтвердить помощь');
     } finally {

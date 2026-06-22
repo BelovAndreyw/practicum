@@ -6,10 +6,12 @@ from datetime import datetime
 from app.models.reports import HelpRequest, HelpResponse
 from app.models.team import Team, TeamMember
 from app.models.activity import Activity, TeamActivityLog
+from app.modules.challenges.logic import CHALLENGE_KRK_DIVISOR
+from app.modules.rating.logic import RatingService
+from app.modules.rating.team_logic import TeamRatingService
 
 
-HELP_BONUS = 0.5
-MAX_RATING = 5.0
+RESCUE_BONUS_POINTS = 40
 
 
 async def _ensure_member_of_team(team_id: int, user_id: int, db: AsyncSession) -> None:
@@ -93,6 +95,36 @@ async def respond_to_help_logic(
     return response
 
 
+async def _apply_rescue_krk_bonus(
+    team_id: int,
+    request_title: str,
+    db: AsyncSession,
+) -> float:
+    """Начисляет бонус КРК всем участникам команды за спасение."""
+    members_result = await db.execute(
+        select(TeamMember).where(TeamMember.team_id == team_id)
+    )
+    members = members_result.scalars().all()
+    if not members:
+        return 0.0
+
+    krk_gain = round(RESCUE_BONUS_POINTS / CHALLENGE_KRK_DIVISOR, 2)
+    bonus_delta = round(krk_gain / RatingService.BONUS_WEIGHT, 2)
+    rating_service = RatingService(db)
+    for member in members:
+        await rating_service.apply_krk_delta(
+            user_id=member.user_id,
+            krk_delta=krk_gain,
+            bonus_delta=bonus_delta,
+            event_type="rescue",
+            description=f'Спасение: «{request_title}» (+{RESCUE_BONUS_POINTS} очков)',
+            team_id=team_id,
+        )
+
+    await TeamRatingService(db).recalculate_team_rating(team_id)
+    return krk_gain
+
+
 async def accept_help_logic(
     request_id: int,
     response_id: int,
@@ -114,39 +146,46 @@ async def accept_help_logic(
     requesting_team = await db.get(Team, request.requesting_team_id)
     responding_team = await db.get(Team, response.responding_team_id)
 
-    old_req_rating = requesting_team.rating
-    old_res_rating = responding_team.rating
-
-    requesting_team.rating = min(MAX_RATING, requesting_team.rating + HELP_BONUS)
-    responding_team.rating = min(MAX_RATING, responding_team.rating + HELP_BONUS)
-
     request.status = "fulfilled"
     request.fulfilled_by_team_id = responding_team.id
     request.fulfilled_at = datetime.utcnow()
 
     response.status = "accepted"
 
-    for team, old_rating, new_rating in [
-        (requesting_team, old_req_rating, requesting_team.rating),
-        (responding_team, old_res_rating, responding_team.rating)
-    ]:
-        rating_log = TeamActivityLog(
-            team_id=team.id,
-            event_type="help_fulfilled",
-            old_rating=old_rating,
-            new_rating=new_rating,
-            description=f"Помощь команде: {request.title}"
-        )
-        db.add(rating_log)
+    team_rating_service = TeamRatingService(db)
+    krk_gain = round(RESCUE_BONUS_POINTS / CHALLENGE_KRK_DIVISOR, 2)
 
-        activity = Activity(
+    for team in (requesting_team, responding_team):
+        team_rating = await team_rating_service.get_or_create_team_rating(team.id)
+        old_average = team_rating.average_krk
+
+        await _apply_rescue_krk_bonus(team.id, request.title, db)
+
+        team_rating = await team_rating_service.get_or_create_team_rating(team.id)
+        new_average = team_rating.average_krk
+
+        db.add(TeamActivityLog(
             team_id=team.id,
-            event_type="achievement",
-            title="Помощь оказана",
-            description=f"Команда помогла другой команде, рейтинг: {old_rating:.2f} → {new_rating:.2f}",
-            event_metadata={"help_request_id": request_id}
-        )
-        db.add(activity)
+            event_type="rescue_completed",
+            old_rating=old_average,
+            new_rating=new_average,
+            description=f"Спасение: {request.title} (+{krk_gain} КРК участникам)",
+        ))
+
+        db.add(Activity(
+            team_id=team.id,
+            event_type="rescue_completed",
+            title="Спасение завершено",
+            description=(
+                f"«{request.title}»: +{krk_gain} КРК каждому участнику, "
+                f"командный КРК {old_average:.2f} → {new_average:.2f}"
+            ),
+            event_metadata={
+                "help_request_id": request_id,
+                "bonus_points": RESCUE_BONUS_POINTS,
+                "krk_gain": krk_gain,
+            },
+        ))
 
     await db.commit()
     await db.refresh(request)
