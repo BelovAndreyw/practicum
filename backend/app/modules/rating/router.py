@@ -74,8 +74,10 @@ async def get_leaderboard(
         username = user.username if user else "Unknown"
 
         team_name = None
+        team_id_value = None
         membership = user.team_membership if user else None
         if membership:
+            team_id_value = membership.team_id
             team_result = await db.execute(
                 select(Team).where(Team.id == membership.team_id)
             )
@@ -89,7 +91,8 @@ async def get_leaderboard(
             global_rank=r.global_rank,
             league=r.league,
             rank_change=r.rank_change,
-            team_name=team_name
+            team_name=team_name,
+            team_id=team_id_value,
         ))
 
     higher_count_result = await db.execute(

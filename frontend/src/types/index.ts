@@ -16,6 +16,7 @@ export interface User {
   avatarUrl?: string;
   role: UserRole;
   teamId?: string;
+  teamName?: string;
   personalRating: number;
   league: League;
   krkBreakdown?: KrkBreakdown;

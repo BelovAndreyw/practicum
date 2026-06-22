@@ -7,6 +7,8 @@ from app.models.user import User, UserRole, Student
 from app.models.team import Team, TeamMember, TeamInviteLink, TeamJoinRequest
 from app.models.rating import UserRating
 from app.modules.rating.team_logic import TeamRatingService
+from app.modules.rating.logic import RatingService
+from app.modules.achievement.service import AchievementService
 from app.modules.team.schemas import TeamCreateRequest
 from datetime import datetime, timedelta
 import secrets
@@ -81,6 +83,57 @@ async def get_user_profile_logic(user: User, db: AsyncSession) -> dict:
         "role": user.role,
         "team_name": team_name,
         "team_id": team_id,
+    }
+
+
+async def get_public_user_profile_logic(user_id: int, db: AsyncSession) -> dict:
+    """Публичный профиль пользователя для просмотра другими участниками."""
+    user_result = await db.execute(
+        select(User)
+        .where(User.id == user_id)
+        .options(selectinload(User.student))
+    )
+    user = user_result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if user.student:
+        full_name = f"{user.student.surname} {user.student.name} {user.student.patronymic}".strip()
+    else:
+        full_name = "Unknown"
+
+    team_name = None
+    team_id = None
+    membership_result = await db.execute(
+        select(TeamMember).where(TeamMember.user_id == user.id)
+    )
+    membership = membership_result.scalar_one_or_none()
+    if membership and membership.team_id:
+        team = await db.get(Team, membership.team_id)
+        if team:
+            team_name = team.name
+            team_id = team.id
+
+    rating_service = RatingService(db)
+    rating = await rating_service.get_or_create_user_rating(user.id)
+
+    achievements = await AchievementService(db).get_user_achievements(user.id)
+
+    return {
+        "id": user.id,
+        "full_name": full_name,
+        "role": user.role,
+        "team_name": team_name,
+        "team_id": team_id,
+        "personal_rating": round(rating.total_krk, 2),
+        "league": rating.league,
+        "krk_breakdown": {
+            "base_score": rating.base_score,
+            "unity_score": rating.unity_score,
+            "bonus_score": rating.bonus_score,
+            "total_krk": rating.total_krk,
+        },
+        "achievements": achievements,
     }
 
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { teamsApi, ratingApi } from '@/api';
 import type { Team } from '@/types';
 import { Card, Badge, Avatar, PageHeader, Input, Spinner, Empty } from '@/components/ui';
@@ -62,7 +63,8 @@ export function TeamsListPage() {
         {filtered.map((t) => {
           const rank = ranking.get(t.id);
           return (
-            <Card key={t.id} padding="lg" hoverable className={styles.card}>
+            <Link key={t.id} to={`/teams/${t.id}`} className={styles.cardLink}>
+              <Card padding="lg" hoverable className={styles.card}>
               <div className={styles.cardTop}>
                 <div className={styles.rankBadge}>{rank ? rankMedal(rank) : '—'}</div>
                 <Badge variant={LEAGUE_VARIANT[t.league] ?? 'accent'}>{t.league}</Badge>
@@ -87,6 +89,7 @@ export function TeamsListPage() {
                 </span>
               </div>
             </Card>
+            </Link>
           );
         })}
       </div>

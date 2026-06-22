@@ -1,4 +1,17 @@
-﻿.layout {
+﻿.center { display: flex; justify-content: center; padding: 60px; }
+
+.teamLink {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 4px;
+  text-decoration: none;
+}
+
+.teamLink:hover {
+  text-decoration: underline;
+}
+
+.layout {
   display: grid;
   grid-template-columns: 310px 1fr;
   gap: 20px;

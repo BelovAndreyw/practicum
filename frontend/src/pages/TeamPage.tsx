@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
 import { activityApi, challengesApi, eventsApi, teamsApi } from '@/api';
 import type { ActivityEvent, CalendarEvent, Challenge, KrkBreakdown, Team } from '@/types';
@@ -255,20 +256,19 @@ export function TeamPage() {
           )}
         </Card>
 
+        {isCaptain && team.inviteCode && (
         <Card padding="lg">
           <span className="eyebrow">Приглашение в команду</span>
           <p className={styles.inviteHint}>Код действует 24 часа после обновления.</p>
 
           <div className={styles.inviteTop}>
             <div className={styles.inviteCode}>{team.inviteCode}</div>
-            {isCaptain && (
-              <Button size="sm" variant="secondary" onClick={handleRegenCode} loading={busy}>Обновить</Button>
-            )}
+            <Button size="sm" variant="secondary" onClick={handleRegenCode} loading={busy}>Обновить</Button>
           </div>
 
           {inviteExpiresLabel && <p className={styles.inviteExpires}>Действует до: {inviteExpiresLabel}</p>}
-          {!isCaptain && <p className={styles.inviteShareRow}>Только капитан может обновить код приглашения.</p>}
         </Card>
+        )}
 
         <Card padding="lg" className={styles.challengesCard}>
           <div className={styles.panelHead}>
@@ -307,11 +307,13 @@ export function TeamPage() {
           <div className={styles.membersGrid}>
             {team.members.map((member) => (
               <div key={member.userId} className={styles.member}>
-                <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatarUrl} size="lg" />
-                <p className={styles.memberName}>{member.firstName} {member.lastName}</p>
-                <p className={styles.memberRole}>{member.role === 'captain' ? '★ Капитан' : 'Участник'}</p>
-                <div className={styles.memberRatingBadge}>{member.personalRating.toFixed(2)}</div>
-                <span className={styles.memberRatingLabel}>КРК</span>
+                <Link to={`/users/${member.userId}`} className={styles.memberLink}>
+                  <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatarUrl} size="lg" />
+                  <p className={styles.memberName}>{member.firstName} {member.lastName}</p>
+                  <p className={styles.memberRole}>{member.role === 'captain' ? '★ Капитан' : 'Участник'}</p>
+                  <div className={styles.memberRatingBadge}>{member.personalRating.toFixed(2)}</div>
+                  <span className={styles.memberRatingLabel}>КРК</span>
+                </Link>
               </div>
             ))}
           </div>

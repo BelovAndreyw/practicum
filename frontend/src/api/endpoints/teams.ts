@@ -45,20 +45,6 @@ export const teamsApi = {
       // рейтинг недоступен — используем average_krk из деталей команды
     }
 
-    // Фолбэк, если invite_code не пришёл в деталях команды
-    if (!team.inviteCode) {
-      try {
-        const invites = await http.get<{ links: BackendInviteLink[] }>(`/team/${id}/invites`);
-        const active = invites.links[0];
-        if (active) {
-          team.inviteCode = active.token;
-          if (active.expires_at) team.inviteCodeExpiresAt = active.expires_at;
-        }
-      } catch {
-        // нет прав или ссылок — код останется пустым
-      }
-    }
-
     return team;
   },
 

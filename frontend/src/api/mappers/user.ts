@@ -70,6 +70,7 @@ export function mapBackendUser(
   data: BackendUserResponse,
   extras?: {
     teamId?: string;
+    teamName?: string;
     personalRating?: number;
     league?: string;
     krkBreakdown?: KrkBreakdown;
@@ -82,9 +83,10 @@ export function mapBackendUser(
     lastName,
     middleName: middleName || undefined,
     email: data.username,
-    studentId: String(data.student_id),
+    studentId: data.student_id ? String(data.student_id) : undefined,
     role: mapBackendRole(data.role),
     teamId: extras?.teamId,
+    teamName: extras?.teamName,
     personalRating: extras?.personalRating ?? 0,
     league: extras?.league ?? '',
     krkBreakdown: extras?.krkBreakdown,

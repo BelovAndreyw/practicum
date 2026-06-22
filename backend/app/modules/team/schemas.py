@@ -1,6 +1,36 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
+
+
+class PublicKrkBreakdown(BaseModel):
+    """Публичная разбивка КРК пользователя"""
+    base_score: float
+    unity_score: float
+    bonus_score: float
+    total_krk: float
+
+
+class PublicAchievementResponse(BaseModel):
+    """Достижение в публичном профиле"""
+    id: str
+    title: str
+    description: str
+    icon: str
+    unlocked_at: datetime
+
+
+class PublicUserProfileResponse(BaseModel):
+    """Публичный профиль пользователя (без email и student_id)"""
+    id: int
+    full_name: str
+    role: str
+    team_name: Optional[str] = None
+    team_id: Optional[int] = None
+    personal_rating: float = 0.0
+    league: Optional[str] = None
+    krk_breakdown: Optional[PublicKrkBreakdown] = None
+    achievements: List[PublicAchievementResponse] = []
 
 
 class UserProfileResponse(BaseModel):

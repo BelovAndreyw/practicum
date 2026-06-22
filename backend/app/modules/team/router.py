@@ -14,6 +14,7 @@ from app.modules.team.logic import (
     get_team_requests_logic,
     process_join_request_logic,
     get_team_detail_logic,
+    get_public_user_profile_logic,
     update_team_logic,
     leave_team_logic,
     disband_team_logic,
@@ -23,6 +24,7 @@ from app.modules.team.logic import (
 )
 from app.modules.team.schemas import (
     UserProfileResponse,
+    PublicUserProfileResponse,
     ProfileUpdateRequest,
     TeamCreateRequest,
     TeamResponse,
@@ -65,6 +67,16 @@ async def update_profile(
         data.patronymic,
         db,
     )
+
+
+@router.get("/users/{user_id}", response_model=PublicUserProfileResponse)
+async def get_public_user_profile(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Публичный профиль пользователя (только просмотр)."""
+    return await get_public_user_profile_logic(user_id, db)
 
 
 @router.post("/create", response_model=TeamResponse)

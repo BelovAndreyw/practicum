@@ -54,6 +54,7 @@ class RankingItemResponse(BaseModel):
     league: str
     rank_change: int
     team_name: Optional[str] = None
+    team_id: Optional[int] = None
 
 
 class LeaderboardResponse(BaseModel):

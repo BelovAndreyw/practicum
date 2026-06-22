@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ratingApi } from '@/api';
 import type { TeamRatingEntry, UserRatingEntry } from '@/types';
 import { Avatar, Badge, Card, Empty, PageHeader, Spinner, Tabs } from '@/components/ui';
@@ -84,7 +85,9 @@ export function RatingPage() {
                       <td className={styles.placeCell}>
                         <Rank rank={entry.rank} />
                       </td>
-                      <td className={styles.teamName}>{entry.team.name}</td>
+                      <td className={styles.teamName}>
+                        <Link to={`/teams/${entry.team.id}`} className={styles.entityLink}>{entry.team.name}</Link>
+                      </td>
                       <td>
                         <Badge variant={LEAGUE_VARIANT[entry.team.league] ?? 'accent'}>{entry.team.league}</Badge>
                       </td>
@@ -153,10 +156,18 @@ export function RatingPage() {
                       <td>
                         <div className={styles.userCell}>
                           <Avatar name={`${entry.user.firstName} ${entry.user.lastName}`} src={entry.user.avatarUrl} size="sm" />
-                          <span>{entry.user.firstName} {entry.user.lastName}</span>
+                          <Link to={`/users/${entry.user.id}`} className={styles.entityLink}>
+                            {entry.user.firstName} {entry.user.lastName}
+                          </Link>
                         </div>
                       </td>
-                      <td className={styles.teamLabel}>{entry.teamName ?? '—'}</td>
+                      <td className={styles.teamLabel}>
+                        {entry.teamId ? (
+                          <Link to={`/teams/${entry.teamId}`} className={styles.entityLink}>{entry.teamName ?? '—'}</Link>
+                        ) : (
+                          entry.teamName ?? '—'
+                        )}
+                      </td>
                       <td>
                         <Badge variant={LEAGUE_VARIANT[entry.user.league] ?? 'accent'}>{entry.user.league}</Badge>
                       </td>
@@ -172,13 +183,15 @@ export function RatingPage() {
         {tab === 'top10' && (
           <div className={styles.topGrid}>
             {userRating.slice(0, 10).map((entry) => (
-              <Card key={entry.user.id} padding="sm" className={styles.topCard}>
-                <div className={styles.topRank}>{rankMedal(entry.rank) ?? entry.rank}</div>
-                <Avatar name={`${entry.user.firstName} ${entry.user.lastName}`} src={entry.user.avatarUrl} size="lg" />
-                <p className={styles.topName}>{entry.user.firstName}<br />{entry.user.lastName}</p>
-                <Badge variant={LEAGUE_VARIANT[entry.user.league] ?? 'accent'}>{entry.user.league}</Badge>
-                <p className={styles.topScore}>{entry.user.personalRating.toFixed(2)}</p>
-              </Card>
+              <Link key={entry.user.id} to={`/users/${entry.user.id}`} className={styles.topCardLink}>
+                <Card padding="sm" className={styles.topCard}>
+                  <div className={styles.topRank}>{rankMedal(entry.rank) ?? entry.rank}</div>
+                  <Avatar name={`${entry.user.firstName} ${entry.user.lastName}`} src={entry.user.avatarUrl} size="lg" />
+                  <p className={styles.topName}>{entry.user.firstName}<br />{entry.user.lastName}</p>
+                  <Badge variant={LEAGUE_VARIANT[entry.user.league] ?? 'accent'}>{entry.user.league}</Badge>
+                  <p className={styles.topScore}>{entry.user.personalRating.toFixed(2)}</p>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
@@ -201,7 +214,9 @@ export function RatingPage() {
                     teams.map((entry) => (
                       <div key={entry.team.id} className={styles.leagueTeam}>
                         <span className={styles.leaguePlace}>{entry.rank}</span>
-                        <span className={styles.teamName}>{entry.team.name}</span>
+                        <Link to={`/teams/${entry.team.id}`} className={[styles.teamName, styles.entityLink].join(' ')}>
+                          {entry.team.name}
+                        </Link>
                         <span className={styles.krkCell}>{entry.team.krk.toFixed(2)}</span>
                       </div>
                     ))

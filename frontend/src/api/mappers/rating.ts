@@ -21,6 +21,7 @@ interface BackendRankingItem {
   global_rank: number;
   league: string;
   team_name?: string | null;
+  team_id?: number | null;
 }
 
 interface BackendLeaderboard {
@@ -51,6 +52,7 @@ export function mapUserRatingList(data: BackendLeaderboard): UserRatingEntry[] {
       league: mapLeague(r.league),
     },
     teamName: r.team_name ?? undefined,
+    teamId: r.team_id != null ? String(r.team_id) : undefined,
   }));
 }
 

@@ -5,7 +5,9 @@ import { LoginPage }      from '@/features/auth/LoginPage';
 import { DashboardPage }  from '@/pages/DashboardPage';
 import { ProfilePage }    from '@/pages/ProfilePage';
 import { TeamPage }       from '@/pages/TeamPage';
+import { TeamDetailPage } from '@/pages/TeamDetailPage';
 import { TeamsListPage }  from '@/pages/TeamsListPage';
+import { UserProfilePage } from '@/pages/UserProfilePage';
 import { RatingPage }     from '@/pages/RatingPage';
 import { ChallengesPage } from '@/pages/ChallengesPage';
 import { EventsPage }     from '@/pages/EventsPage';
@@ -25,8 +27,10 @@ export const router = createBrowserRouter([
         children: [
           { path: '/',            element: <DashboardPage /> },
           { path: '/profile',     element: <ProfilePage /> },
+          { path: '/users/:userId', element: <UserProfilePage /> },
           { path: '/team',        element: <TeamPage /> },
           { path: '/teams',       element: <TeamsListPage /> },
+          { path: '/teams/:teamId', element: <TeamDetailPage /> },
           { path: '/rating',      element: <RatingPage /> },
           { path: '/challenges',  element: <ChallengesPage /> },
           { path: '/events',      element: <EventsPage /> },

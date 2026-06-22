@@ -1,0 +1,45 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.membersCard {
+  grid-column: span 2;
+}
+
+.manageLink {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.manageLink:hover {
+  text-decoration: underline;
+}
+
+.memberLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.memberLink:hover .memberName,
+.memberLink:hover p:first-of-type {
+  color: var(--accent-strong);
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .membersCard {
+    grid-column: span 1;
+  }
+}

@@ -8,6 +8,16 @@
 
 .card { display: flex; flex-direction: column; }
 
+.cardLink {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+.cardLink:hover .teamName {
+  color: var(--accent-strong);
+}
+
 .cardTop {
   display: flex;
   align-items: center;

@@ -174,6 +174,10 @@ async def test_join_by_link(client):
     assert detail.status_code == 200
     assert detail.json()["invite_code"] == token
 
+    student_detail = await client.get(f"/team/{team_id}", headers={"Authorization": f"Bearer {student_token}"})
+    assert student_detail.status_code == 200
+    assert student_detail.json()["invite_code"] is None
+
     lowercase_join = await client.post("/team/join-by-link", json={
         "token": token.lower()
     }, headers={"Authorization": f"Bearer {student_token}"})
