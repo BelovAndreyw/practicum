@@ -475,6 +475,9 @@ export const MOCK_NEWS: NewsItem[] = [
     authorId: 'org1',
     authorName: 'Виктория Романова',
     publishedAt: '2026-04-02T09:00:00Z',
+    images: [
+      { id: 'img1', url: 'https://picsum.photos/seed/practicum-n1/800/400', filename: 'start.jpg' },
+    ],
   },
   {
     id: 'n2',
@@ -483,6 +486,7 @@ export const MOCK_NEWS: NewsItem[] = [
     authorId: 'org1',
     authorName: 'Виктория Романова',
     publishedAt: '2026-04-14T11:00:00Z',
+    images: [],
   },
 ];
 

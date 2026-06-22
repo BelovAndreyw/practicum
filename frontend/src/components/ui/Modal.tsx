@@ -1,38 +1,72 @@
-import { ReactNode, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styles from './Modal.module.css';
 
-interface Props {
-  title: string;
-  open: boolean;
+interface ModalProps {
+  isOpen?: boolean;
+  open?: boolean;
   onClose: () => void;
-  children: ReactNode;
-  footer?: ReactNode;
+  title?: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  showCloseButton?: boolean;
 }
 
-export function Modal({ title, open, onClose, children, footer }: Props) {
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  size = 'md',
+  showCloseButton = true,
+}) => {
+  const visible = isOpen ?? open ?? false;
+  const overlayRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (visible) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
     return () => {
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [visible, onClose]);
 
-  if (!open) return null;
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === overlayRef.current) onClose();
+  };
+
+  if (!visible) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.dialog} role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>{title}</h2>
-          <button className={styles.close} onClick={onClose} aria-label="Закрыть">✕</button>
-        </div>
-        <div className={styles.body}>{children}</div>
+    <div 
+      ref={overlayRef}
+      className={styles.overlay}
+      onClick={handleOverlayClick}
+    >
+      <div className={`${styles.modal} ${styles[size]}`}>
+        {(title || showCloseButton) && (
+          <div className={styles.header}>
+            {title && <h3 className={styles.title}>{title}</h3>}
+            {showCloseButton && (
+              <button className={styles.closeButton} onClick={onClose} aria-label="Закрыть">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+        <div className={styles.content}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
       </div>
     </div>
   );
-}
+};

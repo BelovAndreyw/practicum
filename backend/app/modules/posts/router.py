@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from app.core.database import get_db
@@ -21,6 +25,7 @@ from app.modules.posts.schemas import (
     PostImageResponse,
 )
 from app.models.user import User
+from app.models.post import PostImage
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
@@ -94,6 +99,31 @@ async def get_posts(
     """Получение списка всех постов с пагинацией"""
     posts, total = await get_all_posts_logic(db, limit=limit, offset=offset)
     return PostListResponse(posts=[build_post_response(p) for p in posts], total=total)
+
+
+@router.get("/{post_id}/images/{image_id}")
+async def get_post_image(
+        post_id: int,
+        image_id: int,
+        db: AsyncSession = Depends(get_db),
+):
+    """Получение изображения поста"""
+    result = await db.execute(
+        select(PostImage).where(PostImage.id == image_id, PostImage.post_id == post_id)
+    )
+    image = result.scalar_one_or_none()
+    if not image:
+        raise HTTPException(status_code=404, detail="Изображение не найдено")
+
+    file_path = Path(image.file_path)
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Файл не найден на диске")
+
+    return FileResponse(
+        path=file_path,
+        media_type=image.content_type or "image/jpeg",
+        filename=image.filename,
+    )
 
 
 @router.get("/{post_id}", response_model=PostResponse)

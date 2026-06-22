@@ -3,6 +3,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { activityApi, knowledgeApi, newsApi } from '@/api';
 import type { ActivityEvent, KnowledgeRequest, KnowledgeRequestType, NewsItem } from '@/types';
 import { Badge, Button, Card, Empty, Input, Modal, PageHeader, Spinner, Textarea } from '@/components/ui';
+import { NewsCard } from '@/components/news/NewsCard';
 import styles from './DashboardPage.module.css';
 
 const EVENT_ICON: Record<string, string> = {
@@ -100,15 +101,7 @@ export function DashboardPage() {
 
             <div className={styles.newsList}>
               {news.map((item) => (
-                <article key={item.id} className={styles.newsItem}>
-                  <p className={styles.newsMeta}>
-                    {new Date(item.publishedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    {' · '}
-                    {item.authorName}
-                  </p>
-                  <h3 className={styles.newsTitle}>{item.title}</h3>
-                  <p className={styles.newsBody}>{item.body}</p>
-                </article>
+                <NewsCard key={item.id} item={item} />
               ))}
             </div>
           </Card>

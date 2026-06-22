@@ -37,7 +37,8 @@ export function AdminPage() {
   const [openingFileKey, setOpeningFileKey] = useState<string | null>(null);
 
   const [showNewsForm, setShowNewsForm] = useState(false);
-  const [newsForm, setNewsForm] = useState({ title: '', body: '' });
+  const [newsForm, setNewsForm] = useState({ title: '', body: '', files: [] as File[] });
+  const [newsPreviews, setNewsPreviews] = useState<string[]>([]);
   const [savingNews, setSavingNews] = useState(false);
 
   const [teams, setTeams] = useState<Team[]>([]);
@@ -126,11 +127,31 @@ export function AdminPage() {
   const handleCreateNews = async () => {
     setSavingNews(true);
     try {
-      const n = await newsApi.create(newsForm);
+      const n = await newsApi.create({
+        title: newsForm.title,
+        body: newsForm.body,
+        files: newsForm.files,
+      });
       setNews((prev) => [n, ...prev]);
       setShowNewsForm(false);
-      setNewsForm({ title: '', body: '' });
+      newsPreviews.forEach((url) => URL.revokeObjectURL(url));
+      setNewsForm({ title: '', body: '', files: [] });
+      setNewsPreviews([]);
     } finally { setSavingNews(false); }
+  };
+
+  const handleNewsFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    newsPreviews.forEach((url) => URL.revokeObjectURL(url));
+    setNewsForm((prev) => ({ ...prev, files }));
+    setNewsPreviews(files.map((file) => URL.createObjectURL(file)));
+  };
+
+  const handleCloseNewsForm = () => {
+    setShowNewsForm(false);
+    newsPreviews.forEach((url) => URL.revokeObjectURL(url));
+    setNewsForm({ title: '', body: '', files: [] });
+    setNewsPreviews([]);
   };
 
   const handleOpenVoteRound = async () => {
@@ -357,9 +378,16 @@ export function AdminPage() {
             <div className={styles.newsList}>
               {news.map((n) => (
                 <div key={n.id} className={styles.newsItem}>
-                  <p className={styles.newsDate}>{new Date(n.publishedAt).toLocaleDateString('ru-RU')}</p>
-                  <p className={styles.newsTitle}>{n.title}</p>
-                  <p className={styles.newsBody}>{n.body}</p>
+                  <div className={styles.newsItemInner}>
+                    {n.images[0] && (
+                      <img className={styles.newsThumb} src={n.images[0].url} alt="" />
+                    )}
+                    <div>
+                      <p className={styles.newsDate}>{new Date(n.publishedAt).toLocaleDateString('ru-RU')}</p>
+                      <p className={styles.newsTitle}>{n.title}</p>
+                      <p className={styles.newsBody}>{n.body}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -389,10 +417,10 @@ export function AdminPage() {
       <Modal
         title="Опубликовать новость"
         open={showNewsForm}
-        onClose={() => setShowNewsForm(false)}
+        onClose={handleCloseNewsForm}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowNewsForm(false)}>Отмена</Button>
+            <Button variant="secondary" onClick={handleCloseNewsForm}>Отмена</Button>
             <Button onClick={handleCreateNews} loading={savingNews} disabled={!newsForm.title || !newsForm.body}>Опубликовать</Button>
           </>
         }
@@ -400,6 +428,23 @@ export function AdminPage() {
         <div className={styles.formGrid}>
           <Input label="Заголовок" value={newsForm.title} onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })} />
           <Textarea label="Текст новости" value={newsForm.body} onChange={(e) => setNewsForm({ ...newsForm, body: e.target.value })} style={{ minHeight: 140 }} />
+          <div>
+            <label className={styles.fileLabel}>Изображения (необязательно)</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className={styles.fileInput}
+              onChange={handleNewsFilesChange}
+            />
+            {newsPreviews.length > 0 && (
+              <div className={styles.filePreview}>
+                {newsPreviews.map((url, index) => (
+                  <img key={url} src={url} alt={newsForm.files[index]?.name ?? ''} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </Modal>
     </div>
