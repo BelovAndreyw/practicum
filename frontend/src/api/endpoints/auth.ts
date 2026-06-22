@@ -34,7 +34,7 @@ async function enrichUserFromProfile(base: User): Promise<User> {
 
     return mapBackendUser(profile, {
       teamId: profile.team_id != null ? String(profile.team_id) : undefined,
-      personalRating: rating?.total_krk ?? base.personalRating,
+      personalRating: Math.round((rating?.total_krk ?? base.personalRating) * 100) / 100,
       league: rating?.league ? mapLeague(rating.league) : base.league,
     });
   } catch {

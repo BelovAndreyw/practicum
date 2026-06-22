@@ -241,7 +241,7 @@ export function TeamPage() {
       <div className={styles.grid}>
         <Card padding="lg" className={styles.krkCard}>
           <span className="eyebrow">Командный рейтинг</span>
-          <div className={styles.krkTotal}>{team.krk.toFixed(1)}</div>
+          <div className={styles.krkTotal}>{team.krk.toFixed(2)}</div>
           <Badge variant={team.league === 'Легенда' ? 'warning' : team.league === 'Профи' ? 'violet' : 'accent'}>
             Лига: {team.league}
           </Badge>
@@ -310,7 +310,7 @@ export function TeamPage() {
                 <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatarUrl} size="lg" />
                 <p className={styles.memberName}>{member.firstName} {member.lastName}</p>
                 <p className={styles.memberRole}>{member.role === 'captain' ? '★ Капитан' : 'Участник'}</p>
-                <div className={styles.memberRatingBadge}>{member.personalRating.toFixed(1)}</div>
+                <div className={styles.memberRatingBadge}>{member.personalRating.toFixed(2)}</div>
                 <span className={styles.memberRatingLabel}>КРК</span>
               </div>
             ))}
@@ -484,7 +484,7 @@ function KrkRow({ label, value }: { label: string; value: number }) {
       <div className={styles.krkRowBar}>
         <div className={styles.krkRowFill} style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }} />
       </div>
-      <span className={styles.krkRowVal}>{value.toFixed(1)} / 100</span>
+      <span className={styles.krkRowVal}>{value.toFixed(2)} / 100</span>
     </div>
   );
 }

@@ -7,10 +7,12 @@ from app.models.team import Team
 from sqlalchemy import select
 from app.modules.challenges.logic import (
     get_challenges_logic,
+    get_completed_team_ids_by_challenge,
     create_challenge_logic,
     enroll_challenge_logic,
     complete_challenge_logic,
     get_team_challenges_logic,
+    get_pending_report_challenge_ids,
     delete_challenge_logic
 )
 from app.modules.challenges.schemas import (
@@ -32,6 +34,9 @@ async def list_challenges(
 ):
     """Список челленджей"""
     challenges, total = await get_challenges_logic(status, limit, offset, db)
+    completed_map = await get_completed_team_ids_by_challenge(
+        [c.id for c in challenges], db
+    )
     return {
         "challenges": [
             ChallengeResponse(
@@ -41,7 +46,8 @@ async def list_challenges(
                 reward_points=c.reward_points,
                 deadline=c.deadline,
                 created_at=c.created_at,
-                is_active=c.is_active
+                is_active=c.is_active,
+                completed_team_ids=completed_map.get(c.id, []),
             )
             for c in challenges
         ],
@@ -70,7 +76,8 @@ async def create_challenge(
         reward_points=challenge.reward_points,
         deadline=challenge.deadline,
         created_at=challenge.created_at,
-        is_active=challenge.is_active
+        is_active=challenge.is_active,
+        completed_team_ids=[],
     )
 
 
@@ -127,6 +134,7 @@ async def get_my_challenges(
         return {"challenges": []}
 
     team_challenges = await get_team_challenges_logic(membership.team_id, db)
+    pending_challenge_ids = await get_pending_report_challenge_ids(membership.team_id, db)
     return {
         "challenges": [
             {
@@ -138,12 +146,14 @@ async def get_my_challenges(
                     reward_points=tc.challenge.reward_points,
                     deadline=tc.challenge.deadline,
                     created_at=tc.challenge.created_at,
-                    is_active=tc.challenge.is_active
+                    is_active=tc.challenge.is_active,
+                    completed_team_ids=[],
                 ),
                 "team_id": tc.team_id,
                 "status": tc.status,
                 "enrolled_at": tc.enrolled_at,
-                "completed_at": tc.completed_at
+                "completed_at": tc.completed_at,
+                "has_pending_report": tc.challenge_id in pending_challenge_ids,
             }
             for tc in team_challenges
         ]

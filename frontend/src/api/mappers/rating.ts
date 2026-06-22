@@ -35,23 +35,25 @@ export function mapTeamRatingList(data: BackendTeamLeaderboard): TeamRatingEntry
       id: String(t.team_id),
       name: t.team_name,
       league: mapLeague(t.league),
-      krk: t.average_krk,
+      krk: roundKrk(t.average_krk),
     },
   }));
 }
 
 export function mapUserRatingList(data: BackendLeaderboard): UserRatingEntry[] {
-  // Бэкенд отдаёт только username (без ФИО), поэтому показываем его как есть,
-  // не разбивая по пробелам (иначе имя дублировалось: «username username»).
   return data.rankings.map((r) => ({
     rank: r.global_rank,
     user: {
       id: String(r.user_id),
       firstName: r.username,
       lastName: '',
-      personalRating: r.total_krk,
+      personalRating: roundKrk(r.total_krk),
       league: mapLeague(r.league),
     },
     teamName: r.team_name ?? undefined,
   }));
+}
+
+function roundKrk(value: number): number {
+  return Math.round(value * 100) / 100;
 }

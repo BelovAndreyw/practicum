@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { checkinApi, challengesApi, newsApi, rescueApi } from '@/api';
+import { checkinApi, challengesApi, newsApi, reportsApi, rescueApi } from '@/api';
 import type { CheckIn, Challenge, NewsItem, RescueRequest } from '@/types';
+import type { ChallengeReportItem } from '@/api/endpoints/reports';
 import { Card, Badge, Button, PageHeader, Tabs, Modal, Input, Textarea, Spinner } from '@/components/ui';
 import styles from './AdminPage.module.css';
 
@@ -15,6 +16,7 @@ export function AdminPage() {
   const [tab, setTab] = useState('checkins');
   const [checkins, setCheckins] = useState<CheckIn[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [pendingReports, setPendingReports] = useState<ChallengeReportItem[]>([]);
   const [rescues, setRescues] = useState<RescueRequest[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,21 +24,35 @@ export function AdminPage() {
   const [showChallengeForm, setShowChallengeForm] = useState(false);
   const [challengeForm, setChallengeForm] = useState({ title: '', description: '', points: '30', deadline: '', acceptsReport: false });
   const [savingChallenge, setSavingChallenge] = useState(false);
+  const [approvingReportId, setApprovingReportId] = useState<number | null>(null);
 
   const [showNewsForm, setShowNewsForm] = useState(false);
   const [newsForm, setNewsForm] = useState({ title: '', body: '' });
   const [savingNews, setSavingNews] = useState(false);
 
   useEffect(() => {
-    Promise.allSettled([checkinApi.listAll(), challengesApi.list(), rescueApi.list(), newsApi.list()])
-      .then(([ci, ch, rs, nw]) => {
+    Promise.allSettled([checkinApi.listAll(), challengesApi.list(), reportsApi.listPending(), rescueApi.list(), newsApi.list()])
+      .then(([ci, ch, rp, rs, nw]) => {
         if (ci.status === 'fulfilled') setCheckins(ci.value);
         if (ch.status === 'fulfilled') setChallenges(ch.value);
+        if (rp.status === 'fulfilled') setPendingReports(rp.value);
         if (rs.status === 'fulfilled') setRescues(rs.value);
         if (nw.status === 'fulfilled') setNews(nw.value);
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleApproveReport = async (reportId: number) => {
+    setApprovingReportId(reportId);
+    try {
+      await reportsApi.approve(reportId);
+      setPendingReports((prev) => prev.filter((report) => report.id !== reportId));
+      const updated = await challengesApi.list();
+      setChallenges(updated);
+    } finally {
+      setApprovingReportId(null);
+    }
+  };
 
   const handleCreateChallenge = async () => {
     setSavingChallenge(true);
@@ -93,6 +109,31 @@ export function AdminPage() {
               <span className="eyebrow">Челленджи</span>
               <Button size="sm" onClick={() => setShowChallengeForm(true)}>+ Создать</Button>
             </div>
+            {pendingReports.length > 0 && (
+              <div className={styles.ciList} style={{ marginBottom: 24 }}>
+                <span className="eyebrow">Отчёты на проверке</span>
+                {pendingReports.map((report) => (
+                  <div key={report.id} className={styles.ciItem}>
+                    <div className={styles.ciHead}>
+                      <Badge variant="warning">Челлендж #{report.challenge_id}</Badge>
+                      <span className={styles.ciMeta}>Команда {report.team_id} · {new Date(report.created_at).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                    <p className={styles.ciField}><strong>{report.title}</strong></p>
+                    {report.description && <p className={styles.ciField}>{report.description}</p>}
+                    <p className={styles.ciField}>Файлов: {report.files.length}</p>
+                    <Button
+                      size="sm"
+                      onClick={() => handleApproveReport(report.id)}
+                      loading={approvingReportId === report.id}
+                      disabled={report.files.length === 0}
+                      style={{ marginTop: 8 }}
+                    >
+                      Зачесть
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
             <table className={styles.table}>
               <thead><tr><th>Название</th><th>Очки</th><th>Срок</th><th>Статус</th><th>Выполнили</th></tr></thead>
               <tbody>

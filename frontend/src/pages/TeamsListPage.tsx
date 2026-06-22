@@ -69,7 +69,7 @@ export function TeamsListPage() {
               </div>
               <h3 className={styles.teamName}>{t.name}</h3>
               <div className={styles.krkRow}>
-                <span className={styles.krkVal}>{t.krk.toFixed(1)}</span>
+                <span className={styles.krkVal}>{t.krk.toFixed(2)}</span>
                 <span className={styles.krkLabel}>КРК</span>
               </div>
               <div className={styles.divider} />

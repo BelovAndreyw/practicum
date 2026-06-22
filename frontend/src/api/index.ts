@@ -4,6 +4,7 @@ export { teamsApi }     from './endpoints/teams';
 export { ratingApi }    from './endpoints/rating';
 export { activityApi }  from './endpoints/activity';
 export { challengesApi } from './endpoints/challenges';
+export { reportsApi }    from './endpoints/reports';
 export { eventsApi }    from './endpoints/events';
 export { newsApi }      from './endpoints/news';
 export { knowledgeApi } from './endpoints/knowledge';

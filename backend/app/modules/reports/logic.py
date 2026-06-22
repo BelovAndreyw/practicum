@@ -1,9 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from datetime import datetime
 from app.models.reports import TeamReport, ReportFile, ReportTask
 from app.models.team import Team
+from app.modules.challenges.logic import ensure_enrollment_logic, complete_challenge_logic
 
 
 async def create_report_logic(
@@ -15,6 +17,9 @@ async def create_report_logic(
     db: AsyncSession
 ) -> TeamReport:
     """Создание отчёта"""
+    if challenge_id is not None:
+        await ensure_enrollment_logic(challenge_id, team_id, db)
+
     report = TeamReport(
         team_id=team_id,
         title=title,
@@ -100,3 +105,51 @@ async def get_team_reports_logic(
         .order_by(TeamReport.created_at.desc())
     )
     return result.scalars().all()
+
+
+async def get_pending_reports_logic(db: AsyncSession) -> list[TeamReport]:
+    """Неодобренные отчёты по челленджам"""
+    result = await db.execute(
+        select(TeamReport)
+        .where(
+            TeamReport.is_approved == False,
+            TeamReport.challenge_id.isnot(None),
+        )
+        .options(
+            selectinload(TeamReport.files),
+            selectinload(TeamReport.tasks),
+        )
+        .order_by(TeamReport.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+async def approve_report_logic(
+    report_id: int,
+    db: AsyncSession,
+) -> TeamReport:
+    """Одобрение отчёта и зачёт челленджа"""
+    result = await db.execute(
+        select(TeamReport)
+        .where(TeamReport.id == report_id)
+        .options(
+            selectinload(TeamReport.files),
+            selectinload(TeamReport.tasks),
+        )
+    )
+    report = result.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Отчёт не найден")
+    if report.is_approved:
+        raise HTTPException(status_code=400, detail="Отчёт уже одобрен")
+    if report.challenge_id is None:
+        raise HTTPException(status_code=400, detail="Отчёт не привязан к челленджу")
+    if not report.files:
+        raise HTTPException(status_code=400, detail="К отчёту не прикреплены файлы")
+
+    report.is_approved = True
+    await db.flush()
+
+    await complete_challenge_logic(report.challenge_id, report.team_id, db)
+    await db.refresh(report)
+    return report

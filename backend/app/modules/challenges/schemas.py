@@ -12,6 +12,7 @@ class ChallengeResponse(BaseModel):
     deadline: Optional[datetime] = None
     created_at: datetime
     is_active: bool
+    completed_team_ids: list[int] = []
 
 
 class ChallengeCreateRequest(BaseModel):

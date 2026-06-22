@@ -108,6 +108,8 @@ export interface ActivityEvent {
 
 export type ChallengeStatus = 'active' | 'completed' | 'expired';
 
+export type TeamChallengeStatus = 'none' | 'enrolled' | 'pending' | 'completed';
+
 export interface Challenge {
   id: string;
   title: string;
@@ -116,7 +118,8 @@ export interface Challenge {
   deadline?: string; // ISO date
   status: ChallengeStatus;
   completedByTeamIds: string[];
-  acceptsReport: boolean; // Р·Р°РіСЂСѓР·РєР° С„Р°Р№Р»РѕРІ/С„РѕС‚Рѕ
+  teamStatus?: TeamChallengeStatus;
+  acceptsReport: boolean; // загрузка файлов/фото
   createdAt: string;
 }
 

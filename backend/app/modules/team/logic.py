@@ -360,17 +360,18 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
         if user.student:
             full_name = f"{user.student.surname} {user.student.name} {user.student.patronymic}"
         user_rating = ratings_by_user.get(user.id)
+        personal_krk = round(user_rating.total_krk, 2) if user_rating else 0.0
         members_list.append({
             "user_id": user.id,
             "username": user.username,
             "full_name": full_name,
             "joined_at": m.joined_at,
-            "personal_krk": user_rating.total_krk if user_rating else 0.0,
+            "personal_krk": personal_krk,
             "league": user_rating.league if user_rating else None,
         })
 
     personal_scores = [m["personal_krk"] for m in members_list]
-    average_krk = sum(personal_scores) / len(personal_scores) if personal_scores else 0.0
+    average_krk = round(sum(personal_scores) / len(personal_scores), 2) if personal_scores else 0.0
 
     return {
         "id": team.id,

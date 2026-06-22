@@ -19,13 +19,20 @@ export function ChallengesPage() {
   const [reportFiles, setReportFiles] = useState<File[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState<Set<string>>(new Set());
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const currentTeamId = user?.teamId ?? '';
 
+  const loadChallenges = () => {
+    setLoading(true);
+    const loader = currentTeamId
+      ? challengesApi.listForTeam(currentTeamId)
+      : challengesApi.list();
+    loader.then(setChallenges).finally(() => setLoading(false));
+  };
+
   useEffect(() => {
-    challengesApi.list().then(setChallenges).finally(() => setLoading(false));
-  }, []);
+    loadChallenges();
+  }, [currentTeamId]);
 
   const reportTextValid = reportBody.trim().length >= MIN_REPORT_LENGTH;
   const filesValid = reportFiles.length > 0;
@@ -72,7 +79,7 @@ export function ChallengesPage() {
         fileUrls: reportFiles.map((file) => file.name),
       }, reportFiles);
 
-      setSubmitted((prev) => new Set(prev).add(selected.id));
+      loadChallenges();
       closeReportModal();
     } finally {
       setSubmitting(false);
@@ -100,7 +107,8 @@ export function ChallengesPage() {
           <ChallengeCard
             key={challenge.id}
             challenge={challenge}
-            done={submitted.has(challenge.id) || (currentTeamId ? challenge.completedByTeamIds.includes(currentTeamId) : false)}
+            done={challenge.teamStatus === 'completed' || (currentTeamId ? challenge.completedByTeamIds.includes(currentTeamId) : false)}
+            pending={challenge.teamStatus === 'pending'}
             onReport={() => openReportModal(challenge)}
           />
         ))}
@@ -194,15 +202,16 @@ export function ChallengesPage() {
 interface ChallengeCardProps {
   challenge: Challenge;
   done?: boolean;
+  pending?: boolean;
   onReport?: () => void;
 }
 
-function ChallengeCard({ challenge, done, onReport }: ChallengeCardProps) {
+function ChallengeCard({ challenge, done, pending, onReport }: ChallengeCardProps) {
   return (
     <Card padding="md" className={styles.card}>
       <div className={styles.cardHead}>
-        <Badge variant={done ? 'success' : challenge.status === 'expired' ? 'default' : 'accent'}>
-          {done ? '✅ Выполнен' : challenge.status === 'expired' ? 'Истёк' : 'Активен'}
+        <Badge variant={done ? 'success' : pending ? 'warning' : challenge.status === 'expired' ? 'default' : 'accent'}>
+          {done ? '✅ Выполнен' : pending ? 'На проверке' : challenge.status === 'expired' ? 'Истёк' : 'Активен'}
         </Badge>
         <Badge variant="violet">+{challenge.points} очков</Badge>
       </div>
@@ -214,7 +223,7 @@ function ChallengeCard({ challenge, done, onReport }: ChallengeCardProps) {
         <p className={styles.deadline}>До: {new Date(challenge.deadline).toLocaleDateString('ru-RU')}</p>
       )}
 
-      {!done && challenge.status === 'active' && onReport && (
+      {!done && !pending && challenge.status === 'active' && onReport && (
         <Button size="sm" onClick={onReport} style={{ marginTop: 12 }}>Сдать отчёт</Button>
       )}
     </Card>

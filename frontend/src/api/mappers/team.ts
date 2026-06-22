@@ -44,6 +44,10 @@ export interface BackendInviteLink {
   is_active?: boolean;
 }
 
+function roundKrk(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 function mapMember(member: BackendTeamMember, captainId: number): TeamMember {
   const { firstName, lastName } = splitFullName(member.full_name);
   const role: UserRole = member.user_id === captainId ? 'captain' : 'student';
@@ -52,13 +56,13 @@ function mapMember(member: BackendTeamMember, captainId: number): TeamMember {
     firstName,
     lastName,
     role,
-    personalRating: member.personal_krk ?? 0,
+    personalRating: roundKrk(member.personal_krk ?? 0),
   };
 }
 
 export function mapTeamSummary(data: BackendTeamSummary, krk?: number, league = ''): Team {
   const detailKrk = 'average_krk' in data ? (data as BackendTeamDetail).average_krk : undefined;
-  const teamKrk = krk ?? detailKrk ?? 0;
+  const teamKrk = roundKrk(krk ?? detailKrk ?? 0);
   const members = data.members && data.members.length > 0
     ? data.members.map((m) => mapMember(m, data.captain_id))
     : Array.from({ length: data.members_count }, (_, index) => ({
@@ -93,10 +97,10 @@ export function mapKrkFromRating(rating: number): KrkBreakdown {
   const cohesion = rating * 0.3;
   const bonus = rating * 0.1;
   return {
-    baseRating: +base.toFixed(1),
-    cohesionCoeff: +cohesion.toFixed(1),
-    bonusCoeff: +bonus.toFixed(1),
-    total: rating,
+    baseRating: +base.toFixed(2),
+    cohesionCoeff: +cohesion.toFixed(2),
+    bonusCoeff: +bonus.toFixed(2),
+    total: roundKrk(rating),
   };
 }
 

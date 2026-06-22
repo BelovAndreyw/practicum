@@ -66,6 +66,7 @@ class TeamRatingService:
         # Вычисляем среднее арифметическое
         total_krk = sum(user_ratings.get(uid, 0.0) for uid in user_ids)
         average_krk = total_krk / len(members) if members else 0.0
+        average_krk = round(average_krk, 2)
 
         team_rating = await self.get_or_create_team_rating(team_id)
         old_average = team_rating.average_krk
@@ -113,17 +114,25 @@ class TeamRatingService:
         new_krk: float
     ) -> TeamRating:
         """Обработка изменения рейтинга участника команды"""
-        # Быстрый пересчет без полного запроса
+        members_result = await self.db.execute(
+            select(TeamMember).where(TeamMember.team_id == team_id)
+        )
+        actual_member_count = len(members_result.scalars().all())
+
         team_rating = await self.get_or_create_team_rating(team_id)
 
-        if team_rating.member_count > 0:
-            delta = new_krk - old_krk
-            team_rating.average_krk = team_rating.average_krk + (delta / team_rating.member_count)
+        if team_rating.member_count != actual_member_count or team_rating.member_count == 0:
+            return await self.recalculate_team_rating(team_id)
 
-            # Лог
+        if actual_member_count > 0:
+            delta = new_krk - old_krk
+            old_average = team_rating.average_krk
+            team_rating.average_krk = round(team_rating.average_krk + (delta / actual_member_count), 2)
+            team_rating.member_count = actual_member_count
+
             await self._log_change(
                 team_rating=team_rating,
-                old_average=team_rating.average_krk - (delta / team_rating.member_count),
+                old_average=old_average,
                 new_average=team_rating.average_krk,
                 event_type="member_rating_changed",
                 description=f"Изменение КРК участника {user_id}: {old_krk} -> {new_krk}",

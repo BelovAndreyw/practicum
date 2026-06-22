@@ -31,7 +31,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    # Порты НЕ открыты наружу — только внутренняя сеть
+    # Для локального seed/migrations с хоста (только 127.0.0.1; 5432 часто занят на Windows)
+    ports:
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata-pilot:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

@@ -88,7 +88,7 @@ export function RatingPage() {
                       <td>
                         <Badge variant={LEAGUE_VARIANT[entry.team.league] ?? 'accent'}>{entry.team.league}</Badge>
                       </td>
-                      <td className={styles.krkCell}>{entry.team.krk.toFixed(1)}</td>
+                      <td className={styles.krkCell}>{entry.team.krk.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -160,7 +160,7 @@ export function RatingPage() {
                       <td>
                         <Badge variant={LEAGUE_VARIANT[entry.user.league] ?? 'accent'}>{entry.user.league}</Badge>
                       </td>
-                      <td className={styles.krkCell}>{entry.user.personalRating}</td>
+                      <td className={styles.krkCell}>{entry.user.personalRating.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -177,7 +177,7 @@ export function RatingPage() {
                 <Avatar name={`${entry.user.firstName} ${entry.user.lastName}`} src={entry.user.avatarUrl} size="lg" />
                 <p className={styles.topName}>{entry.user.firstName}<br />{entry.user.lastName}</p>
                 <Badge variant={LEAGUE_VARIANT[entry.user.league] ?? 'accent'}>{entry.user.league}</Badge>
-                <p className={styles.topScore}>{entry.user.personalRating}</p>
+                <p className={styles.topScore}>{entry.user.personalRating.toFixed(2)}</p>
               </Card>
             ))}
           </div>
@@ -202,7 +202,7 @@ export function RatingPage() {
                       <div key={entry.team.id} className={styles.leagueTeam}>
                         <span className={styles.leaguePlace}>{entry.rank}</span>
                         <span className={styles.teamName}>{entry.team.name}</span>
-                        <span className={styles.krkCell}>{entry.team.krk.toFixed(1)}</span>
+                        <span className={styles.krkCell}>{entry.team.krk.toFixed(2)}</span>
                       </div>
                     ))
                   )}

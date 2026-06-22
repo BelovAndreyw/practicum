@@ -2,7 +2,12 @@ import { http } from '../client';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 import { MOCK_CHALLENGES } from '../mock/data';
-import { mapChallengeList, toBackendChallengeCreate } from '../mappers/challenges';
+import {
+  mapChallengeList,
+  mergeMyChallengeStatus,
+  toBackendChallengeCreate,
+  type MyChallengesResponse,
+} from '../mappers/challenges';
 import type { Challenge, ChallengeReport } from '@/types';
 
 const USE_MOCK = shouldUseMock();
@@ -12,6 +17,16 @@ export const challengesApi = {
     if (USE_MOCK) { await mockDelay(); return MOCK_CHALLENGES; }
     const data = await http.get<Parameters<typeof mapChallengeList>[0]>('/challenges');
     return mapChallengeList(data);
+  },
+
+  async getMy(): Promise<MyChallengesResponse> {
+    if (USE_MOCK) { await mockDelay(); return { challenges: [] }; }
+    return http.get<MyChallengesResponse>('/challenges/my');
+  },
+
+  async listForTeam(teamId: string): Promise<Challenge[]> {
+    const [challenges, my] = await Promise.all([this.list(), this.getMy()]);
+    return mergeMyChallengeStatus(challenges, my.challenges, teamId);
   },
 
   async submitReport(report: Omit<ChallengeReport, 'submittedAt'>, files: File[] = []): Promise<void> {

@@ -98,7 +98,7 @@ export function ProfilePage() {
 
             <div className={styles.stats}>
               <div className={styles.statItem}>
-                <span className={styles.statVal}>{user.personalRating}</span>
+                <span className={styles.statVal}>{user.personalRating.toFixed(2)}</span>
                 <span className={styles.statLabel}>Рейтинг</span>
               </div>
               <div className={styles.statItem}>
@@ -114,7 +114,7 @@ export function ProfilePage() {
             <div className={styles.ratingSection}>
               <div className={styles.ratingSectionHead}>
                 <span className={styles.ratingLabel}>Личный рейтинг</span>
-                <span className={styles.ratingNum}>{user.personalRating} / 100</span>
+                <span className={styles.ratingNum}>{user.personalRating.toFixed(2)} / 100</span>
               </div>
               <div className={styles.ratingBar}>
                 <div className={styles.ratingFill} style={{ width: `${Math.min(user.personalRating, 100)}%` }} />
@@ -188,7 +188,7 @@ export function ProfilePage() {
 
             <div className={styles.ratingTotal}>
               <span>Итог:</span>
-              <strong>{user.personalRating}</strong>
+              <strong>{user.personalRating.toFixed(2)}</strong>
               <span className={styles.ratingTotalLabel}> / 100</span>
             </div>
           </Card>

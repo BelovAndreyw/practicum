@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, HTTPExcep
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_admin_or_teacher
 from app.models.user import User
 from app.models.team import TeamMember
 from app.modules.reports.logic import (
@@ -11,6 +11,8 @@ from app.modules.reports.logic import (
     assign_task_logic,
     complete_task_logic,
     get_team_reports_logic,
+    get_pending_reports_logic,
+    approve_report_logic,
 )
 from app.modules.reports.schemas import (
     ReportCreateRequest,
@@ -154,6 +156,27 @@ async def upload_report_file(
         ))
 
     return {"files": added}
+
+
+@router.get("/pending")
+async def list_pending_reports(
+    current_user: User = Depends(get_current_admin_or_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Неодобренные отчёты по челленджам (организатор)"""
+    reports = await get_pending_reports_logic(db)
+    return {"reports": [build_report_response(r) for r in reports], "total": len(reports)}
+
+
+@router.post("/{report_id}/approve")
+async def approve_report(
+    report_id: int,
+    current_user: User = Depends(get_current_admin_or_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Одобрить отчёт и зачесть челлендж"""
+    report = await approve_report_logic(report_id, db)
+    return {"message": "Отчёт одобрен, челлендж зачтён", "report": build_report_response(report)}
 
 
 @router.get("/team/{team_id}")

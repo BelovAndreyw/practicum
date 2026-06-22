@@ -17,13 +17,18 @@
   • Активности + логи команд
   • Заявки на вступление + пригласительные ссылки
 
-Запуск: python seed_mega.py
+Запуск с хоста (pilot compose пробрасывает Postgres на 127.0.0.1:5433):
+  python scripts/seed_all.py
 ================================================================================
 """
 import asyncio
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 import secrets
 
 # Делаем пакет `app` импортируемым независимо от того, откуда запущен скрипт:
@@ -31,10 +36,75 @@ import secrets
 #   • из каталога scripts/ (../backend/app)
 #   • внутри backend-контейнера, где код лежит прямо в /app/app
 _here = Path(__file__).resolve().parent
-for _candidate in (_here / "backend", _here.parent / "backend", _here, _here.parent):
+_repo_root = _here.parent
+for _candidate in (_here / "backend", _repo_root / "backend", _here, _repo_root):
     if (_candidate / "app").is_dir():
         sys.path.insert(0, str(_candidate))
         break
+
+
+def _load_env_file() -> None:
+    """Загружает .env.pilot / .env в os.environ (если переменные ещё не заданы)."""
+    import os
+
+    for name in (".env.pilot", ".env"):
+        env_path = _repo_root / name
+        if not env_path.exists():
+            continue
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key, value = key.strip(), value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+        break
+
+
+def _database_url_for_host() -> str | None:
+    """postgres:5432 в compose-доступен только внутри сети Docker."""
+    import os
+    from urllib.parse import urlparse, urlunparse
+
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        user = os.environ.get("POSTGRES_USER")
+        password = os.environ.get("POSTGRES_PASSWORD")
+        db = os.environ.get("POSTGRES_DB")
+        host = os.environ.get("POSTGRES_HOST", "127.0.0.1")
+        port = os.environ.get("POSTGRES_PORT", "5432")
+        if user and password and db:
+            url = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}"
+
+    if not url:
+        return None
+
+    if os.path.exists("/.dockerenv"):
+        return url
+
+    parsed = urlparse(url)
+    if parsed.hostname == "postgres":
+        host = os.environ.get("SEED_POSTGRES_HOST", "127.0.0.1")
+        # Внутри compose Postgres слушает 5432, с хоста — проброс на 5433 (см. docker-compose.pilot.yml)
+        port = int(os.environ.get("SEED_POSTGRES_PORT", "5433"))
+        netloc = f"{parsed.username}:{parsed.password}@{host}:{port}"
+        url = urlunparse(parsed._replace(netloc=netloc))
+        print(f"[seed] DB host from machine: postgres:5432 -> {host}:{port}")
+
+    return url
+
+
+def _apply_database_url() -> None:
+    import os
+
+    _load_env_file()
+    url = _database_url_for_host()
+    if url:
+        os.environ["DATABASE_URL"] = url
+
+
+_apply_database_url()
 
 
 def _utcnow() -> datetime:
@@ -104,11 +174,11 @@ USERS_DATA = [
 
 TEAMS_DATA = [
     {"name": "Альфа", "description": "Команда веб-разработчиков. Стек: React, FastAPI, PostgreSQL.",
-     "captain_index": 0, "member_indices": [0, 1, 2, 8, 12], "rating": 1250.0},
+     "captain_index": 0, "member_indices": [0, 1, 2, 8, 12], "rating": 4.0},
     {"name": "Бета", "description": "DevOps и инфраструктура. Docker, Kubernetes, CI/CD.",
-     "captain_index": 3, "member_indices": [3, 4, 5, 9, 13], "rating": 1180.0},
+     "captain_index": 3, "member_indices": [3, 4, 5, 9, 13], "rating": 3.8},
     {"name": "Гамма", "description": "Data Science и ML. Python, PyTorch, pandas.",
-     "captain_index": 6, "member_indices": [6, 7, 14, 15, 16], "rating": 980.0},
+     "captain_index": 6, "member_indices": [6, 7, 14, 15, 16], "rating": 3.5},
 ]
 
 POSTS_DATA = [
@@ -125,7 +195,7 @@ POSTS_DATA = [
      "content": "Ищем backend-разработчика!\n\nПроект: прогнозирование загруженности столовой.\n\nТребования:\n• Python (FastAPI/Flask/Django)\n• SQL/PostgreSQL\n• 5–7 часов в неделю\n\nПишите @novikov_av!",
      "author_index": 6, "created_days_ago": 5},
     {"title": "📊 Результаты первого КРК",
-     "content": "Итоги КРК-1:\n\n🥇 «Альфа» — 1250 очков\n🥈 «Бета» — 1180 очков\n🥉 «Гамма» — 980 очков\n\nСледующий КРК — 15 апреля.",
+     "content": "Итоги КРК-1:\n\n🥇 «Альфа» — 82.24 КРК\n🥈 «Бета» — 79.00 КРК\n🥉 «Гамма» — 75.60 КРК\n\nСледующий КРК — 15 апреля.",
      "author_index": 0, "created_days_ago": 8},
     {"title": "🔧 Ищу ментора по React и TypeScript",
      "content": "Застрял на архитектуре состояний.\n\nВопросы:\n• Context API vs Zustand?\n• Кэширование запросов?\n• SSR с Next.js?\n\nМогу угостить кофе ☕ @kuznetsov_ds",
@@ -137,7 +207,7 @@ POSTS_DATA = [
      "content": "Проблема: 15+ минут на поиск места.\n\nРешение:\n• Датчики на местах\n• Приложение с картой\n• Push-уведомления\n• Интеграция с пропускной системой\n\nГотов помочь с аналитикой!",
      "author_index": 7, "created_days_ago": 2},
     {"title": "🐛 Исправлен баг в системе оценивания",
-     "content": "Баллы за документацию удваивались при повторной отправке.\n\nИсправлено, рейтинги пересчитаны. «Гамма» +40 очков.\n\nЗаметили что-то ещё — пишите @vasiliev_ni.",
+     "content": "Баллы за документацию удваивались при повторной отправке.\n\nИсправлено, рейтинги пересчитаны. «Гамма» +1.50 КРК.\n\nЗаметили что-то ещё — пишите @vasiliev_ni.",
      "author_index": 4, "created_days_ago": 6},
     {"title": "🏗️ Инфраструктура «Альфы» на Kubernetes",
      "content": "Отчёт команды «Бета»:\n\n✅ CI/CD (GitHub Actions → Docker Hub → VPS)\n✅ PostgreSQL + Redis в Docker Compose\n✅ Nginx с SSL и rate limiting\n✅ Healthchecks и rollback\n✅ Loki + Grafana\n\nДеплой: 30 мин → 3 мин.",
@@ -299,30 +369,35 @@ CHECKINS_DATA = [
      ]},
 ]
 
+# Компоненты подобраны так, что total = base×0.6 + unity×0.3 + bonus×0.1 − penalty ≈ 73–85.
+# Средний КРК команд: Альфа ~82.2, Бета ~79.0, Гамма ~75.6.
 USER_RATINGS_DATA = [
-    {"user_index": 0, "base": 45.0, "unity": 12.0, "bonus": 8.0, "penalty": 0.0, "rank": 1, "league": "legend", "change": 0},
-    {"user_index": 1, "base": 42.0, "unity": 12.0, "bonus": 6.0, "penalty": 0.0, "rank": 2, "league": "legend", "change": 1},
-    {"user_index": 2, "base": 40.0, "unity": 12.0, "bonus": 5.0, "penalty": 0.0, "rank": 3, "league": "legend", "change": 1},
-    {"user_index": 3, "base": 38.0, "unity": 11.0, "bonus": 7.0, "penalty": 0.0, "rank": 4, "league": "pro", "change": 0},
-    {"user_index": 4, "base": 36.0, "unity": 11.0, "bonus": 4.0, "penalty": 0.0, "rank": 5, "league": "pro", "change": -1},
-    {"user_index": 5, "base": 35.0, "unity": 11.0, "bonus": 3.0, "penalty": 0.0, "rank": 6, "league": "pro", "change": 0},
-    {"user_index": 6, "base": 32.0, "unity": 8.0, "bonus": 5.0, "penalty": 0.0, "rank": 7, "league": "pro", "change": 2},
-    {"user_index": 7, "base": 30.0, "unity": 8.0, "bonus": 3.0, "penalty": 0.0, "rank": 8, "league": "pro", "change": 0},
-    {"user_index": 8, "base": 15.0, "unity": 0.0, "bonus": 2.0, "penalty": 0.0, "rank": 9, "league": "newbie", "change": 0},
-    {"user_index": 9, "base": 12.0, "unity": 0.0, "bonus": 1.0, "penalty": 0.0, "rank": 10, "league": "newbie", "change": 0},
-    {"user_index": 12, "base": 38.0, "unity": 10.0, "bonus": 4.0, "penalty": 0.0, "rank": 11, "league": "pro", "change": 0},
-    {"user_index": 13, "base": 34.0, "unity": 10.0, "bonus": 3.0, "penalty": 0.0, "rank": 12, "league": "pro", "change": 0},
-    {"user_index": 14, "base": 28.0, "unity": 7.0, "bonus": 2.0, "penalty": 0.0, "rank": 13, "league": "pro", "change": 0},
-    {"user_index": 15, "base": 26.0, "unity": 7.0, "bonus": 2.0, "penalty": 0.0, "rank": 14, "league": "pro", "change": 0},
-    {"user_index": 16, "base": 24.0, "unity": 6.0, "bonus": 1.0, "penalty": 0.0, "rank": 15, "league": "newbie", "change": 0},
+    # Альфа — лидеры (~78–85)
+    {"user_index": 0, "base": 88.0, "unity": 82.0, "bonus": 78.0, "penalty": 0.0, "rank": 1, "league": "pro", "change": 0},
+    {"user_index": 1, "base": 84.0, "unity": 81.0, "bonus": 79.0, "penalty": 0.0, "rank": 3, "league": "pro", "change": 1},
+    {"user_index": 2, "base": 83.0, "unity": 80.0, "bonus": 77.0, "penalty": 0.0, "rank": 5, "league": "pro", "change": 1},
+    {"user_index": 8, "base": 80.0, "unity": 76.0, "bonus": 72.0, "penalty": 0.0, "rank": 9, "league": "pro", "change": 0},
+    {"user_index": 12, "base": 85.0, "unity": 83.0, "bonus": 80.0, "penalty": 0.0, "rank": 2, "league": "pro", "change": 0},
+    # Бета — середина (~75–80)
+    {"user_index": 3, "base": 84.0, "unity": 80.0, "bonus": 76.0, "penalty": 0.0, "rank": 4, "league": "pro", "change": 0},
+    {"user_index": 4, "base": 81.0, "unity": 78.0, "bonus": 74.0, "penalty": 0.0, "rank": 7, "league": "pro", "change": -1},
+    {"user_index": 5, "base": 79.0, "unity": 77.0, "bonus": 73.0, "penalty": 0.0, "rank": 10, "league": "pro", "change": 0},
+    {"user_index": 9, "base": 77.0, "unity": 74.0, "bonus": 70.0, "penalty": 0.0, "rank": 12, "league": "pro", "change": 0},
+    {"user_index": 13, "base": 82.0, "unity": 79.0, "bonus": 75.0, "penalty": 0.0, "rank": 6, "league": "pro", "change": 0},
+    # Гамма — чуть ниже (~73–79)
+    {"user_index": 6, "base": 81.0, "unity": 77.0, "bonus": 73.0, "penalty": 0.0, "rank": 8, "league": "pro", "change": 2},
+    {"user_index": 7, "base": 79.0, "unity": 75.0, "bonus": 71.0, "penalty": 0.0, "rank": 11, "league": "pro", "change": 0},
+    {"user_index": 14, "base": 77.0, "unity": 73.0, "bonus": 69.0, "penalty": 0.0, "rank": 13, "league": "pro", "change": 0},
+    {"user_index": 15, "base": 76.0, "unity": 72.0, "bonus": 68.0, "penalty": 0.0, "rank": 14, "league": "pro", "change": 0},
+    {"user_index": 16, "base": 75.0, "unity": 71.0, "bonus": 67.0, "penalty": 0.0, "rank": 15, "league": "pro", "change": 0},
 ]
 
 RATING_LOGS_DATA = [
-    {"user_index": 0, "old_total": 60.0, "new_total": 65.0, "event": "challenge", "desc": "Завершён челлендж «Оптимизация SQL»", "days_ago": 5},
-    {"user_index": 1, "old_total": 55.0, "new_total": 60.0, "event": "challenge", "desc": "Завершён челлендж «Оптимизация SQL»", "days_ago": 5},
-    {"user_index": 3, "old_total": 52.0, "new_total": 56.0, "event": "challenge", "desc": "Завершён челлендж «Оптимизация SQL»", "days_ago": 6},
-    {"user_index": 0, "old_total": 65.0, "new_total": 63.0, "event": "penalty", "desc": "Опоздание с check-in на 2 дня", "days_ago": 8},
-    {"user_index": 6, "old_total": 40.0, "new_total": 45.0, "event": "activity", "desc": "Помощь команде «Бета» с Figma", "days_ago": 4},
+    {"user_index": 0, "old_total": 80.20, "new_total": 85.20, "event": "challenge", "desc": "Завершён челлендж «Оптимизация SQL»", "days_ago": 5},
+    {"user_index": 1, "old_total": 77.60, "new_total": 82.60, "event": "challenge", "desc": "Завершён челлендж «Оптимизация SQL»", "days_ago": 5},
+    {"user_index": 3, "old_total": 77.00, "new_total": 82.00, "event": "challenge", "desc": "Завершён челлендж «Оптимизация SQL»", "days_ago": 6},
+    {"user_index": 0, "old_total": 85.20, "new_total": 83.20, "event": "penalty", "desc": "Опоздание с check-in на 2 дня", "days_ago": 8},
+    {"user_index": 6, "old_total": 76.00, "new_total": 79.00, "event": "activity", "desc": "Помощь команде «Бета» с Figma", "days_ago": 4},
 ]
 
 TEAM_RATINGS_DATA = [
@@ -332,9 +407,9 @@ TEAM_RATINGS_DATA = [
 ]
 
 TEAM_RATING_LOGS_DATA = [
-    {"team_index": 0, "old": 62.0, "new": 65.0, "event": "member_rating_changed", "desc": "Обновление после КРК-1", "days_ago": 8},
-    {"team_index": 1, "old": 54.0, "new": 56.0, "event": "member_rating_changed", "desc": "Обновление после КРК-1", "days_ago": 8},
-    {"team_index": 2, "old": 40.0, "new": 45.0, "event": "member_rating_changed", "desc": "Помощь другой команде + бонус", "days_ago": 4},
+    {"team_index": 0, "old": 80.00, "new": 82.24, "event": "member_rating_changed", "desc": "Обновление после КРК-1", "days_ago": 8},
+    {"team_index": 1, "old": 77.50, "new": 79.00, "event": "member_rating_changed", "desc": "Обновление после КРК-1", "days_ago": 8},
+    {"team_index": 2, "old": 73.00, "new": 75.60, "event": "member_rating_changed", "desc": "Помощь другой команде + бонус", "days_ago": 4},
 ]
 
 ACTIVITIES_DATA = [
@@ -344,15 +419,15 @@ ACTIVITIES_DATA = [
     {"team_index": 0, "user_index": 2, "event_type": "member_joined", "title": "Волков А.Н. присоединился к «Альфе»", "desc": "По пригласительной ссылке", "days_ago": 22},
     {"team_index": 0, "user_index": 0, "event_type": "challenge_completed", "title": "«Альфа» завершила челлендж", "desc": "Оптимизация SQL — 150 очков", "days_ago": 5},
     {"team_index": 1, "user_index": 3, "event_type": "challenge_completed", "title": "«Бета» завершила челлендж", "desc": "Оптимизация SQL — 150 очков", "days_ago": 6},
-    {"team_index": 0, "user_index": 0, "event_type": "rating_updated", "title": "Рейтинг «Альфы» обновлён", "desc": "Новый рейтинг: 1250 (+30)", "days_ago": 8},
-    {"team_index": 1, "user_index": 3, "event_type": "rating_updated", "title": "Рейтинг «Беты» обновлён", "desc": "Новый рейтинг: 1180 (+20)", "days_ago": 8},
+    {"team_index": 0, "user_index": 0, "event_type": "rating_updated", "title": "Рейтинг «Альфы» обновлён", "desc": "Средний КРК: 82.24 (+2.24)", "days_ago": 8},
+    {"team_index": 1, "user_index": 3, "event_type": "rating_updated", "title": "Рейтинг «Беты» обновлён", "desc": "Средний КРК: 79.00 (+1.50)", "days_ago": 8},
 ]
 
 TEAM_ACTIVITY_LOGS_DATA = [
-    {"team_index": 0, "event": "rating_change", "old": 1220.0, "new": 1250.0, "desc": "КРК-1: отличная документация", "days_ago": 8},
-    {"team_index": 1, "event": "rating_change", "old": 1160.0, "new": 1180.0, "desc": "КРК-1: сильная инфраструктура", "days_ago": 8},
-    {"team_index": 2, "event": "rating_change", "old": 940.0, "new": 980.0, "desc": "КРК-1: интересная идея + бонус", "days_ago": 8},
-    {"team_index": 0, "event": "member_joined", "old": 1220.0, "new": 1220.0, "desc": "Волков А.Н. присоединился", "days_ago": 22},
+    {"team_index": 0, "event": "rating_change", "old": 80.00, "new": 82.24, "desc": "КРК-1: отличная документация", "days_ago": 8},
+    {"team_index": 1, "event": "rating_change", "old": 77.50, "new": 79.00, "desc": "КРК-1: сильная инфраструктура", "days_ago": 8},
+    {"team_index": 2, "event": "rating_change", "old": 73.00, "new": 75.60, "desc": "КРК-1: интересная идея + бонус", "days_ago": 8},
+    {"team_index": 0, "event": "member_joined", "old": 80.00, "new": 80.00, "desc": "Волков А.Н. присоединился", "days_ago": 22},
 ]
 
 JOIN_REQUESTS_DATA = [
@@ -373,11 +448,11 @@ LEAGUE_SETTINGS_DATA = [
 ]
 
 ARCHIVES_DATA = [
-    {"year": 2026, "month": 3, "user_index": 0, "team_index": 0, "krk": 60.0, "rank": 2, "league": "pro"},
-    {"year": 2026, "month": 3, "user_index": 1, "team_index": 0, "krk": 55.0, "rank": 3, "league": "pro"},
-    {"year": 2026, "month": 3, "user_index": 3, "team_index": 1, "krk": 52.0, "rank": 4, "league": "pro"},
-    {"year": 2026, "month": 4, "user_index": 0, "team_index": 0, "krk": 65.0, "rank": 1, "league": "legend"},
-    {"year": 2026, "month": 4, "user_index": 1, "team_index": 0, "krk": 60.0, "rank": 2, "league": "legend"},
+    {"year": 2026, "month": 3, "user_index": 0, "team_index": 0, "krk": 78.00, "rank": 2, "league": "pro"},
+    {"year": 2026, "month": 3, "user_index": 1, "team_index": 0, "krk": 76.00, "rank": 3, "league": "pro"},
+    {"year": 2026, "month": 3, "user_index": 3, "team_index": 1, "krk": 75.00, "rank": 4, "league": "pro"},
+    {"year": 2026, "month": 4, "user_index": 0, "team_index": 0, "krk": 85.20, "rank": 1, "league": "pro"},
+    {"year": 2026, "month": 4, "user_index": 1, "team_index": 0, "krk": 82.60, "rank": 2, "league": "pro"},
 ]
 
 async def create_users(session):
@@ -418,8 +493,33 @@ async def create_teams(session, users):
     return created
 
 
+async def _dedupe_by_field(session, model, field_name: str, values: list) -> int:
+    """Удаляет дубликаты, оставляя запись с наименьшим id."""
+    removed = 0
+    for value in values:
+        result = await session.execute(
+            select(model)
+            .where(getattr(model, field_name) == value)
+            .order_by(model.id)
+        )
+        rows = result.scalars().all()
+        for duplicate in rows[1:]:
+            await session.delete(duplicate)
+            removed += 1
+    if removed:
+        await session.flush()
+    return removed
+
+
 async def create_posts(session, users, teams):
+    post_titles = [pd["title"] for pd in POSTS_DATA]
+    removed = await _dedupe_by_field(session, Post, "title", post_titles)
+    if removed:
+        print(f"   ↳ удалено дубликатов постов: {removed}")
     for pd in POSTS_DATA:
+        existing = await session.execute(select(Post).where(Post.title == pd["title"]))
+        if existing.scalar_one_or_none():
+            continue
         author = users[pd["author_index"]]
         author_team = None
         for td in TEAMS_DATA:
@@ -435,7 +535,14 @@ async def create_posts(session, users, teams):
 
 
 async def create_events(session, users, teams):
+    event_titles = [ed["title"] for ed in EVENTS_DATA]
+    removed = await _dedupe_by_field(session, TeamEvent, "title", event_titles)
+    if removed:
+        print(f"   ↳ удалено дубликатов событий: {removed}")
     for ed in EVENTS_DATA:
+        existing = await session.execute(select(TeamEvent).where(TeamEvent.title == ed["title"]))
+        if existing.scalar_one_or_none():
+            continue
         creator = users[ed["created_by_index"]]
         team = teams[0] if ed["created_by_index"] in [0, 1, 2] else (teams[1] if ed["created_by_index"] in [3, 4, 5] else teams[2])
         starts = _utcnow() + timedelta(days=ed["starts_at"])
@@ -536,7 +643,25 @@ async def create_user_ratings(session, users):
     created = []
     for rd in USER_RATINGS_DATA:
         user = users[rd["user_index"]]
-        total = rd["base"] + rd["unity"] + rd["bonus"] - rd["penalty"]
+        existing = await session.execute(
+            select(UserRating).where(UserRating.user_id == user.id)
+        )
+        found = existing.scalar_one_or_none()
+        total = round(
+            (rd["base"] * 0.6) + (rd["unity"] * 0.3) + (rd["bonus"] * 0.1) - rd["penalty"],
+            2,
+        )
+        if found:
+            found.base_score = rd["base"]
+            found.unity_score = rd["unity"]
+            found.bonus_score = rd["bonus"]
+            found.penalty_score = rd["penalty"]
+            found.total_krk = total
+            found.global_rank = rd["rank"]
+            found.league = rd["league"]
+            found.rank_change = rd["change"]
+            created.append(found)
+            continue
         ur = UserRating(user_id=user.id, base_score=rd["base"], unity_score=rd["unity"],
                         bonus_score=rd["bonus"], penalty_score=rd["penalty"], total_krk=total,
                         global_rank=rd["rank"], league=rd["league"], rank_change=rd["change"])
@@ -559,6 +684,13 @@ async def create_team_ratings(session, teams):
     created = []
     for trd in TEAM_RATINGS_DATA:
         team = teams[trd["team_index"]]
+        existing = await session.execute(
+            select(TeamRating).where(TeamRating.team_id == team.id)
+        )
+        found = existing.scalar_one_or_none()
+        if found:
+            created.append(found)
+            continue
         now = _utcnow()
         tr = TeamRating(team_id=team.id, average_krk=trd["average_krk"], member_count=trd["member_count"],
                         global_rank=trd["rank"], rank_change=trd["change"],
@@ -641,8 +773,18 @@ async def create_league_settings(session):
 
 async def create_archives(session, users, teams):
     for ar in ARCHIVES_DATA:
+        user_id = users[ar["user_index"]].id
+        existing = await session.execute(
+            select(RatingPeriodArchive).where(
+                RatingPeriodArchive.period_year == ar["year"],
+                RatingPeriodArchive.period_month == ar["month"],
+                RatingPeriodArchive.user_id == user_id,
+            )
+        )
+        if existing.scalar_one_or_none():
+            continue
         archive = RatingPeriodArchive(period_year=ar["year"], period_month=ar["month"],
-                                       user_id=users[ar["user_index"]].id,
+                                       user_id=user_id,
                                        team_id=teams[ar["team_index"]].id if ar["team_index"] is not None else None,
                                        final_krk=ar["krk"], final_rank=ar["rank"], league=ar["league"],
                                        created_at=_utcnow())
@@ -701,10 +843,17 @@ async def print_summary(session):
 
     print("\n  🏆 Команды:")
     print("  " + "-" * 60)
-    for i, t in enumerate(TEAMS_DATA):
+    team_rows = await session.execute(
+        select(Team, TeamRating)
+        .outerjoin(TeamRating, TeamRating.team_id == Team.id)
+        .order_by(Team.id)
+    )
+    for i, (team, tr) in enumerate(team_rows.all()):
+        t = TEAMS_DATA[i]
         captain = USERS_DATA[t["captain_index"]]
         members = [USERS_DATA[idx]["surname"] + " " + USERS_DATA[idx]["name"] for idx in t["member_indices"]]
-        print(f"    {i+1}. «{t['name']}» — рейтинг: {t['rating']}")
+        avg_krk = f"{tr.average_krk:.2f}" if tr else "—"
+        print(f"    {i+1}. «{team.name}» — средний КРК: {avg_krk}")
         print(f"       Капитан: {captain['surname']} {captain['name']}")
         print(f"       Участники: {', '.join(members)}")
 
@@ -759,9 +908,24 @@ async def main():
     print("  🚀 МЕГА-НАПОЛНЕНИЕ САЙТА")
     print("=" * 65)
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        print("\n✅ Таблицы проверены/созданы")
+    from app.core.config import settings
+    print(f"\n📡 База: {settings.database_url.split('@')[-1]}")
+
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            print("\n✅ Таблицы проверены/созданы")
+    except OSError as exc:
+        print(
+            "\n❌ Не удалось подключиться к PostgreSQL.\n"
+            "   Скрипт запущен с хоста, а БД доступна только внутри Docker.\n"
+            "   1) Пересоздайте postgres с пробросом порта:\n"
+            "      docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot up -d postgres\n"
+            "   2) Postgres проброшен на 127.0.0.1:5433 (или задайте SEED_POSTGRES_PORT)\n"
+            "   3) Проверьте, что в .env.pilot верные POSTGRES_* / DATABASE_URL\n"
+            f"   Ошибка: {exc}\n"
+        )
+        raise SystemExit(1) from exc
 
     async with AsyncSessionLocal() as session:
         async with session.begin():

@@ -24,6 +24,11 @@ class RatingService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    @staticmethod
+    def round_krk(value: float) -> float:
+        """Округление КРК до сотых."""
+        return round(value, 2)
+
     async def calculate_krk(
         self,
         base: float,
@@ -32,7 +37,19 @@ class RatingService:
         penalty: float = 0.0
     ) -> float:
         """Расчет КРК по формуле"""
-        return (base * self.BASE_WEIGHT) + (unity * self.UNITY_WEIGHT) + (bonus * self.BONUS_WEIGHT) + penalty
+        total = (base * self.BASE_WEIGHT) + (unity * self.UNITY_WEIGHT) + (bonus * self.BONUS_WEIGHT) + penalty
+        return self.round_krk(total)
+
+    async def sync_rating_total(self, rating: UserRating) -> UserRating:
+        """Синхронизирует total_krk с компонентами по формуле."""
+        rating.total_krk = await self.calculate_krk(
+            rating.base_score,
+            rating.unity_score,
+            rating.bonus_score,
+            rating.penalty_score,
+        )
+        rating.league = await self._get_league_for_score(rating.total_krk)
+        return rating
 
     async def get_or_create_user_rating(self, user_id: int) -> UserRating:
         """Получить или создать рейтинг пользователя"""
@@ -46,6 +63,59 @@ class RatingService:
             self.db.add(rating)
             await self.db.flush()
 
+        return rating
+
+    async def apply_krk_delta(
+        self,
+        user_id: int,
+        krk_delta: float,
+        bonus_delta: float,
+        event_type: str,
+        description: Optional[str] = None,
+        team_id: Optional[int] = None,
+    ) -> UserRating:
+        """Прибавляет к КРК фиксированную дельту (для челленджей и бонусов)."""
+        rating = await self.get_or_create_user_rating(user_id)
+
+        old_base = rating.base_score
+        old_unity = rating.unity_score
+        old_bonus = rating.bonus_score
+        old_penalty = rating.penalty_score
+        old_total = rating.total_krk
+
+        rating.bonus_score = self.round_krk(rating.bonus_score + bonus_delta)
+        rating.total_krk = self.round_krk(old_total + krk_delta)
+        rating.league = await self._get_league_for_score(rating.total_krk)
+
+        log = RatingLog(
+            user_id=rating.id,
+            old_base=old_base,
+            new_base=rating.base_score,
+            old_unity=old_unity,
+            new_unity=rating.unity_score,
+            old_bonus=old_bonus,
+            new_bonus=rating.bonus_score,
+            old_penalty=old_penalty,
+            new_penalty=rating.penalty_score,
+            old_total=old_total,
+            new_total=rating.total_krk,
+            event_type=event_type,
+            description=description,
+            team_id=team_id,
+        )
+        self.db.add(log)
+
+        if krk_delta != 0:
+            membership_result = await self.db.execute(
+                select(TeamMember).where(TeamMember.user_id == user_id)
+            )
+            membership = membership_result.scalar_one_or_none()
+            if membership:
+                await TeamRatingService(self.db).on_member_rating_changed(
+                    membership.team_id, user_id, old_total, rating.total_krk
+                )
+
+        await self.db.flush()
         return rating
 
     async def update_user_rating(
@@ -87,6 +157,10 @@ class RatingService:
             rating.bonus_score,
             rating.penalty_score
         )
+        rating.base_score = self.round_krk(rating.base_score)
+        rating.unity_score = self.round_krk(rating.unity_score)
+        rating.bonus_score = self.round_krk(rating.bonus_score)
+        rating.penalty_score = self.round_krk(rating.penalty_score)
 
         # Определяем лигу
         rating.league = await self._get_league_for_score(rating.total_krk)
