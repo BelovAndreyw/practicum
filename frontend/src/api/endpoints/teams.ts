@@ -2,6 +2,7 @@ import { http } from '../client';
 import { ratingApi } from './rating';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
+import { getMockInviteOverride, setMockInviteOverride } from '../mock/inviteCodes';
 import { MOCK_TEAMS } from '../mock/data';
 import {
   mapKrkFromRating,
@@ -16,13 +17,18 @@ import type { Team, KrkBreakdown } from '@/types';
 
 const USE_MOCK = shouldUseMock();
 
+function applyMockInvite(team: Team): Team {
+  const override = getMockInviteOverride(team.id);
+  return override ? { ...team, ...override } : team;
+}
+
 export const teamsApi = {
   async getTeam(id: string): Promise<Team> {
     if (USE_MOCK) {
       await mockDelay();
       const t = MOCK_TEAMS.find((team) => team.id === id);
       if (!t) throw new Error('Team not found');
-      return t;
+      return applyMockInvite(t);
     }
     const data = await http.get<BackendTeamDetail>(`/team/${id}`);
     const team = mapTeamDetail(data, data.average_krk ?? 0);
@@ -39,13 +45,18 @@ export const teamsApi = {
       // рейтинг недоступен — используем average_krk из деталей команды
     }
 
-    // Активный инвайт-код (доступен капитану); для остальных эндпоинт вернёт 403
-    try {
-      const invites = await http.get<{ links: BackendInviteLink[] }>(`/team/${id}/invites`);
-      const active = invites.links.find((l) => l.is_active) ?? invites.links[0];
-      if (active) team.inviteCode = active.token;
-    } catch {
-      // нет прав или ссылок — код останется пустым
+    // Фолбэк, если invite_code не пришёл в деталях команды
+    if (!team.inviteCode) {
+      try {
+        const invites = await http.get<{ links: BackendInviteLink[] }>(`/team/${id}/invites`);
+        const active = invites.links[0];
+        if (active) {
+          team.inviteCode = active.token;
+          if (active.expires_at) team.inviteCodeExpiresAt = active.expires_at;
+        }
+      } catch {
+        // нет прав или ссылок — код останется пустым
+      }
     }
 
     return team;
@@ -81,7 +92,18 @@ export const teamsApi = {
       return newTeam;
     }
     const data = await http.post<BackendTeamSummary>('/team/create', { name });
-    return mapTeamSummary(data);
+    const team = mapTeamSummary(data);
+    try {
+      const invites = await http.get<{ links: BackendInviteLink[] }>(`/team/${data.id}/invites`);
+      const active = invites.links.find((l) => l.is_active !== false) ?? invites.links[0];
+      if (active) {
+        team.inviteCode = active.token;
+        if (active.expires_at) team.inviteCodeExpiresAt = active.expires_at;
+      }
+    } catch {
+      // код подтянется при следующей загрузке страницы
+    }
+    return team;
   },
 
   async joinByCode(code: string): Promise<Team> {
@@ -91,7 +113,7 @@ export const teamsApi = {
       if (!t) throw new Error('Команда с таким кодом не найдена');
       return t;
     }
-    await http.post('/team/join-by-link', { token: code });
+    await http.post('/team/join-by-link', { token: code.trim().toUpperCase() });
     const profile = await http.get<{ team_id?: number | null }>('/team/profile');
     if (!profile.team_id) throw new Error('Не удалось вступить в команду');
     return teamsApi.getTeam(String(profile.team_id));
@@ -126,15 +148,18 @@ export const teamsApi = {
 
       const updatedAt = new Date();
       const expiresAt = new Date(updatedAt.getTime() + 24 * 60 * 60 * 1000);
-      t.inviteCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-      t.inviteCodeUpdatedAt = updatedAt.toISOString();
-      t.inviteCodeExpiresAt = expiresAt.toISOString();
-
-      return {
-        inviteCode: t.inviteCode,
-        inviteCodeUpdatedAt: t.inviteCodeUpdatedAt,
-        inviteCodeExpiresAt: t.inviteCodeExpiresAt,
+      const inviteCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const payload = {
+        inviteCode,
+        inviteCodeUpdatedAt: updatedAt.toISOString(),
+        inviteCodeExpiresAt: expiresAt.toISOString(),
       };
+      t.inviteCode = payload.inviteCode;
+      t.inviteCodeUpdatedAt = payload.inviteCodeUpdatedAt;
+      t.inviteCodeExpiresAt = payload.inviteCodeExpiresAt;
+      setMockInviteOverride(teamId, payload);
+
+      return payload;
     }
     const data = await http.post<BackendInviteLink>(`/team/${teamId}/invite`, {});
     const updatedAt = new Date().toISOString();

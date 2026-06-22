@@ -59,6 +59,33 @@ async def get_current_captain(
         )
     return current_user
 
+
+async def get_optional_current_user(
+        token: str | None = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)),
+        db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Возвращает пользователя по JWT, если токен передан; иначе None."""
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        username: str | None = payload.get("username")
+        if username is None:
+            return None
+    except JWTError:
+        return None
+
+    result = await db.execute(
+        select(User)
+        .where(User.username == username)
+        .options(selectinload(User.student))
+    )
+    user = result.scalar_one_or_none()
+    if user is None or not user.is_active:
+        return None
+    return user
+
 #пока не знаю, что делают преподаватели и администраторы (и отдельно ли они?), поэтому на них еще нет запроса
 
 async def get_current_admin_or_teacher(

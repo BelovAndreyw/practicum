@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
@@ -26,6 +26,26 @@ async def _generate_unique_invite_code(db: AsyncSession, length: int = 6) -> str
             return code
     # Маловероятный случай череды коллизий — удлиняем код
     return "".join(secrets.choice(INVITE_CODE_ALPHABET) for _ in range(length + 4))
+
+
+async def _new_invite_link(
+    team_id: int,
+    db: AsyncSession,
+    expires_hours: int = 24,
+    max_uses: int | None = None,
+) -> TeamInviteLink:
+    token = await _generate_unique_invite_code(db)
+    expires_at = datetime.utcnow() + timedelta(hours=expires_hours) if expires_hours else None
+    link = TeamInviteLink(
+        team_id=team_id,
+        token=token,
+        expires_at=expires_at,
+        max_uses=max_uses,
+        uses_count=0,
+        is_active=True,
+    )
+    db.add(link)
+    return link
 
 
 async def get_user_profile_logic(user: User, db: AsyncSession) -> dict:
@@ -131,6 +151,7 @@ async def create_team_logic(user: User, data: TeamCreateRequest, db: AsyncSessio
     db.add(TeamMember(user_id=user.id, team_id=team.id))
     user.role = UserRole.CAPTAIN.value
     await TeamRatingService(db).on_member_joined(team.id, user.id)
+    await _new_invite_link(team.id, db)
 
     try:
         await db.commit()
@@ -187,23 +208,15 @@ async def search_teams_logic(query: str, db: AsyncSession) -> list:
 
 async def create_invite_link_logic(team: Team, expires_hours: int = 24,
                                    max_uses: int = None, db: AsyncSession = None) -> TeamInviteLink:
-    """Создание пригласительной ссылки"""
-    token = await _generate_unique_invite_code(db)
-
-    expires_at = None
-    if expires_hours:
-        expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
-
-    link = TeamInviteLink(
-        team_id=team.id,
-        token=token,
-        expires_at=expires_at,
-        max_uses=max_uses,
-        uses_count=0,
-        is_active=True
+    """Создание пригласительной ссылки (предыдущие активные коды команды отзываются)."""
+    await db.execute(
+        update(TeamInviteLink)
+        .where(TeamInviteLink.team_id == team.id, TeamInviteLink.is_active.is_(True))
+        .values(is_active=False)
     )
 
-    db.add(link)
+    link = await _new_invite_link(team.id, db, expires_hours, max_uses)
+
     await db.commit()
     await db.refresh(link)
 
@@ -212,6 +225,7 @@ async def create_invite_link_logic(team: Team, expires_hours: int = 24,
 
 async def join_by_link_logic(token: str, user: User, db: AsyncSession) -> Team:
     """Вступление в команду по пригласительной ссылке"""
+    token = token.strip().upper()
     link_result = await db.execute(select(TeamInviteLink).where(TeamInviteLink.token == token))
     link = link_result.scalar_one_or_none()
 
@@ -322,7 +336,7 @@ async def process_join_request_logic(request_id: int, action: str, captain: User
     return request
 
 
-async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
+async def get_team_detail_logic(team_id: int, db: AsyncSession, viewer: User | None = None) -> dict:
     """Получение деталей команды"""
     team = await db.get(Team, team_id)
     if not team:
@@ -373,6 +387,20 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
     personal_scores = [m["personal_krk"] for m in members_list]
     average_krk = round(sum(personal_scores) / len(personal_scores), 2) if personal_scores else 0.0
 
+    invite_code = None
+    invite_expires_at = None
+    if viewer and viewer.id == team.captain_id:
+        invite_result = await db.execute(
+            select(TeamInviteLink)
+            .where(TeamInviteLink.team_id == team_id, TeamInviteLink.is_active.is_(True))
+            .order_by(TeamInviteLink.created_at.desc())
+            .limit(1)
+        )
+        active_invite = invite_result.scalar_one_or_none()
+        if active_invite:
+            invite_code = active_invite.token
+            invite_expires_at = active_invite.expires_at
+
     return {
         "id": team.id,
         "name": team.name,
@@ -382,7 +410,9 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
         "members": members_list,
         "members_count": len(members_list),
         "average_krk": average_krk,
-        "created_at": team.created_at
+        "created_at": team.created_at,
+        "invite_code": invite_code,
+        "invite_expires_at": invite_expires_at,
     }
 
 
@@ -460,7 +490,8 @@ async def get_my_invite_links_logic(team_id: int, captain: User, db: AsyncSessio
     result = await db.execute(
         select(TeamInviteLink)
         .where(TeamInviteLink.team_id == team_id)
-        .where(TeamInviteLink.is_active == True)
+        .where(TeamInviteLink.is_active.is_(True))
+        .order_by(TeamInviteLink.created_at.desc())
     )
     return result.scalars().all()
 

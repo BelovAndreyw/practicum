@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, get_current_captain
+from app.core.dependencies import get_current_user, get_current_captain, get_optional_current_user
 from app.modules.team.logic import (
     get_user_profile_logic,
     create_team_logic,
@@ -251,10 +251,11 @@ async def process_request(
 @router.get("/{team_id}", response_model=TeamDetailResponse)
 async def get_team_detail(
     team_id: int,
+    current_user: User | None = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Просмотр информации о команде"""
-    return await get_team_detail_logic(team_id, db)
+    return await get_team_detail_logic(team_id, db, viewer=current_user)
 
 
 @router.put("/{team_id}", response_model=TeamResponse)
@@ -302,7 +303,7 @@ async def disband_team(
 @router.get("/{team_id}/invites", response_model=InviteLinkListResponse)
 async def get_my_invite_links(
     team_id: int,
-    current_user: User = Depends(get_current_captain),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Получение списка активных пригласительных ссылок"""

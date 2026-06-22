@@ -101,6 +101,8 @@ class TeamDetailResponse(BaseModel):
     members_count: int
     average_krk: float = 0.0
     created_at: datetime
+    invite_code: Optional[str] = None
+    invite_expires_at: Optional[datetime] = None
 
 
 class InviteLinkListResponse(BaseModel):

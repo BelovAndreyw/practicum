@@ -150,11 +150,11 @@ async def test_join_by_link(client):
     }, headers={"Authorization": f"Bearer {captain_token}"})
     team_id = create.json()["id"]
 
-    invite = await client.post(f"/team/{team_id}/invite", json={
-        "expires_hours": 24
-    }, headers={"Authorization": f"Bearer {captain_token}"})
-    assert invite.status_code == 200
-    token = invite.json()["token"]
+    invites = await client.get(f"/team/{team_id}/invites",
+                               headers={"Authorization": f"Bearer {captain_token}"})
+    assert invites.status_code == 200
+    assert len(invites.json()["links"]) == 1
+    token = invites.json()["links"][0]["token"]
 
     # Студент вступает по ссылке... Зачем ссылке нужны данные студента... Безопасность вышла из чата 2
     student_login = await client.post("/auth/login", json={
@@ -169,6 +169,63 @@ async def test_join_by_link(client):
 
     assert join.status_code == 200
     assert join.json()["team_name"] == "Link Team"
+
+    detail = await client.get(f"/team/{team_id}", headers={"Authorization": f"Bearer {captain_token}"})
+    assert detail.status_code == 200
+    assert detail.json()["invite_code"] == token
+
+    lowercase_join = await client.post("/team/join-by-link", json={
+        "token": token.lower()
+    }, headers={"Authorization": f"Bearer {student_token}"})
+    assert lowercase_join.status_code == 400
+    assert "уже состоите" in lowercase_join.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_regenerate_invite_code_deactivates_old(client):
+    """Новый инвайт-код заменяет предыдущий: старый перестаёт работать."""
+    captain_login = await client.post("/auth/login", json={
+        "username": "ivanov_captain",
+        "password": "CaptainPass123!"
+    })
+    captain_token = captain_login.json()["access_token"]
+
+    create = await client.post("/team/create", json={
+        "name": "Regen Team",
+        "description": "Test"
+    }, headers={"Authorization": f"Bearer {captain_token}"})
+    team_id = create.json()["id"]
+
+    first = await client.post(f"/team/{team_id}/invite", json={"expires_hours": 24},
+                              headers={"Authorization": f"Bearer {captain_token}"})
+    assert first.status_code == 200
+    old_token = first.json()["token"]
+
+    second = await client.post(f"/team/{team_id}/invite", json={"expires_hours": 24},
+                               headers={"Authorization": f"Bearer {captain_token}"})
+    assert second.status_code == 200
+    new_token = second.json()["token"]
+    assert new_token != old_token
+
+    invites = await client.get(f"/team/{team_id}/invites",
+                               headers={"Authorization": f"Bearer {captain_token}"})
+    assert invites.status_code == 200
+    active_tokens = [link["token"] for link in invites.json()["links"]]
+    assert active_tokens == [new_token]
+
+    detail = await client.get(f"/team/{team_id}", headers={"Authorization": f"Bearer {captain_token}"})
+    assert detail.status_code == 200
+    assert detail.json()["invite_code"] == new_token
+
+    student_login = await client.post("/auth/login", json={
+        "username": "petrov_student",
+        "password": "StudentPass123!"
+    })
+    student_token = student_login.json()["access_token"]
+
+    old_join = await client.post("/team/join-by-link", json={"token": old_token},
+                                 headers={"Authorization": f"Bearer {student_token}"})
+    assert old_join.status_code == 400
 
 
 @pytest.mark.asyncio

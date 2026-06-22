@@ -25,6 +25,8 @@ export interface BackendTeamMember {
 export interface BackendTeamDetail extends BackendTeamSummary {
   members: BackendTeamMember[];
   average_krk?: number;
+  invite_code?: string | null;
+  invite_expires_at?: string | null;
 }
 
 export interface BackendTeamProfile {
@@ -89,6 +91,8 @@ export function mapTeamDetail(data: BackendTeamDetail, krk = 0, league = ''): Te
   return {
     ...mapTeamSummary(data, krk, league),
     members: data.members.map((m) => mapMember(m, data.captain_id)),
+    inviteCode: data.invite_code ?? '',
+    inviteCodeExpiresAt: data.invite_expires_at ?? undefined,
   };
 }
 
