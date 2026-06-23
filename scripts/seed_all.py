@@ -142,6 +142,7 @@ from app.models.reports import (
 )
 from app.models.voting import VoteRound
 from app.modules.rating.team_logic import TeamRatingService
+from app.modules.achievement.service import AchievementService
 
 USERS_DATA = [
     {"student_id": 201, "surname": "Смирнов", "name": "Алексей", "patronymic": "Петрович",
@@ -996,6 +997,9 @@ async def main():
             print("⚙️ Настройки лиг..."); await create_league_settings(session)
             print("📦 Архивы рейтингов..."); await create_archives(session, users, teams)
             print("🗳️ Голосование..."); await create_vote_rounds(session, teams)
+
+            print("🏅 Синхронизация достижений...")
+            await AchievementService(session).sync_all_users()
 
         await session.commit()
         print("\n💾 Все данные сохранены")

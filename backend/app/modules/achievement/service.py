@@ -3,6 +3,8 @@ from sqlalchemy import select
 from app.models.achievement import UserAchievement
 from app.models.activity import Activity
 from app.models.team import TeamMember
+from app.models.reports import WeeklyCheckin, HelpRequest
+from app.models.user import User
 from app.modules.achievement.catalog import get_achievement, ACHIEVEMENT_CATALOG
 
 
@@ -71,3 +73,52 @@ class AchievementService:
         )
         for member in members_result.scalars().all():
             await self.unlock_if_new(member.user_id, achievement_id)
+
+    async def sync_for_user(self, user_id: int) -> None:
+        """Выдаёт достижения по уже совершённым действиям (seed, старые данные)."""
+        checkin = await self.db.execute(
+            select(WeeklyCheckin.id)
+            .where(WeeklyCheckin.created_by == user_id)
+            .limit(1)
+        )
+        if checkin.scalar_one_or_none():
+            await self.unlock_if_new(user_id, "ach_x1")
+
+        team_ids = [
+            row[0]
+            for row in (
+                await self.db.execute(
+                    select(TeamMember.team_id).where(TeamMember.user_id == user_id)
+                )
+            ).all()
+        ]
+        if not team_ids:
+            return
+
+        fulfilled = await self.db.execute(
+            select(HelpRequest.id)
+            .where(
+                HelpRequest.fulfilled_by_team_id.in_(team_ids),
+                HelpRequest.status == "fulfilled",
+            )
+            .limit(1)
+        )
+        if fulfilled.scalar_one_or_none():
+            await self.unlock_if_new(user_id, "ach_x2")
+
+        offering = await self.db.execute(
+            select(HelpRequest.id)
+            .where(
+                HelpRequest.requesting_team_id.in_(team_ids),
+                HelpRequest.help_type == "offering",
+            )
+            .limit(1)
+        )
+        if offering.scalar_one_or_none():
+            await self.unlock_if_new(user_id, "ach_x3")
+
+    async def sync_all_users(self) -> None:
+        """Синхронизирует достижения для всех пользователей (после seed)."""
+        result = await self.db.execute(select(User.id))
+        for (user_id,) in result.all():
+            await self.sync_for_user(user_id)

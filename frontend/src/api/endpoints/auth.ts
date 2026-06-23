@@ -37,6 +37,7 @@ async function enrichUserFromProfile(base: User): Promise<User> {
       league: rating?.league ? mapLeague(rating.league) : base.league,
       krkBreakdown,
     });
+    // Достижения всегда из /auth/me (там sync по фактическим действиям)
     return { ...enriched, achievements: base.achievements };
   } catch {
     return base;

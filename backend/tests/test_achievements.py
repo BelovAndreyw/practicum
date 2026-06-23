@@ -119,6 +119,30 @@ async def test_checkin_unlocks_achievement_even_with_prior_checkins(db_session):
     )
     assert result.scalar_one_or_none() is not None
 
+
+@pytest.mark.asyncio
+async def test_sync_grants_checkin_achievement_for_seeded_checkins(db_session):
+    """sync_for_user выдаёт ach_x1 за check-in, созданные напрямую (seed), без unlock_if_new."""
+    user = await _create_user(db_session, "seed_user")
+    team = await _create_team(db_session, "SeedTeam", user, [])
+
+    db_session.add(WeeklyCheckin(
+        team_id=team.id,
+        week_start_date=date.today(),
+        content="Seeded week",
+        created_by=user.id,
+        status="approved",
+    ))
+    await db_session.commit()
+
+    service = AchievementService(db_session)
+    await service.sync_for_user(user.id)
+    await db_session.commit()
+
+    items = await service.get_user_achievements(user.id)
+    assert any(a["id"] == "ach_x1" for a in items)
+
+
 @pytest.mark.asyncio
 async def test_offering_unlocks_knowledge_achievement(db_session):
     user = await _create_user(db_session, "student3")
@@ -158,3 +182,35 @@ async def test_rescue_unlocks_helper_achievement(db_session):
         select(Activity).where(Activity.event_type == "achievement_unlocked")
     )
     assert activity_result.scalars().first() is not None
+
+
+@pytest.mark.asyncio
+async def test_sync_grants_rescue_achievement(db_session):
+    """sync_for_user выдаёт ach_x2 участнику команды, завершившей спасение."""
+    requester = await _create_user(db_session, "req2")
+    helper = await _create_user(db_session, "help2")
+    team_a = await _create_team(db_session, "A2", requester, [])
+    team_b = await _create_team(db_session, "B2", helper, [])
+
+    request = await create_help_request_logic(
+        team_a.id, requester.id, "Help", "Need", "receiving", "both", None, db_session,
+    )
+    response = await respond_to_help_logic(request.id, team_b.id, "OK", db_session)
+    await accept_help_logic(request.id, response.id, requester.id, db_session)
+
+    # Сбросить достижения, как если бы accept не вызывал unlock
+    await db_session.execute(
+        select(UserAchievement).where(UserAchievement.user_id == helper.id)
+    )
+    for row in (await db_session.execute(
+        select(UserAchievement).where(UserAchievement.user_id == helper.id)
+    )).scalars().all():
+        await db_session.delete(row)
+    await db_session.commit()
+
+    service = AchievementService(db_session)
+    await service.sync_for_user(helper.id)
+    await db_session.commit()
+
+    items = await service.get_user_achievements(helper.id)
+    assert any(a["id"] == "ach_x2" for a in items)
