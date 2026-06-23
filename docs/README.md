@@ -1,12 +1,14 @@
 # Документация «Командный зачёт»
 
+Оглавление каталога `docs/`. Быстрый старт dev/pilot — в [корневом README](../README.md).
+
 ## С чего начать
 
 | Документ | Для кого | О чём |
 |----------|----------|-------|
-| [**project-overview.md**](project-overview.md) | Все | Полный обзор проекта: стек, модули, экраны, окружения |
-| [**deployment-schema.md**](deployment-schema.md) | DevSecOps, backend | Архитектура, compose-окружения, CI/CD |
-| [**../README.md**](../README.md) | Разработчики | Быстрый старт dev/pilot |
+| [**project-overview.md**](project-overview.md) | Все | Полный обзор: стек, модули API, экраны, окружения |
+| [**deployment-schema.md**](deployment-schema.md) | DevSecOps | Архитектура, compose, CI/CD, секреты |
+| [**../README.md**](../README.md) | Разработчики | Быстрый старт: `docker compose` dev/pilot |
 
 ## Разработка и продукт
 
@@ -28,8 +30,14 @@
 
 ## Шаблоны окружения
 
-- Корневой [`.env.example`](../.env.example) — для dev/test compose
-- [`.env.pilot.example`](../.env.pilot.example) — для pilot
-- [`frontend/.env.example`](../frontend/.env.example) — переменные Vite
+| Файл | Назначение |
+|------|------------|
+| [`.env.example`](../.env.example) | dev/test compose |
+| [`.env.pilot.example`](../.env.pilot.example) | pilot |
+| [`frontend/.env.example`](../frontend/.env.example) | переменные Vite |
+| [`.env.example` в docs](.env.example) | расширенный справочник (в т.ч. планируемый SSO) |
 
-Файл [`docs/.env.example`](.env.example) — расширенный справочник (в т.ч. планируемые переменные SSO).
+## Скрипты (вне docs)
+
+- [`infra/scripts/bootstrap-pilot-server.sh`](../infra/scripts/bootstrap-pilot-server.sh) — bootstrap сервера
+- [`infra/scripts/deploy-pilot-manual.sh`](../infra/scripts/deploy-pilot-manual.sh) — ручной деплой pilot

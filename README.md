@@ -89,8 +89,4 @@ docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot down
 
 ## Документация
 
-- Обзор проекта: `docs/project-overview.md`
-- Оглавление docs: `docs/README.md`
-- Схема развёртывания: `docs/deployment-schema.md`
-- Pilot на сервере: `docs/pilot-github-setup.md` (GitHub Secrets, branch protection)
-- Bootstrap-скрипт: `infra/scripts/bootstrap-pilot-server.sh`
+Подробные материалы — в каталоге [`docs/`](docs/README.md) (обзор проекта, DevOps, UX, pilot, безопасность).
