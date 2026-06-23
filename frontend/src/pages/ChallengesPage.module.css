@@ -52,6 +52,17 @@
   gap: 12px;
 }
 
+.formError {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .fieldHint {
   margin: -6px 0 0;
   font-size: 0.76rem;
@@ -77,6 +88,11 @@
   padding: 8px 10px;
   font-size: 0.85rem;
   color: var(--text);
+}
+
+.fileInputError {
+  border-color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .fileHint {

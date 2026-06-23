@@ -1,9 +1,15 @@
 .center { display: flex; justify-content: center; padding: 60px; }
 
+.searchBar {
+  max-width: 380px;
+  margin-bottom: 34px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 18px;
+  padding-top: 2px;
 }
 
 .card { display: flex; flex-direction: column; }
@@ -81,5 +87,9 @@
 
 @media (max-width: 640px) {
   .center { padding: 28px 12px; }
+  .searchBar {
+    max-width: none;
+    margin-bottom: 24px;
+  }
   .grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }

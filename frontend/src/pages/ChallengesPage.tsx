@@ -30,6 +30,7 @@ export function ChallengesPage() {
   const reportTextValid = reportBody.trim().length >= MIN_REPORT_LENGTH;
   const filesValid = reportFiles.length > 0;
   const canSubmit = reportTextValid && filesValid;
+  const showRequiredError = attemptedSubmit && !canSubmit;
 
   const openReportModal = (challenge: Challenge) => {
     setSelected(challenge);
@@ -143,16 +144,18 @@ export function ChallengesPage() {
         )}
 
         <div className={styles.reportForm}>
+          {showRequiredError && (
+            <p className={styles.formError}>Заполните все обязательные поля.</p>
+          )}
+
           <Textarea
             label="Описание результата (обязательно)"
             placeholder="Что сделали, кто участвовал, какой результат получили..."
             value={reportBody}
             onChange={(event) => setReportBody(event.target.value)}
+            error={attemptedSubmit && !reportTextValid ? 'Добавьте описание результата минимум на 40 символов.' : undefined}
           />
           <p className={styles.fieldHint}>Символов: {reportBody.trim().length} / {MIN_REPORT_LENGTH}</p>
-          {attemptedSubmit && !reportTextValid && (
-            <p className={styles.errorText}>Добавьте более подробное описание результата.</p>
-          )}
 
           <Textarea
             label="Комментарий для организатора (необязательно)"
@@ -167,7 +170,7 @@ export function ChallengesPage() {
               id="challenge-report-files"
               type="file"
               multiple
-              className={styles.fileInput}
+              className={[styles.fileInput, attemptedSubmit && !filesValid ? styles.fileInputError : ''].join(' ')}
               accept="image/*,.pdf,.doc,.docx,.ppt,.pptx"
               onChange={handleFilesChange}
             />
