@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom';
 import { ratingApi } from '@/api';
 import type { TeamRatingEntry, UserRatingEntry } from '@/types';
-import { Avatar, Badge, Card, Empty, PageHeader, Spinner, Tabs } from '@/components/ui';
+import { Avatar, Badge, Card, Empty, Input, PageHeader, Spinner, Tabs } from '@/components/ui';
 import styles from './RatingPage.module.css';
 
 const LEAGUE_VARIANT: Record<string, 'accent' | 'violet' | 'warning'> = {
@@ -19,6 +19,7 @@ export function RatingPage() {
 
   const [streamFilter, setStreamFilter] = useState('all');
   const [teamFilter, setTeamFilter] = useState('all');
+  const [studentSearch, setStudentSearch] = useState('');
 
   useEffect(() => {
     Promise.allSettled([ratingApi.getTeamRating(), ratingApi.getUserRating()])
@@ -40,12 +41,20 @@ export function RatingPage() {
   }, [userRating]);
 
   const filteredUsers = useMemo(() => {
+    const normalizedSearch = studentSearch.trim().toLowerCase();
+
     return userRating.filter((entry) => {
       const streamMatch = streamFilter === 'all' || entry.stream === streamFilter;
       const teamMatch = teamFilter === 'all' || entry.teamName === teamFilter;
-      return streamMatch && teamMatch;
+      const searchable = [
+        entry.user.firstName,
+        entry.user.lastName,
+        entry.teamName ?? '',
+      ].join(' ').toLowerCase();
+      const searchMatch = !normalizedSearch || searchable.includes(normalizedSearch);
+      return streamMatch && teamMatch && searchMatch;
     });
-  }, [userRating, streamFilter, teamFilter]);
+  }, [userRating, streamFilter, teamFilter, studentSearch]);
 
   if (loading) return <div className={styles.center}><Spinner size="lg" /></div>;
 
@@ -102,7 +111,14 @@ export function RatingPage() {
 
         {tab === 'users' && (
           <Card padding="lg">
-            <span className="eyebrow">Рейтинг студентов</span>
+            <div className={styles.searchHeader}>
+              <Input
+                label="Поиск студента"
+                placeholder="Введите имя, фамилию или команду..."
+                value={studentSearch}
+                onChange={(event) => setStudentSearch(event.target.value)}
+              />
+            </div>
 
             <div className={styles.filtersRow}>
               <label className={styles.filterField}>

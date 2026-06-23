@@ -49,12 +49,13 @@ export function TeamsListPage() {
         subtitle="Список всех команд потока, отсортированных по КРК."
       />
 
-      <Input
-        placeholder="Поиск по названию..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        style={{ maxWidth: 380, marginBottom: 20 }}
-      />
+      <div className={styles.searchBar}>
+        <Input
+          placeholder="Поиск по названию..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
 
       {loading && <div className={styles.center}><Spinner /></div>}
       {!loading && filtered.length === 0 && <Empty message="Команды не найдены" />}
