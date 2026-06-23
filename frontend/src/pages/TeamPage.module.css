@@ -101,6 +101,14 @@
 .challengeDesc { font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
 .challengeDeadline { font-size: 0.74rem; color: var(--warning); margin-top: 5px; }
 
+.calendarControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .calendarNav { display: flex; align-items: center; gap: 8px; }
 .calendarMonth {
   min-width: 160px;
@@ -179,9 +187,17 @@
   align-items: baseline;
   gap: 5px;
   min-width: 0;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
   font-size: 0.68rem;
   line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
 }
+
+.dayEvent:hover .dayEventTitle { text-decoration: underline; }
 
 .dayEventTime {
   font-weight: 600;
@@ -238,6 +254,15 @@
   border-radius: var(--radius-lg);
   background: var(--surface-soft);
   border: 1px solid var(--line);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.member:hover {
+  border-color: var(--accent);
+  box-shadow: 0 12px 24px rgba(27, 39, 72, 0.08);
+  transform: translateY(-2px);
 }
 
 .memberLink {
@@ -258,6 +283,79 @@
 .memberRole { font-size: 0.74rem; color: var(--muted); }
 .memberRatingBadge { margin-top: 4px; font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--accent-strong); }
 .memberRatingLabel { font-size: 0.68rem; color: var(--muted); }
+
+.memberModalCenter {
+  display: flex;
+  justify-content: center;
+  padding: 26px 0;
+}
+
+.memberProfile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.memberDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.memberDetails strong {
+  color: var(--text);
+}
+
+.teamEventForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.eventFormatRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.eventFormatButton {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 8px 14px;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), color var(--transition);
+}
+
+.eventFormatButton:hover,
+.eventFormatActive {
+  border-color: var(--accent);
+  background: #eef1ff;
+  color: var(--accent-strong);
+}
+
+.eventFormatButton:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.eventFormatButton:disabled:hover {
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+.eventFormatActive:disabled,
+.eventFormatActive:disabled:hover {
+  border-color: var(--accent);
+  background: #eef1ff;
+  color: var(--accent-strong);
+}
 
 @media (max-width: 1100px) {
   .grid { grid-template-columns: 1fr 1fr; }
@@ -318,6 +416,10 @@
     justify-content: space-between;
     width: 100%;
   }
+  .calendarControls {
+    align-items: stretch;
+    flex-direction: column;
+  }
   .monthGrid,
   .weekHeader {
     gap: 3px;
@@ -348,6 +450,11 @@
   }
   .member {
     padding: 14px 10px;
+  }
+  .memberProfile {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
   }
 }
 

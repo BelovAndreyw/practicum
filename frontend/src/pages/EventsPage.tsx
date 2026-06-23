@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { eventsApi } from '@/api';
+import { useAuth } from '@/features/auth/AuthContext';
 import type { CalendarEvent, EventFormat } from '@/types';
 import { Badge, Button, Card, Empty, Input, Modal, PageHeader, Spinner, Textarea } from '@/components/ui';
 import styles from './EventsPage.module.css';
@@ -11,13 +12,17 @@ const FORMAT_LABEL: Record<EventFormat, string> = {
 };
 
 export function EventsPage() {
+  const { user } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     title: '',
     description: '',
+    imageUrl: '',
     format: 'online' as EventFormat,
     date: '',
     location: '',
@@ -28,23 +33,81 @@ export function EventsPage() {
     eventsApi.list().then(setEvents).finally(() => setLoading(false));
   }, []);
 
-  const handleCreate = async () => {
+  const resetForm = () => {
+    setForm({ title: '', description: '', imageUrl: '', format: 'online', date: '', location: '', onlineLink: '' });
+  };
+
+  const openCreateModal = () => {
+    setEditingEvent(null);
+    resetForm();
+    setShowCreate(true);
+  };
+
+  const openEditModal = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    setSelectedEvent(null);
+    setForm({
+      title: event.title,
+      description: event.description ?? '',
+      imageUrl: event.imageUrl ?? '',
+      format: event.format,
+      date: toDatetimeLocalValue(new Date(event.date)),
+      location: event.location ?? '',
+      onlineLink: event.onlineLink ?? '',
+    });
+    setShowCreate(true);
+  };
+
+  const closeEventModal = () => {
+    setShowCreate(false);
+    setEditingEvent(null);
+  };
+
+  const canEditEvent = (event: CalendarEvent) => Boolean(user && event.organizerId === user.id);
+  const canDeleteEvent = (event: CalendarEvent) => Boolean(user && (event.organizerId === user.id || user.role === 'organizer'));
+
+  const handleSave = async () => {
     setSaving(true);
     try {
       const payload = {
         title: form.title,
         description: form.description,
+        imageUrl: form.imageUrl.trim() || undefined,
         format: form.format,
-        date: form.date,
+        date: new Date(form.date).toISOString(),
         location: form.format === 'offline' ? form.location : undefined,
         onlineLink: form.format === 'online' ? form.onlineLink : undefined,
         invitedTeamIds: [],
       };
 
-      const created = await eventsApi.create(payload);
-      setEvents((prev) => [...prev, created]);
-      setShowCreate(false);
-      setForm({ title: '', description: '', format: 'online', date: '', location: '', onlineLink: '' });
+      if (editingEvent) {
+        const updated = await eventsApi.update(editingEvent.id, payload);
+        setEvents((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      } else {
+        const created = await eventsApi.create({
+          ...payload,
+          organizerId: user?.id,
+          organizerName: user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : undefined,
+        });
+        setEvents((prev) => [...prev, created]);
+      }
+
+      closeEventModal();
+      resetForm();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (event: CalendarEvent) => {
+    if (!canDeleteEvent(event) || !window.confirm('Удалить событие?')) return;
+
+    setSaving(true);
+    try {
+      await eventsApi.remove(event.id);
+      setEvents((prev) => prev.filter((item) => item.id !== event.id));
+      if (selectedEvent?.id === event.id) setSelectedEvent(null);
+      if (editingEvent?.id === event.id) closeEventModal();
     } finally {
       setSaving(false);
     }
@@ -60,7 +123,7 @@ export function EventsPage() {
         eyebrow="Календарь"
         title="События"
         subtitle="Встречи, воркшопы и мероприятия от команд и организаторов."
-        actions={<Button size="sm" onClick={() => setShowCreate(true)}>+ Создать событие</Button>}
+        actions={<Button size="sm" onClick={openCreateModal}>+ Создать событие</Button>}
       />
 
       {events.length === 0 && <Empty icon="📅" message="Нет запланированных событий" />}
@@ -99,6 +162,10 @@ export function EventsPage() {
                     Ссылка на подключение
                   </a>
                 )}
+
+                <div className={styles.eventActions}>
+                  <Button size="sm" variant="secondary" onClick={() => setSelectedEvent(item)}>Подробнее</Button>
+                </div>
               </div>
             </Card>
           );
@@ -106,18 +173,21 @@ export function EventsPage() {
       </div>
 
       <Modal
-        title="Создать событие"
+        title={editingEvent ? 'Редактировать событие' : 'Создать событие'}
         open={showCreate}
-        onClose={() => setShowCreate(false)}
+        onClose={closeEventModal}
         footer={(
           <>
-            <Button variant="secondary" onClick={() => setShowCreate(false)}>Отмена</Button>
+            {editingEvent && canDeleteEvent(editingEvent) && (
+              <Button variant="danger" onClick={() => handleDelete(editingEvent)} loading={saving}>Удалить</Button>
+            )}
+            <Button variant="secondary" onClick={closeEventModal}>Отмена</Button>
             <Button
-              onClick={handleCreate}
+              onClick={handleSave}
               loading={saving}
               disabled={!form.title || !form.date || (form.format === 'online' && !form.onlineLink.trim())}
             >
-              Создать
+              {editingEvent ? 'Сохранить' : 'Создать'}
             </Button>
           </>
         )}
@@ -125,6 +195,7 @@ export function EventsPage() {
         <div className={styles.createForm}>
           <Input label="Название" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Воркшоп по Java" />
           <Textarea label="Описание (необязательно)" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+          <Input label="Изображение" value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} placeholder="https://..." />
           <Input label="Дата и время" type="datetime-local" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
 
           <div className={styles.formatRow}>
@@ -162,6 +233,61 @@ export function EventsPage() {
           )}
         </div>
       </Modal>
+
+      <Modal
+        title={selectedEvent?.title ?? 'Событие'}
+        open={!!selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        footer={(
+          <>
+            {selectedEvent && canDeleteEvent(selectedEvent) && (
+              <Button variant="danger" onClick={() => handleDelete(selectedEvent)} loading={saving}>Удалить</Button>
+            )}
+            {selectedEvent && canEditEvent(selectedEvent) && (
+              <Button onClick={() => openEditModal(selectedEvent)}>Редактировать</Button>
+            )}
+            <Button variant="secondary" onClick={() => setSelectedEvent(null)}>Закрыть</Button>
+          </>
+        )}
+      >
+        {selectedEvent && (
+          <div className={styles.details}>
+            <div className={styles.detailsImage}>
+              {selectedEvent.imageUrl ? (
+                <img src={selectedEvent.imageUrl} alt="" />
+              ) : (
+                <div className={styles.detailsPlaceholder}>КЗ</div>
+              )}
+            </div>
+
+            <div className={styles.detailsMeta}>
+              <Badge variant={selectedEvent.format === 'online' ? 'accent' : 'violet'}>{FORMAT_LABEL[selectedEvent.format]}</Badge>
+              <span>{new Date(selectedEvent.date).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+
+            <p className={styles.detailsText}>
+              {selectedEvent.description || 'Подробности события появятся ближе к началу мероприятия.'}
+            </p>
+
+            <div className={styles.detailsInfo}>
+              <p><strong>Организатор:</strong> {selectedEvent.organizerName}</p>
+              {selectedEvent.location && <p><strong>Место:</strong> {selectedEvent.location}</p>}
+              {selectedEvent.onlineLink && (
+                <p>
+                  <strong>Ссылка:</strong>{' '}
+                  <a href={selectedEvent.onlineLink} target="_blank" rel="noreferrer">открыть подключение</a>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
+}
+
+function toDatetimeLocalValue(date: Date) {
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 16);
 }

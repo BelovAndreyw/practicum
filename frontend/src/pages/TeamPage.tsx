@@ -1,9 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
-import { activityApi, challengesApi, eventsApi, teamsApi } from '@/api';
-import type { ActivityEvent, CalendarEvent, Challenge, KrkBreakdown, Team } from '@/types';
-import { Avatar, Badge, Button, Card, Empty, Input, PageHeader, Spinner } from '@/components/ui';
+import { activityApi, challengesApi, eventsApi, teamsApi, usersApi } from '@/api';
+import type { ActivityEvent, CalendarEvent, Challenge, EventFormat, KrkBreakdown, Team, User } from '@/types';
+import { Avatar, Badge, Button, Card, Empty, Input, Modal, PageHeader, Spinner, Textarea } from '@/components/ui';
 import styles from './TeamPage.module.css';
 import { isPastEvent } from '@/utils/dates';
 
@@ -41,6 +40,18 @@ export function TeamPage() {
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
+  const [selectedMember, setSelectedMember] = useState<User | null>(null);
+  const [memberLoading, setMemberLoading] = useState(false);
+  const [showTeamEventModal, setShowTeamEventModal] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    description: '',
+    format: 'online' as EventFormat,
+    date: '',
+    location: '',
+    onlineLink: '',
+  });
 
   useEffect(() => {
     if (!user?.teamId) {
@@ -73,9 +84,12 @@ export function TeamPage() {
             ? challengesResult.value.filter((item) => item.status === 'active').slice(0, 5)
             : [],
         );
+        const teamMemberIds = new Set(teamData.members.map((member) => member.userId));
         setEvents(
           eventsResult.status === 'fulfilled'
-            ? eventsResult.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            ? eventsResult.value
+              .filter((item) => item.invitedTeamIds.includes(teamData.id) || teamMemberIds.has(item.organizerId))
+              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             : [],
         );
         setActivity(
@@ -133,6 +147,104 @@ export function TeamPage() {
   };
 
   const isCaptain = team?.captainId === user?.id;
+  const teamMemberIds = useMemo(() => new Set(team?.members.map((member) => member.userId) ?? []), [team?.members]);
+  const editingTeamEvent = useMemo(
+    () => events.find((item) => item.id === editingEventId) ?? null,
+    [editingEventId, events],
+  );
+
+  const canEditTeamEvent = (event: CalendarEvent) => {
+    if (!user || !team) return false;
+    if (event.organizerId === user.id) return true;
+    return Boolean(isCaptain && teamMemberIds.has(event.organizerId));
+  };
+
+  const canDeleteTeamEvent = (event: CalendarEvent) => {
+    if (!user) return false;
+    if (event.organizerId === user.id || user.role === 'organizer') return true;
+    return Boolean(isCaptain && teamMemberIds.has(event.organizerId));
+  };
+
+  const canEditCurrentTeamEvent = !editingTeamEvent || canEditTeamEvent(editingTeamEvent);
+  const canDeleteCurrentTeamEvent = Boolean(editingTeamEvent && canDeleteTeamEvent(editingTeamEvent));
+
+  const openMemberProfile = async (userId: string) => {
+    setMemberLoading(true);
+    setSelectedMember(null);
+    try {
+      setSelectedMember(await usersApi.getUser(userId));
+    } finally {
+      setMemberLoading(false);
+    }
+  };
+
+  const openNewTeamEvent = () => {
+    const initialDate = new Date();
+    initialDate.setHours(initialDate.getHours() + 1, 0, 0, 0);
+    setEditingEventId(null);
+    setEventForm({
+      title: '',
+      description: '',
+      format: 'online',
+      date: toDatetimeLocalValue(initialDate),
+      location: '',
+      onlineLink: '',
+    });
+    setShowTeamEventModal(true);
+  };
+
+  const openEditTeamEvent = (event: CalendarEvent) => {
+    setEditingEventId(event.id);
+    setEventForm({
+      title: event.title,
+      description: event.description ?? '',
+      format: event.format,
+      date: toDatetimeLocalValue(new Date(event.date)),
+      location: event.location ?? '',
+      onlineLink: event.onlineLink ?? '',
+    });
+    setShowTeamEventModal(true);
+  };
+
+  const closeTeamEventModal = () => {
+    setShowTeamEventModal(false);
+    setEditingEventId(null);
+  };
+
+  const handleSaveTeamEvent = () => {
+    if (!team || !user || !eventForm.title.trim() || !eventForm.date) return;
+    const existingEvent = editingEventId ? events.find((item) => item.id === editingEventId) : null;
+    if (existingEvent && !canEditTeamEvent(existingEvent)) return;
+
+    const payload: CalendarEvent = {
+      id: editingEventId ?? `team-event-${Date.now()}`,
+      title: eventForm.title.trim(),
+      description: eventForm.description.trim() || undefined,
+      format: eventForm.format,
+      date: new Date(eventForm.date).toISOString(),
+      location: eventForm.format === 'offline' ? eventForm.location.trim() || undefined : undefined,
+      onlineLink: eventForm.format === 'online' ? eventForm.onlineLink.trim() || undefined : undefined,
+      organizerId: existingEvent?.organizerId ?? user.id,
+      organizerName: existingEvent?.organizerName ?? [user.firstName, user.lastName].filter(Boolean).join(' '),
+      invitedTeamIds: [team.id],
+      createdAt: existingEvent?.createdAt ?? new Date().toISOString(),
+    };
+
+    setEvents((prev) => {
+      const next = editingEventId
+        ? prev.map((item) => (item.id === editingEventId ? payload : item))
+        : [...prev, payload];
+
+      return next.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    });
+    closeTeamEventModal();
+  };
+
+  const handleDeleteTeamEvent = () => {
+    if (!editingTeamEvent || !canDeleteTeamEvent(editingTeamEvent) || !window.confirm('Удалить событие команды?')) return;
+    setEvents((prev) => prev.filter((item) => item.id !== editingTeamEvent.id));
+    closeTeamEventModal();
+  };
 
   const inviteExpiresLabel = useMemo(() => {
     if (!team?.inviteCodeExpiresAt) return null;
@@ -306,15 +418,18 @@ export function TeamPage() {
 
           <div className={styles.membersGrid}>
             {team.members.map((member) => (
-              <div key={member.userId} className={styles.member}>
-                <Link to={`/users/${member.userId}`} className={styles.memberLink}>
-                  <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatarUrl} size="lg" />
-                  <p className={styles.memberName}>{member.firstName} {member.lastName}</p>
-                  <p className={styles.memberRole}>{member.role === 'captain' ? '★ Капитан' : 'Участник'}</p>
-                  <div className={styles.memberRatingBadge}>{member.personalRating.toFixed(2)}</div>
-                  <span className={styles.memberRatingLabel}>КРК</span>
-                </Link>
-              </div>
+              <button
+                type="button"
+                key={member.userId}
+                className={styles.member}
+                onClick={() => openMemberProfile(member.userId)}
+              >
+                <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatarUrl} size="lg" />
+                <p className={styles.memberName}>{member.firstName} {member.lastName}</p>
+                <p className={styles.memberRole}>{member.role === 'captain' ? '★ Капитан' : 'Участник'}</p>
+                <div className={styles.memberRatingBadge}>{member.personalRating.toFixed(2)}</div>
+                <span className={styles.memberRatingLabel}>КРК</span>
+              </button>
             ))}
           </div>
         </Card>
@@ -325,90 +440,90 @@ export function TeamPage() {
               <span className="eyebrow">Календарь</span>
               <h3 className={styles.panelTitle}>Календарь команды</h3>
             </div>
-            <div className={styles.calendarNav}>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => setCalendarMonth((prev) => shiftMonth(prev, -1))}
-              >
-                ←
-              </Button>
-              <span className={styles.calendarMonth}>{capitalize(monthLabel)}</span>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => setCalendarMonth((prev) => shiftMonth(prev, 1))}
-              >
-                →
-              </Button>
+            <div className={styles.calendarControls}>
+              <Button type="button" size="sm" onClick={openNewTeamEvent}>+ Событие команды</Button>
+              <div className={styles.calendarNav}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setCalendarMonth((prev) => shiftMonth(prev, -1))}
+                >
+                  ←
+                </Button>
+                <span className={styles.calendarMonth}>{capitalize(monthLabel)}</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setCalendarMonth((prev) => shiftMonth(prev, 1))}
+                >
+                  →
+                </Button>
+              </div>
             </div>
           </div>
 
-          {events.length === 0 && <Empty icon="📅" message="Событий пока нет" />}
+          {events.length === 0 && <Empty icon="📅" message="Командных событий пока нет" hint="Добавьте событие в календарь команды" />}
 
-          {events.length > 0 && (
-            <>
-              <div className={styles.weekHeader}>
-                {WEEK_DAYS.map((day) => (
-                  <span key={day} className={styles.weekday}>{day}</span>
-                ))}
-              </div>
+          <div className={styles.weekHeader}>
+            {WEEK_DAYS.map((day) => (
+              <span key={day} className={styles.weekday}>{day}</span>
+            ))}
+          </div>
 
-              <div className={styles.monthGrid}>
-                {monthCells.map((cell) => {
-                  const isCurrentDay = isToday(cell.date);
-                  const dayEvents = eventsByDay.get(getDateKey(cell.date)) ?? [];
+          <div className={styles.monthGrid}>
+            {monthCells.map((cell) => {
+              const isCurrentDay = isToday(cell.date);
+              const dayEvents = eventsByDay.get(getDateKey(cell.date)) ?? [];
 
-                  return (
-                    <div
-                      key={cell.key}
-                      className={[
-                        styles.dayCell,
-                        cell.inCurrentMonth ? '' : styles.dayMuted,
-                        isCurrentDay ? styles.dayToday : '',
-                      ].join(' ')}
-                    >
-                      <span className={styles.dayNumber}>{cell.date.getDate()}</span>
+              return (
+                <div
+                  key={cell.key}
+                  className={[
+                    styles.dayCell,
+                    cell.inCurrentMonth ? '' : styles.dayMuted,
+                    isCurrentDay ? styles.dayToday : '',
+                  ].join(' ')}
+                >
+                  <span className={styles.dayNumber}>{cell.date.getDate()}</span>
 
-                      <div className={styles.dayEventList}>
-                        {dayEvents.slice(0, 2).map((item) => {
-                          const eventDate = new Date(item.date);
-                          const past = isPastEvent(item.date);
-                          return (
-                            <div
-                              key={item.id}
-                              className={[
-                                styles.dayEvent,
-                                item.format === 'online' ? styles.dayEventOnline : styles.dayEventOffline,
-                                past ? styles.dayEventPast : '',
-                              ].join(' ')}
-                              title={`${eventDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · ${item.title}`}
-                            >
-                              <span className={styles.dayEventTime}>
-                                {eventDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                              <span className={styles.dayEventTitle}>{item.title}</span>
-                            </div>
-                          );
-                        })}
+                  <div className={styles.dayEventList}>
+                    {dayEvents.slice(0, 2).map((item) => {
+                      const eventDate = new Date(item.date);
+                      const past = isPastEvent(item.date);
+                      return (
+                        <button
+                          type="button"
+                          key={item.id}
+                          className={[
+                            styles.dayEvent,
+                            item.format === 'online' ? styles.dayEventOnline : styles.dayEventOffline,
+                            past ? styles.dayEventPast : '',
+                          ].join(' ')}
+                          title={`${eventDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · ${item.title}`}
+                          onClick={() => openEditTeamEvent(item)}
+                        >
+                          <span className={styles.dayEventTime}>
+                            {eventDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className={styles.dayEventTitle}>{item.title}</span>
+                        </button>
+                      );
+                    })}
 
-                        {dayEvents.length > 2 && (
-                          <span className={styles.dayMore}>+{dayEvents.length - 2} ещё</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    {dayEvents.length > 2 && (
+                      <span className={styles.dayMore}>+{dayEvents.length - 2} ещё</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-              <p className={styles.calendarHint}>
-                События из раздела «События» отображаются здесь автоматически.{' '}
-                <a href="/events" className={styles.calendarLink}>Добавить новое событие</a>
-              </p>
-            </>
-          )}
+          <p className={styles.calendarHint}>
+            Здесь отображаются только события этой команды. Нажмите на событие, чтобы посмотреть или изменить его.
+          </p>
         </Card>
 
         <Card padding="lg" className={styles.activityCard}>
@@ -430,6 +545,101 @@ export function TeamPage() {
           </div>
         </Card>
       </div>
+
+      <Modal
+        title={memberLoading ? 'Профиль участника' : selectedMember ? `${selectedMember.firstName} ${selectedMember.lastName}` : 'Профиль участника'}
+        open={memberLoading || !!selectedMember}
+        onClose={() => { setSelectedMember(null); setMemberLoading(false); }}
+        footer={<Button variant="secondary" onClick={() => { setSelectedMember(null); setMemberLoading(false); }}>Закрыть</Button>}
+      >
+        {memberLoading && <div className={styles.memberModalCenter}><Spinner /></div>}
+        {selectedMember && (
+          <div className={styles.memberProfile}>
+            <Avatar name={`${selectedMember.firstName} ${selectedMember.lastName}`} src={selectedMember.avatarUrl} size="xl" />
+            <div className={styles.memberDetails}>
+              <p><strong>ФИО:</strong> {[selectedMember.lastName, selectedMember.firstName, selectedMember.middleName].filter(Boolean).join(' ')}</p>
+              <p><strong>Email:</strong> {selectedMember.email}</p>
+              <p><strong>Телефон:</strong> {selectedMember.phone ?? 'не указан'}</p>
+              {selectedMember.studentId && <p><strong>Учебный ID:</strong> {selectedMember.studentId}</p>}
+              <p><strong>Рейтинг:</strong> {selectedMember.personalRating}</p>
+              <p><strong>Роль:</strong> {selectedMember.role === 'captain' ? 'капитан' : selectedMember.role === 'organizer' ? 'организатор' : 'студент'}</p>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        title={editingEventId ? (canEditCurrentTeamEvent ? 'Редактировать событие команды' : 'Событие команды') : 'Добавить событие команды'}
+        open={showTeamEventModal}
+        onClose={closeTeamEventModal}
+        footer={(
+          <>
+            {canDeleteCurrentTeamEvent && (
+              <Button variant="danger" onClick={handleDeleteTeamEvent}>Удалить</Button>
+            )}
+            <Button variant="secondary" onClick={closeTeamEventModal}>
+              {canEditCurrentTeamEvent ? 'Отмена' : 'Закрыть'}
+            </Button>
+            {canEditCurrentTeamEvent && (
+              <Button onClick={handleSaveTeamEvent} disabled={!eventForm.title.trim() || !eventForm.date}>Сохранить</Button>
+            )}
+          </>
+        )}
+      >
+        <div className={styles.teamEventForm}>
+          <Input
+            label="Название"
+            value={eventForm.title}
+            onChange={(event) => setEventForm({ ...eventForm, title: event.target.value })}
+            placeholder="Командный разбор темы"
+            disabled={!canEditCurrentTeamEvent}
+          />
+          <Textarea
+            label="Описание"
+            value={eventForm.description}
+            onChange={(event) => setEventForm({ ...eventForm, description: event.target.value })}
+            placeholder="Что планируем сделать и кто участвует..."
+            disabled={!canEditCurrentTeamEvent}
+          />
+          <Input
+            label="Дата и время"
+            type="datetime-local"
+            value={eventForm.date}
+            onChange={(event) => setEventForm({ ...eventForm, date: event.target.value })}
+            disabled={!canEditCurrentTeamEvent}
+          />
+          <div className={styles.eventFormatRow}>
+            {(['online', 'offline'] as const).map((format) => (
+              <button
+                key={format}
+                type="button"
+                className={[styles.eventFormatButton, eventForm.format === format ? styles.eventFormatActive : ''].join(' ')}
+                onClick={() => setEventForm({ ...eventForm, format })}
+                disabled={!canEditCurrentTeamEvent}
+              >
+                {format === 'online' ? 'Онлайн' : 'Офлайн'}
+              </button>
+            ))}
+          </div>
+          {eventForm.format === 'online' ? (
+            <Input
+              label="Ссылка"
+              value={eventForm.onlineLink}
+              onChange={(event) => setEventForm({ ...eventForm, onlineLink: event.target.value })}
+              placeholder="https://..."
+              disabled={!canEditCurrentTeamEvent}
+            />
+          ) : (
+            <Input
+              label="Место"
+              value={eventForm.location}
+              onChange={(event) => setEventForm({ ...eventForm, location: event.target.value })}
+              placeholder="Корпус, аудитория"
+              disabled={!canEditCurrentTeamEvent}
+            />
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -477,6 +687,12 @@ function isToday(date: Date) {
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function toDatetimeLocalValue(date: Date) {
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 16);
 }
 
 function KrkRow({ label, value }: { label: string; value: number }) {

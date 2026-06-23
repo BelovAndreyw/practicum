@@ -133,10 +133,40 @@
 .topScore { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--accent-strong); margin: 0; }
 
 /* Leagues */
-.leaguesGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.leaguesGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch; }
+.leagueCard { min-height: 260px; display: flex; flex-direction: column; }
 .leagueHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .leagueName { font-size: 1rem; margin: 0; }
 .leagueDesc { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; line-height: 1.55; }
+
+.leagueBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-top: 2px;
+}
+
+.leagueEmpty {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.leagueEmptyIcon {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f1f4ff;
+  font-size: 1rem;
+}
 
 .leagueTeam {
   display: grid;

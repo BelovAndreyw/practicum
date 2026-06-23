@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+﻿import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { activityApi } from '@/api';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { ActivityEvent } from '@/types';
@@ -27,6 +27,8 @@ export function ProfilePage() {
     firstName: '',
     lastName: '',
     middleName: '',
+    email: '',
+    phone: '',
     avatarUrl: '',
   });
 
@@ -40,6 +42,8 @@ export function ProfilePage() {
       firstName: user.firstName,
       lastName: user.lastName,
       middleName: user.middleName ?? '',
+      email: user.email,
+      phone: user.phone ?? '',
       avatarUrl: user.avatarUrl ?? '',
     });
   }, [user]);
@@ -73,12 +77,27 @@ export function ProfilePage() {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         middleName: form.middleName.trim() || undefined,
+        email: form.email.trim(),
+        phone: form.phone.trim() || undefined,
         avatarUrl: form.avatarUrl.trim() || undefined,
       });
       setShowEdit(false);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setForm((prev) => ({ ...prev, avatarUrl: reader.result as string }));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -97,6 +116,7 @@ export function ProfilePage() {
               <h2 className={styles.name}>{fullName}</h2>
               {user.studentId && <p className={styles.studentId}>№ {user.studentId}</p>}
               <p className={styles.email}>{user.email}</p>
+              {user.phone && <p className={styles.email}>{user.phone}</p>}
               <div className={styles.badges}>
                 <Badge variant={LEAGUE_VARIANT[user.league] ?? 'accent'}>{user.league}</Badge>
                 <Badge variant={user.role === 'captain' ? 'violet' : 'default'}>
@@ -221,6 +241,22 @@ export function ProfilePage() {
           <Input label="Имя" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} />
           <Input label="Фамилия" value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} />
           <Input label="Отчество" value={form.middleName} onChange={(event) => setForm({ ...form, middleName: event.target.value })} />
+          <Input label="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="name@urfu.ru" />
+          <Input label="Телефон" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="+7 900 000-00-00" />
+          <div className={styles.photoField}>
+            <span className={styles.photoLabel}>Фото</span>
+            <div className={styles.photoControls}>
+              {form.avatarUrl && <Avatar name={`${form.firstName} ${form.lastName}`} src={form.avatarUrl} size="md" />}
+              <label className={styles.uploadButton} htmlFor="profile-photo-upload">+ Загрузить</label>
+              <input
+                id="profile-photo-upload"
+                type="file"
+                accept="image/*"
+                className={styles.fileInput}
+                onChange={handleAvatarUpload}
+              />
+            </div>
+          </div>
           <Input label="Ссылка на аватар" value={form.avatarUrl} onChange={(event) => setForm({ ...form, avatarUrl: event.target.value })} placeholder="https://..." />
         </div>
       </Modal>

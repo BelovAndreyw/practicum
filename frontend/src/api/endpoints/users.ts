@@ -70,7 +70,7 @@ export const usersApi = {
     );
   },
 
-  async updateUser(id: string, data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'avatarUrl'>>): Promise<User> {
+  async updateUser(id: string, data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'email' | 'phone' | 'avatarUrl'>>): Promise<User> {
     if (USE_MOCK) {
       await mockDelay();
       const idx = MOCK_USERS.findIndex((item) => item.id === id);

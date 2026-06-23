@@ -41,17 +41,16 @@ export function RatingPage() {
   }, [userRating]);
 
   const filteredUsers = useMemo(() => {
-    const normalizedSearch = studentSearch.trim().toLowerCase();
+    const normalizedSearch = normalizeSearch(studentSearch);
 
     return userRating.filter((entry) => {
       const streamMatch = streamFilter === 'all' || entry.stream === streamFilter;
       const teamMatch = teamFilter === 'all' || entry.teamName === teamFilter;
       const searchable = [
-        entry.user.firstName,
-        entry.user.lastName,
+        ...Object.values(entry.user).filter((value): value is string => typeof value === 'string'),
         entry.teamName ?? '',
-      ].join(' ').toLowerCase();
-      const searchMatch = !normalizedSearch || searchable.includes(normalizedSearch);
+      ].join(' ');
+      const searchMatch = !normalizedSearch || normalizeSearch(searchable).includes(normalizedSearch);
       return streamMatch && teamMatch && searchMatch;
     });
   }, [userRating, streamFilter, teamFilter, studentSearch]);
@@ -98,7 +97,7 @@ export function RatingPage() {
                         <Link to={`/teams/${entry.team.id}`} className={styles.entityLink}>{entry.team.name}</Link>
                       </td>
                       <td>
-                        <Badge variant={LEAGUE_VARIANT[entry.team.league] ?? 'accent'}>{entry.team.league}</Badge>
+                        <Badge variant={LEAGUE_VARIANT[getLeagueByKrk(entry.team.krk)] ?? 'accent'}>{getLeagueByKrk(entry.team.krk)}</Badge>
                       </td>
                       <td className={styles.krkCell}>{entry.team.krk.toFixed(2)}</td>
                     </tr>
@@ -215,28 +214,33 @@ export function RatingPage() {
         {tab === 'leagues' && (
           <div className={styles.leaguesGrid}>
             {(['Новичок', 'Профи', 'Легенда'] as const).map((league) => {
-              const teams = teamRating.filter((entry) => entry.team.league === league);
+              const teams = teamRating.filter((entry) => getLeagueByKrk(entry.team.krk) === league);
               return (
-                <Card key={league} padding="lg">
+                <Card key={league} padding="lg" className={styles.leagueCard}>
                   <div className={styles.leagueHeader}>
                     <h2 className={styles.leagueName}>{league}</h2>
                     <Badge variant={LEAGUE_VARIANT[league]}>{teams.length} команд</Badge>
                   </div>
                   <LeagueDesc league={league} />
 
-                  {teams.length === 0 ? (
-                    <Empty message="Команды в этой лиге пока не найдены" />
-                  ) : (
-                    teams.map((entry) => (
-                      <div key={entry.team.id} className={styles.leagueTeam}>
-                        <span className={styles.leaguePlace}>{entry.rank}</span>
-                        <Link to={`/teams/${entry.team.id}`} className={[styles.teamName, styles.entityLink].join(' ')}>
-                          {entry.team.name}
-                        </Link>
-                        <span className={styles.krkCell}>{entry.team.krk.toFixed(2)}</span>
+                  <div className={styles.leagueBody}>
+                    {teams.length === 0 ? (
+                      <div className={styles.leagueEmpty}>
+                        <span className={styles.leagueEmptyIcon}>📭</span>
+                        <span>Команды в этой лиге пока не найдены</span>
                       </div>
-                    ))
-                  )}
+                    ) : (
+                      teams.map((entry) => (
+                        <div key={entry.team.id} className={styles.leagueTeam}>
+                          <span className={styles.leaguePlace}>{entry.rank}</span>
+                          <Link to={`/teams/${entry.team.id}`} className={[styles.teamName, styles.entityLink].join(' ')}>
+                            {entry.team.name}
+                          </Link>
+                          <span className={styles.krkCell}>{entry.team.krk.toFixed(2)}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </Card>
               );
             })}
@@ -268,9 +272,19 @@ function rankMedal(rank: number) {
 function LeagueDesc({ league }: { league: string }) {
   const desc: Record<string, string> = {
     Новичок: 'КРК до 60. Команды только начинают путь.',
-    Профи: 'КРК от 60 до 89. Стабильные и активные команды.',
-    Легенда: 'КРК от 90. Лучшие команды потока.',
+    Профи: 'КРК от 60 до 85. Стабильные и активные команды.',
+    Легенда: 'КРК от 85. Лучшие команды потока.',
   };
 
   return <p className={styles.leagueDesc}>{desc[league]}</p>;
+}
+
+function normalizeSearch(value: string) {
+  return value.trim().toLowerCase().replace(/ё/g, 'е');
+}
+
+function getLeagueByKrk(krk: number) {
+  if (krk >= 85) return 'Легенда';
+  if (krk >= 60) return 'Профи';
+  return 'Новичок';
 }

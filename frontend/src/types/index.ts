@@ -12,6 +12,7 @@ export interface User {
   lastName: string;
   middleName?: string;
   email: string;
+  phone?: string;
   studentId?: string; // РЅРѕРјРµСЂ СЃС‚СѓРґРµРЅС‡РµСЃРєРѕРіРѕ Р±РёР»РµС‚Р° / РЈСЂР¤РЈ login
   avatarUrl?: string;
   role: UserRole;
@@ -54,6 +55,8 @@ export interface TeamMember {
   userId: string;
   firstName: string;
   lastName: string;
+  email?: string;
+  phone?: string;
   avatarUrl?: string;
   role: UserRole;
   personalRating: number;
@@ -68,7 +71,7 @@ export interface TeamRatingEntry {
 
 export interface UserRatingEntry {
   rank: number;
-  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'avatarUrl' | 'personalRating' | 'league'>;
+  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'personalRating' | 'league'> & Partial<Pick<User, 'middleName' | 'email' | 'phone' | 'studentId' | 'avatarUrl'>>;
   teamId?: string;
   teamName?: string;
   stream?: string;
@@ -141,6 +144,7 @@ export interface CalendarEvent {
   id: string;
   title: string;
   description?: string;
+  imageUrl?: string;
   format: EventFormat;
   date: string; // ISO date
   location?: string;
