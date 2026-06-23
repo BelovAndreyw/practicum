@@ -1,4 +1,4 @@
-исывающих прое# План интеграции SSO УрФУ
+# План интеграции SSO УрФУ
 
 ## Обзор
 
@@ -71,18 +71,25 @@
 - Капитан команды: назначается внутри приложения
 - Организатор: назначается вручную админом
 
-## Stub-аутентификация для dev/test
+## Текущая аутентификация (до SSO)
 
-Пока SSO не подключён, backend использует stub-провайдер:
+Пока SSO не подключён, backend использует собственный flow:
 
-- Принимает любой email вида `*@urfu.ru` с паролем `test`
-- Возвращает моковые данные пользователя
-- Интерфейс провайдера идентичен реальному — переключение через env:
-  ```
-  SSO_ENABLED=false   # stub
-  SSO_ENABLED=true    # реальный SSO
-  SSO_PROVIDER=oauth2 # или ldap
-  ```
+1. **POST `/auth/verify`** — проверка `student_id` по таблице `students` (данные вуза)
+2. **POST `/auth/register`** — регистрация с verification token (JWT, scope `verification`)
+3. **POST `/auth/login`** — вход по `username` + пароль, выдача JWT
+
+В `DEMO_MODE=true` при старте сидируются демо-пользователи (`backend/app/core/demo_seed.py`).
+На pilot с `DEMO_MODE=false` данные загружаются через `scripts/seed_all.py`.
+
+Переменные `SSO_ENABLED`, `SSO_PROVIDER` в `docs/.env.example` — **планируемые**; в коде пока не используются.
+При интеграции SSO целевой интерфейс:
+
+```
+SSO_ENABLED=false   # текущий flow (verify/register/login)
+SSO_ENABLED=true    # реальный SSO
+SSO_PROVIDER=oauth2 # или ldap
+```
 
 ## Действия
 

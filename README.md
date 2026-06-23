@@ -1,6 +1,6 @@
 # Командный зачёт
 
-Учебный сервис с ролями (студент/капитан/организатор) и API.
+Учебный сервис с ролями (студент/капитан/организатор) и API. Полный обзор — в [`docs/project-overview.md`](docs/project-overview.md).
 
 ## Стек (MVP)
 
@@ -8,14 +8,14 @@
 - **DB/ORM**: PostgreSQL 16 (dev/test через Docker), SQLAlchemy 2 (async), asyncpg; для локальных/CI тестов — SQLite (aiosqlite)
 - **Auth**: JWT (`python-jose`), пароли — `bcrypt`
 - **Reverse proxy**: **Nginx** (маршрутизация `/api` → backend, `/` → frontend)
-- **Frontend**: пока статическая заглушка (HTML/CSS/JS) под Nginx
+- **Frontend**: React 18 + TypeScript + Vite (см. `frontend/README.md`)
 - **Infra**: Docker + Docker Compose
 - **CI/DevSecOps**: GitHub Actions (build/healthchecks/pytest/`pip-audit`), secret-scan `gitleaks`
 
 ## Структура репозитория
 
-- `backend/` — FastAPI приложение (`app/main.py`, модули `auth/team/posts`)
-- `frontend/` — статический прототип (stub) для проверки инфраструктуры
+- `backend/` — FastAPI приложение (`app/main.py`, модули auth/team/posts/rating/…)
+- `frontend/` — React SPA (`frontend/src/`, Vite)
 - `infra/` — compose, nginx конфиги, ssl-скрипты
 - `.github/workflows/` — CI пайплайны
 - `docs/` — документация
@@ -89,6 +89,8 @@ docker compose -f infra/docker-compose.pilot.yml --env-file .env.pilot down
 
 ## Документация
 
+- Обзор проекта: `docs/project-overview.md`
+- Оглавление docs: `docs/README.md`
 - Схема развёртывания: `docs/deployment-schema.md`
 - Pilot на сервере: `docs/pilot-github-setup.md` (GitHub Secrets, branch protection)
 - Bootstrap-скрипт: `infra/scripts/bootstrap-pilot-server.sh`

@@ -1,5 +1,7 @@
 # Схема развёртывания — Командный зачёт
 
+Общий обзор проекта: [`project-overview.md`](project-overview.md).
+
 ## Архитектура
 
 ```
@@ -125,9 +127,9 @@ docker compose -f infra/docker-compose.dev.yml --env-file .env up -d
 # 3. Проверяем
 # Через Nginx (порт 80): / — фронтенд; API бэкенда — под префиксом /api/
 curl -s http://localhost/api/auth/verify -H "Content-Type: application/json" -d '{"student_id":123,"surname":"Иванов","name":"Иван","patronymic":"Иванович"}'
-# Прямой доступ к бэкенду (порт 8000, как в compose dev): корень — health, не API
+# Прямой доступ к бэкенду (порт 8000, как в compose dev): корень — health
 curl -s http://localhost:8000/
-# {"message": "Сервер работает. REST: префикс /api ...", ...}
+# {"message": "API работает! Открой /docs"}
 
 # 4. Останавливаем
 docker compose -f infra/docker-compose.dev.yml --env-file .env down

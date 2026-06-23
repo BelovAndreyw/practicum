@@ -6,7 +6,7 @@
 - [ ] `.env` файлы в `.gitignore`, не коммитятся
 - [ ] `.env.example` содержит только placeholder-значения (CHANGE_ME)
 - [ ] Gitleaks сканирует каждый push (`.github/workflows/secret-scan.yml`)
-- [ ] На сервере `.env` создаётся CI из secrets, а не хранится в репо
+- [ ] На сервере `.env.pilot` создаётся при bootstrap вручную (см. `pilot-server-bootstrap.md`), не коммитится в репо
 
 ## RBAC окружений
 
@@ -44,6 +44,8 @@
 
 **Backend-разработчику:** использовать CORS middleware с `allow_origins` из env.
 Никогда не ставить `allow_origins=*` в test/prod.
+
+> **Статус:** переменная `BACKEND_CORS_ORIGINS` описана в шаблонах env, CORS middleware в backend **ещё не реализован** — задача на доработку.
 
 ## Файловое хранилище
 

@@ -4,7 +4,7 @@
 
 | Проверка | Результат |
 |----------|-----------|
-| Backend pytest | **54 passed** |
+| Backend pytest | **56 passed** |
 | Frontend `npm run build` | **OK** |
 | Docker pilot compose | Валиден (`infra/docker-compose.pilot.yml`) |
 | CI autodeploy | Только ветка `master` — для TestAndFix нужен **ручной деплой** |
@@ -77,7 +77,7 @@ curl -fsS -o /dev/null https://teamzachet.ru/
 curl -fsS https://teamzachet.ru/api/
 ```
 
-Логин организатора (если есть seed): `teacher_ip` / `teacher123`.
+Логин организатора после `scripts/seed_all.py`: `teacher_ip` / `teacher123`.
 
 ### 4. Откат на master
 
