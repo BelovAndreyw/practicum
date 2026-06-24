@@ -3,6 +3,7 @@ import { checkinApi, challengesApi, newsApi, reportsApi, rescueApi, votingApi, t
 import type { CheckIn, Challenge, NewsItem, RescueRequest, Team, VoteRound } from '@/types';
 import type { ChallengeReportItem } from '@/api/endpoints/reports';
 import { Card, Badge, Button, PageHeader, Tabs, Modal, Input, Textarea, Spinner } from '@/components/ui';
+import { readImagePreviewUrl } from '@/utils/imagePreview';
 import styles from './AdminPage.module.css';
 
 const TABS = [
@@ -134,22 +135,19 @@ export function AdminPage() {
       });
       setNews((prev) => [n, ...prev]);
       setShowNewsForm(false);
-      newsPreviews.forEach((url) => URL.revokeObjectURL(url));
       setNewsForm({ title: '', body: '', files: [] });
       setNewsPreviews([]);
     } finally { setSavingNews(false); }
   };
 
-  const handleNewsFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNewsFilesChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
-    newsPreviews.forEach((url) => URL.revokeObjectURL(url));
     setNewsForm((prev) => ({ ...prev, files }));
-    setNewsPreviews(files.map((file) => URL.createObjectURL(file)));
+    setNewsPreviews(await Promise.all(files.map((file) => readImagePreviewUrl(file))));
   };
 
   const handleCloseNewsForm = () => {
     setShowNewsForm(false);
-    newsPreviews.forEach((url) => URL.revokeObjectURL(url));
     setNewsForm({ title: '', body: '', files: [] });
     setNewsPreviews([]);
   };

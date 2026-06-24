@@ -5,6 +5,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 import type { ActivityEvent } from '@/types';
 import { Avatar, Badge, Button, Card, Empty, Input, Modal, PageHeader } from '@/components/ui';
 import { ACHIEVEMENT_CATALOG } from '@/constants/achievements';
+import { readImagePreviewUrl } from '@/utils/imagePreview';
 import styles from './ProfilePage.module.css';
 
 const LEAGUE_VARIANT: Record<string, 'accent' | 'violet' | 'warning'> = {
@@ -48,10 +49,6 @@ export function ProfilePage() {
     setAvatarPreviewUrl(null);
   }, [user]);
 
-  useEffect(() => () => {
-    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-  }, [avatarPreviewUrl]);
-
   const personalRating = user?.personalRating ?? 0;
   const ratingParts = useMemo(() => {
     if (user?.krkBreakdown) {
@@ -91,7 +88,6 @@ export function ProfilePage() {
         avatarUrl: form.avatarUrl.trim() || undefined,
       });
       setPendingAvatarFile(null);
-      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setAvatarPreviewUrl(null);
       setShowEdit(false);
     } finally {
@@ -99,13 +95,12 @@ export function ProfilePage() {
     }
   };
 
-  const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     setPendingAvatarFile(file);
-    setAvatarPreviewUrl(URL.createObjectURL(file));
+    setAvatarPreviewUrl(await readImagePreviewUrl(file));
     event.target.value = '';
   };
 
@@ -115,7 +110,6 @@ export function ProfilePage() {
       await usersApi.removeAvatar();
       await refreshUser();
       setPendingAvatarFile(null);
-      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setAvatarPreviewUrl(null);
     } finally {
       setSaving(false);

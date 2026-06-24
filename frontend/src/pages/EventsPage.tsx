@@ -6,6 +6,7 @@ import type { CalendarEvent, EventFormat, Team } from '@/types';
 import { Badge, Button, Card, Empty, Input, Modal, PageHeader, Spinner, Textarea } from '@/components/ui';
 import styles from './EventsPage.module.css';
 import { isPastEvent } from '@/utils/dates';
+import { readImagePreviewUrl } from '@/utils/imagePreview';
 
 const FORMAT_LABEL: Record<EventFormat, string> = {
   online: '🌐 Онлайн',
@@ -53,12 +54,7 @@ export function EventsPage() {
     teamsApi.listTeams().then(setOrganizerTeams).catch(() => setOrganizerTeams([]));
   }, [isOrganizerWithoutTeam]);
 
-  useEffect(() => () => {
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
-  }, [imagePreviewUrl]);
-
   const resetForm = () => {
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     setPendingImageFile(null);
     setImagePreviewUrl(null);
     setHasUploadedImage(false);
@@ -83,7 +79,6 @@ export function EventsPage() {
   const openEditModal = (event: CalendarEvent) => {
     setEditingEvent(event);
     setSelectedEvent(null);
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     setPendingImageFile(null);
     setImagePreviewUrl(null);
     setHasUploadedImage(isApiMediaUrl(event.imageUrl));
@@ -109,13 +104,12 @@ export function EventsPage() {
   const canDeleteEvent = (event: CalendarEvent) => Boolean(user && (event.organizerId === user.id || user.role === 'organizer'));
   const formImagePreview = imagePreviewUrl ?? (form.imageUrl || (hasUploadedImage ? editingEvent?.imageUrl : undefined));
 
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     setPendingImageFile(file);
-    setImagePreviewUrl(URL.createObjectURL(file));
+    setImagePreviewUrl(await readImagePreviewUrl(file));
     event.target.value = '';
   };
 
@@ -128,7 +122,6 @@ export function EventsPage() {
       setEditingEvent(updated);
       setHasUploadedImage(false);
       setPendingImageFile(null);
-      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
       setImagePreviewUrl(null);
     } finally {
       setSaving(false);
