@@ -76,7 +76,7 @@ export const usersApi = {
     );
   },
 
-  async updateUser(id: string, data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'email' | 'phone' | 'avatarUrl'>>): Promise<User> {
+  async updateUser(id: string, data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'email' | 'phone'>> & { avatarUrl?: string | null }): Promise<User> {
     if (USE_MOCK) {
       await mockDelay();
       const idx = MOCK_USERS.findIndex((item) => item.id === id);
@@ -85,14 +85,15 @@ export const usersApi = {
       return MOCK_USERS[idx];
     }
 
-    await http.patch('/team/profile', {
-      surname: data.lastName,
-      name: data.firstName,
-      patronymic: data.middleName,
-      email: data.email,
-      phone: data.phone,
-      avatar_url: data.avatarUrl,
-    });
+    const body: Record<string, string | null> = {};
+    if (data.lastName !== undefined) body.surname = data.lastName;
+    if (data.firstName !== undefined) body.name = data.firstName;
+    if (data.patronymic !== undefined) body.patronymic = data.patronymic ?? '';
+    if (data.email !== undefined) body.email = data.email;
+    if (data.phone !== undefined) body.phone = data.phone ?? '';
+    if (data.avatarUrl !== undefined) body.avatar_url = data.avatarUrl || null;
+
+    await http.patch('/team/profile', body);
 
     return authApi.me();
   },
@@ -108,7 +109,7 @@ export const usersApi = {
 
     const form = new FormData();
     form.append('file', file);
-    await http.postForm('/team/profile/avatar', form);
+    await http.postForm<BackendUserProfileResponse>('/team/profile/avatar', form);
     return authApi.me();
   },
 

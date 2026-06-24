@@ -10,7 +10,7 @@ interface AuthState {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  updateProfile: (data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'email' | 'phone' | 'avatarUrl'>>) => Promise<void>;
+  updateProfile: (data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'email' | 'phone'>> & { avatarUrl?: string | null }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     writeStoredUser(me);
   };
 
-  const updateProfile = async (data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'email' | 'phone' | 'avatarUrl'>>) => {
+  const updateProfile = async (data: Partial<Pick<User, 'firstName' | 'lastName' | 'middleName' | 'email' | 'phone'>> & { avatarUrl?: string | null }) => {
     if (!user) return;
     const updated = await usersApi.updateUser(user.id, data);
     setUser(updated);

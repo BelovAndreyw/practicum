@@ -94,7 +94,8 @@ async def test_upload_avatar_returns_api_url(client):
     headers=headers,
   )
   assert upload.status_code == 200
-  assert upload.json()["avatar_url"] == f"/team/users/{user_id}/avatar"
+  avatar_url = upload.json()["avatar_url"]
+  assert avatar_url.startswith(f"/team/users/{user_id}/avatar?v=")
 
   image = await ac.get(f"/team/users/{user_id}/avatar")
   assert image.status_code == 200
@@ -112,8 +113,9 @@ async def test_uploaded_avatar_has_priority_over_external_url(client):
     headers=headers,
   )
   assert upload.status_code == 200
-  assert upload.json()["avatar_url"] == f"/team/users/{user_id}/avatar"
-  assert upload.json()["avatar_url"] != "https://example.com/old-avatar.png"
+  avatar_url = upload.json()["avatar_url"]
+  assert avatar_url.startswith(f"/team/users/{user_id}/avatar?v=")
+  assert avatar_url != "https://example.com/old-avatar.png"
 
 
 @pytest.mark.asyncio
@@ -146,7 +148,7 @@ async def test_upload_avatar_accepts_octet_stream(client):
     headers=headers,
   )
   assert upload.status_code == 200
-  assert upload.json()["avatar_url"] == f"/team/users/{user_id}/avatar"
+  assert upload.json()["avatar_url"].startswith(f"/team/users/{user_id}/avatar?v=")
 
 
 @pytest.mark.asyncio
@@ -186,7 +188,7 @@ async def test_upload_event_image(client):
     headers=headers,
   )
   assert upload.status_code == 200
-  assert upload.json()["image_url"] == f"/events/{event_id}/image"
+  assert upload.json()["image_url"].startswith(f"/events/{event_id}/image?v=")
 
   image = await ac.get(f"/events/{event_id}/image")
   assert image.status_code == 200

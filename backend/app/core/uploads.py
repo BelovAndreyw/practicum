@@ -99,3 +99,9 @@ def delete_file(path: str | None) -> None:
     file_path = resolve_upload_path(path)
     if file_path.is_file():
         file_path.unlink()
+
+
+def versioned_upload_url(base_path: str, file_path: str) -> str:
+    """URL загруженного файла с токеном версии — браузер не показывает старый кэш после замены."""
+    token = Path(file_path).stem
+    return f"{base_path}?v={token}"

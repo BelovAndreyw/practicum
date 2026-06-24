@@ -8,14 +8,19 @@ from app.models.reports import TeamEvent, EventInvitation, EventParticipant
 from app.models.team import Team
 from app.models.user import User, UserRole
 from app.modules.events.schemas import EventCreateRequest, EventUpdateRequest
-from app.core.uploads import EVENT_IMAGE_UPLOAD_DIR, delete_file, save_image, validate_image
+from app.core.uploads import EVENT_IMAGE_UPLOAD_DIR, delete_file, save_image, validate_image, versioned_upload_url
 
 
 def resolve_event_image_url(event: TeamEvent) -> str | None:
     """Приоритет загруженного файла над внешней ссылкой."""
     if event.image_file_path:
-        return f"/events/{event.id}/image"
+        return versioned_upload_url(f"/events/{event.id}/image", event.image_file_path)
     return event.image_url
+
+
+def _is_internal_event_image_url(event: TeamEvent, url: str) -> bool:
+    normalized = url.split("?", 1)[0]
+    return normalized.endswith(f"/events/{event.id}/image")
 
 
 async def _is_team_captain(user: User, team_id: int, db: AsyncSession) -> bool:
@@ -106,6 +111,18 @@ async def update_event_logic(
         raise HTTPException(status_code=403, detail="Нет прав на редактирование события")
 
     payload = data.model_dump(exclude_unset=True)
+    if "image_url" in payload:
+        new_url = payload["image_url"]
+        if new_url and _is_internal_event_image_url(event, new_url):
+            payload.pop("image_url")
+        elif new_url:
+            if event.image_file_path:
+                delete_file(event.image_file_path)
+                event.image_file_path = None
+                event.image_content_type = None
+        else:
+            payload["image_url"] = None
+
     for field, value in payload.items():
         setattr(event, field, value)
 

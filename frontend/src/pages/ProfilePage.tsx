@@ -70,7 +70,8 @@ export function ProfilePage() {
   const fullName = [user.lastName, user.firstName, user.middleName].filter(Boolean).join(' ');
   const unlockedIds = new Set(user.achievements.map((item) => item.id));
   const hasUploadedAvatar = isApiMediaUrl(user.avatarUrl);
-  const editAvatarPreview = avatarPreviewUrl ?? (form.avatarUrl || user.avatarUrl);
+  const editAvatarPreview = avatarPreviewUrl
+    ?? (form.avatarUrl || (hasUploadedAvatar ? user.avatarUrl : undefined));
 
   const handleSave = async () => {
     if (!form.firstName.trim() || !form.lastName.trim()) return;
@@ -78,6 +79,7 @@ export function ProfilePage() {
     try {
       if (pendingAvatarFile) {
         await usersApi.uploadAvatar(pendingAvatarFile);
+        await refreshUser();
       }
       await updateProfile({
         firstName: form.firstName.trim(),
@@ -85,7 +87,9 @@ export function ProfilePage() {
         middleName: form.middleName.trim() || undefined,
         email: form.email.trim(),
         phone: form.phone.trim() || undefined,
-        avatarUrl: form.avatarUrl.trim() || undefined,
+        ...(pendingAvatarFile
+          ? {}
+          : { avatarUrl: form.avatarUrl.trim() || null }),
       });
       setPendingAvatarFile(null);
       setAvatarPreviewUrl(null);

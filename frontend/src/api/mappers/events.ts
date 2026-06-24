@@ -72,7 +72,7 @@ export function toBackendEventCreate(data: {
 export function toBackendEventUpdate(data: {
   title?: string;
   description?: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   format?: EventFormat;
   date?: string;
   location?: string;

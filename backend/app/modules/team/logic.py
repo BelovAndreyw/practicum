@@ -12,7 +12,7 @@ from app.modules.achievement.service import AchievementService
 from app.modules.team.schemas import TeamCreateRequest
 from datetime import datetime, timedelta
 import secrets
-from app.core.uploads import AVATAR_UPLOAD_DIR, delete_file, save_image, validate_image
+from app.core.uploads import AVATAR_UPLOAD_DIR, delete_file, save_image, validate_image, versioned_upload_url
 
 # Алфавит без визуально похожих символов (0/O, 1/I/L) — код удобно вводить вручную
 INVITE_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
@@ -21,10 +21,14 @@ INVITE_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 def resolve_avatar_url(user: User) -> str | None:
     """Приоритет загруженного файла над внешней ссылкой."""
     if user.avatar_file_path:
-        return f"/team/users/{user.id}/avatar"
+        return versioned_upload_url(f"/team/users/{user.id}/avatar", user.avatar_file_path)
     return user.avatar_url
 
 
+def _is_internal_avatar_url(user: User, url: str) -> bool:
+    """Ссылка на API-эндпоинт аватара — не внешний URL."""
+    normalized = url.split("?", 1)[0]
+    return normalized.endswith(f"/team/users/{user.id}/avatar") or normalized.endswith(f"/users/{user.id}/avatar")
 
 async def _generate_unique_invite_code(db: AsyncSession, length: int = 6) -> str:
     """Генерирует короткий уникальный код приглашения."""
@@ -266,7 +270,17 @@ async def update_user_profile_logic(
     if phone is not None:
         user.phone = phone or None
     if avatar_url is not None:
-        user.avatar_url = avatar_url or None
+        new_url = avatar_url.strip() if avatar_url else None
+        if new_url and _is_internal_avatar_url(user, new_url):
+            new_url = None
+        if new_url:
+            if user.avatar_file_path:
+                delete_file(user.avatar_file_path)
+                user.avatar_file_path = None
+                user.avatar_content_type = None
+            user.avatar_url = new_url
+        else:
+            user.avatar_url = None
     db.add(user)
 
     await db.commit()

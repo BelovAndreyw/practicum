@@ -134,7 +134,7 @@ export function EventsPage() {
       const payload = {
         title: form.title,
         description: form.description,
-        imageUrl: form.imageUrl.trim() || undefined,
+        ...(!pendingImageFile ? { imageUrl: form.imageUrl.trim() || null } : {}),
         format: form.format,
         date: new Date(form.date).toISOString(),
         location: form.format === 'offline' ? form.location : undefined,
