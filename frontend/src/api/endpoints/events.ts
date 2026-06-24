@@ -6,9 +6,16 @@ import { mapEvent, mapEventList, toBackendEventCreate, toBackendEventUpdate } fr
 import type { CalendarEvent } from '@/types';
 
 const USE_MOCK = shouldUseMock();
-type EventCreateData = Omit<CalendarEvent, 'id' | 'createdAt' | 'organizerId' | 'organizerName'>
+
+type EventWriteFields = Omit<CalendarEvent, 'id' | 'createdAt' | 'organizerId' | 'organizerName' | 'imageUrl'> & {
+  imageUrl?: string | null;
+};
+
+type EventCreateData = EventWriteFields
   & Partial<Pick<CalendarEvent, 'organizerId' | 'organizerName'>>
   & { teamId?: string };
+
+type EventUpdateData = Partial<EventWriteFields>;
 
 export const eventsApi = {
   async list(teamId?: string): Promise<CalendarEvent[]> {
@@ -38,6 +45,7 @@ export const eventsApi = {
       await mockDelay();
       const event: CalendarEvent = {
         ...data,
+        imageUrl: data.imageUrl ?? undefined,
         id: `ce${Date.now()}`,
         organizerId: data.organizerId ?? 'u1',
         organizerName: data.organizerName ?? 'Алексей Петров',
@@ -50,15 +58,16 @@ export const eventsApi = {
     return mapEvent(created);
   },
 
-  async update(
-    id: string,
-    data: Partial<Omit<CalendarEvent, 'id' | 'createdAt' | 'organizerId' | 'organizerName'>>,
-  ): Promise<CalendarEvent> {
+  async update(id: string, data: EventUpdateData): Promise<CalendarEvent> {
     if (USE_MOCK) {
       await mockDelay();
       const index = MOCK_EVENTS.findIndex((item) => item.id === id);
       if (index < 0) throw new Error('Event not found');
-      MOCK_EVENTS[index] = { ...MOCK_EVENTS[index], ...data };
+      MOCK_EVENTS[index] = {
+        ...MOCK_EVENTS[index],
+        ...data,
+        imageUrl: data.imageUrl !== undefined ? (data.imageUrl ?? undefined) : MOCK_EVENTS[index].imageUrl,
+      };
       return MOCK_EVENTS[index];
     }
     const updated = await http.patch<Parameters<typeof mapEvent>[0]>(`/events/${id}`, toBackendEventUpdate(data));

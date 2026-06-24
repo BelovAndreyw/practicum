@@ -81,14 +81,19 @@ export const usersApi = {
       await mockDelay();
       const idx = MOCK_USERS.findIndex((item) => item.id === id);
       if (idx < 0) throw new Error('User not found');
-      MOCK_USERS[idx] = { ...MOCK_USERS[idx], ...data };
+      const { avatarUrl, ...rest } = data;
+      MOCK_USERS[idx] = {
+        ...MOCK_USERS[idx],
+        ...rest,
+        ...(avatarUrl !== undefined ? { avatarUrl: avatarUrl ?? undefined } : {}),
+      };
       return MOCK_USERS[idx];
     }
 
     const body: Record<string, string | null> = {};
     if (data.lastName !== undefined) body.surname = data.lastName;
     if (data.firstName !== undefined) body.name = data.firstName;
-    if (data.patronymic !== undefined) body.patronymic = data.patronymic ?? '';
+    if (data.middleName !== undefined) body.patronymic = data.middleName ?? '';
     if (data.email !== undefined) body.email = data.email;
     if (data.phone !== undefined) body.phone = data.phone ?? '';
     if (data.avatarUrl !== undefined) body.avatar_url = data.avatarUrl || null;
@@ -109,7 +114,7 @@ export const usersApi = {
 
     const form = new FormData();
     form.append('file', file);
-    await http.postForm<BackendUserProfileResponse>('/team/profile/avatar', form);
+    await http.postForm('/team/profile/avatar', form);
     return authApi.me();
   },
 

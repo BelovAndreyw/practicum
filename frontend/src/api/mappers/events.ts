@@ -49,7 +49,7 @@ export function mapEventList(data: BackendEventList): CalendarEvent[] {
 export function toBackendEventCreate(data: {
   title: string;
   description?: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   format: EventFormat;
   date: string;
   location?: string;
