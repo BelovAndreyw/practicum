@@ -21,12 +21,15 @@ class PublicAchievementResponse(BaseModel):
 
 
 class PublicUserProfileResponse(BaseModel):
-    """Публичный профиль пользователя (без email и student_id)"""
+    """Публичный профиль пользователя"""
     id: int
     full_name: str
     role: str
     team_name: Optional[str] = None
     team_id: Optional[int] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
     personal_rating: float = 0.0
     league: Optional[str] = None
     krk_breakdown: Optional[PublicKrkBreakdown] = None
@@ -42,13 +45,19 @@ class UserProfileResponse(BaseModel):
     role: str
     team_name: Optional[str] = None
     team_id: Optional[int] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class ProfileUpdateRequest(BaseModel):
-    """Обновление ФИО студента в профиле"""
+    """Обновление профиля: ФИО, контакты, аватар"""
     surname: Optional[str] = Field(None, min_length=1, max_length=100)
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     patronymic: Optional[str] = Field(None, max_length=100)
+    email: Optional[str] = Field(None, max_length=255)
+    phone: Optional[str] = Field(None, max_length=50)
+    avatar_url: Optional[str] = None
 
 
 class TeamCreateRequest(BaseModel):
@@ -118,6 +127,10 @@ class TeamMemberResponse(BaseModel):
     joined_at: datetime
     personal_krk: float = 0.0
     league: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
+    role: Optional[str] = None
 
 
 class TeamDetailResponse(BaseModel):

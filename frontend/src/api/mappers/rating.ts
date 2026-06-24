@@ -1,5 +1,5 @@
 import type { TeamRatingEntry, UserRatingEntry } from '@/types';
-import { mapLeague } from './user';
+import { mapLeague, splitFullName } from './user';
 
 interface BackendTeamRating {
   team_id: number;
@@ -17,6 +17,7 @@ interface BackendTeamLeaderboard {
 interface BackendRankingItem {
   user_id: number;
   username: string;
+  full_name?: string | null;
   total_krk: number;
   global_rank: number;
   league: string;
@@ -42,18 +43,24 @@ export function mapTeamRatingList(data: BackendTeamLeaderboard): TeamRatingEntry
 }
 
 export function mapUserRatingList(data: BackendLeaderboard): UserRatingEntry[] {
-  return data.rankings.map((r) => ({
-    rank: r.global_rank,
-    user: {
-      id: String(r.user_id),
-      firstName: r.username,
-      lastName: '',
-      personalRating: roundKrk(r.total_krk),
-      league: mapLeague(r.league),
-    },
-    teamName: r.team_name ?? undefined,
-    teamId: r.team_id != null ? String(r.team_id) : undefined,
-  }));
+  return data.rankings.map((r) => {
+    const { firstName, lastName } = r.full_name
+      ? splitFullName(r.full_name.trim())
+      : { firstName: r.username, lastName: '' };
+    return {
+      rank: r.global_rank,
+      user: {
+        id: String(r.user_id),
+        firstName,
+        lastName,
+        username: r.username,
+        personalRating: roundKrk(r.total_krk),
+        league: mapLeague(r.league),
+      },
+      teamName: r.team_name ?? undefined,
+      teamId: r.team_id != null ? String(r.team_id) : undefined,
+    };
+  });
 }
 
 function roundKrk(value: number): number {

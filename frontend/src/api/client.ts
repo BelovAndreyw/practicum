@@ -11,6 +11,9 @@ export const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
 const TOKEN_KEY = 'access_token';
 
+/** Событие, на которое подписывается AuthContext, чтобы чисто завершить сессию при 401. */
+export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized';
+
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -18,6 +21,32 @@ export function getAuthToken(): string | null {
 export function setAuthToken(token: string | null): void {
   if (token) localStorage.setItem(TOKEN_KEY, token);
   else localStorage.removeItem(TOKEN_KEY);
+}
+
+/**
+ * Бэкенд хранит время в naive UTC и сериализует его без суффикса `Z`.
+ * Браузер же трактует такую ISO-строку как локальное время, из-за чего
+ * время «уезжает» на величину смещения часового пояса (баг срока инвайта).
+ * Здесь рекурсивно дописываем `Z` ко всем датам без таймзоны, чтобы фронт
+ * корректно конвертировал UTC в локальное время во всех местах сразу.
+ */
+const TZ_LESS_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$/;
+
+function normalizeDatetimes<T>(value: T): T {
+  if (typeof value === 'string') {
+    return (TZ_LESS_ISO.test(value) ? `${value}Z` : value) as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeDatetimes(item)) as unknown as T;
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      out[key] = normalizeDatetimes(val);
+    }
+    return out as unknown as T;
+  }
+  return value;
 }
 
 function parseErrorMessage(body: unknown, fallback: string): string {
@@ -78,12 +107,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       // no json body
     }
+    // Токен протух или недействителен — чисто завершаем сессию,
+    // чтобы UI не оставался в «полу-залогиненном» состоянии с пустыми списками.
+    if (res.status === 401) {
+      setAuthToken(null);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
+      }
+    }
     throw new ApiError(res.status, message, details);
   }
 
   // 204 No Content
   if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  const data = (await res.json()) as T;
+  return normalizeDatetimes(data);
 }
 
 export const http = {
@@ -108,6 +146,12 @@ export async function openAuthenticatedFile(path: string): Promise<void> {
       message = parseErrorMessage(body, message);
     } catch {
       // no json body
+    }
+    if (res.status === 401) {
+      setAuthToken(null);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
+      }
     }
     throw new ApiError(res.status, message);
   }

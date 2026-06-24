@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -36,6 +36,9 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     role = Column(String, default=UserRole.STUDENT.value)
+    email = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    avatar_url = Column(Text, nullable=True)
 
     student = relationship("Student", back_populates="user")
     team_membership = relationship("TeamMember", back_populates="user", uselist=False)

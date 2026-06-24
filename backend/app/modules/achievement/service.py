@@ -33,7 +33,12 @@ class AchievementService:
             })
         return items
 
-    async def unlock_if_new(self, user_id: int, achievement_id: str) -> bool:
+    async def unlock_if_new(
+        self,
+        user_id: int,
+        achievement_id: str,
+        create_activity: bool = True,
+    ) -> bool:
         definition = get_achievement(achievement_id)
         if not definition:
             return False
@@ -51,28 +56,44 @@ class AchievementService:
         self.db.add(record)
         await self.db.flush()
 
-        membership_result = await self.db.execute(
-            select(TeamMember).where(TeamMember.user_id == user_id)
-        )
-        membership = membership_result.scalar_one_or_none()
-        if membership:
-            self.db.add(Activity(
-                team_id=membership.team_id,
-                user_id=user_id,
-                event_type="achievement_unlocked",
-                title=f"Достижение: {definition.title}",
-                description=definition.description,
-                event_metadata={"achievement_id": achievement_id},
-            ))
+        if create_activity:
+            membership_result = await self.db.execute(
+                select(TeamMember).where(TeamMember.user_id == user_id)
+            )
+            membership = membership_result.scalar_one_or_none()
+            if membership:
+                self.db.add(Activity(
+                    team_id=membership.team_id,
+                    user_id=user_id,
+                    event_type="achievement_unlocked",
+                    title=f"Достижение: {definition.title}",
+                    description=definition.description,
+                    event_metadata={"achievement_id": achievement_id},
+                ))
 
         return True
 
     async def unlock_for_team_members(self, team_id: int, achievement_id: str) -> None:
+        definition = get_achievement(achievement_id)
         members_result = await self.db.execute(
             select(TeamMember).where(TeamMember.team_id == team_id)
         )
+        unlocked_any = False
+        # Командное достижение выдаём каждому участнику, но в ленту пишем
+        # ОДНУ запись на команду, иначе получается дубль вида «Спаситель ×5».
         for member in members_result.scalars().all():
-            await self.unlock_if_new(member.user_id, achievement_id)
+            if await self.unlock_if_new(member.user_id, achievement_id, create_activity=False):
+                unlocked_any = True
+
+        if unlocked_any and definition:
+            self.db.add(Activity(
+                team_id=team_id,
+                user_id=None,
+                event_type="achievement_unlocked",
+                title=f"Достижение: {definition.title}",
+                description=definition.description,
+                event_metadata={"achievement_id": achievement_id, "team_wide": True},
+            ))
 
     async def sync_for_user(self, user_id: int) -> None:
         """Выдаёт достижения по уже совершённым действиям (seed, старые данные)."""

@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
-import { eventsApi } from '@/api';
+import { eventsApi, teamsApi } from '@/api';
 import { useAuth } from '@/features/auth/AuthContext';
-import type { CalendarEvent, EventFormat } from '@/types';
+import type { CalendarEvent, EventFormat, Team } from '@/types';
 import { Badge, Button, Card, Empty, Input, Modal, PageHeader, Spinner, Textarea } from '@/components/ui';
 import styles from './EventsPage.module.css';
 import { isPastEvent } from '@/utils/dates';
@@ -15,6 +15,8 @@ export function EventsPage() {
   const { user } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [organizerTeams, setOrganizerTeams] = useState<Team[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
@@ -27,14 +29,37 @@ export function EventsPage() {
     date: '',
     location: '',
     onlineLink: '',
+    teamId: '',
   });
 
+  const isOrganizerWithoutTeam = user?.role === 'organizer' && !user.teamId;
+  const canCreateEvent = Boolean(user && (user.teamId || user.role === 'organizer'));
+
   useEffect(() => {
-    eventsApi.list().then(setEvents).finally(() => setLoading(false));
+    setLoading(true);
+    setLoadError(null);
+    eventsApi.list()
+      .then(setEvents)
+      .catch(() => setLoadError('Не удалось загрузить события'))
+      .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!isOrganizerWithoutTeam) return;
+    teamsApi.listTeams().then(setOrganizerTeams).catch(() => setOrganizerTeams([]));
+  }, [isOrganizerWithoutTeam]);
+
   const resetForm = () => {
-    setForm({ title: '', description: '', imageUrl: '', format: 'online', date: '', location: '', onlineLink: '' });
+    setForm({
+      title: '',
+      description: '',
+      imageUrl: '',
+      format: 'online',
+      date: '',
+      location: '',
+      onlineLink: '',
+      teamId: user?.teamId ?? organizerTeams[0]?.id ?? '',
+    });
   };
 
   const openCreateModal = () => {
@@ -54,6 +79,7 @@ export function EventsPage() {
       date: toDatetimeLocalValue(new Date(event.date)),
       location: event.location ?? '',
       onlineLink: event.onlineLink ?? '',
+      teamId: event.invitedTeamIds[0] ?? '',
     });
     setShowCreate(true);
   };
@@ -84,8 +110,11 @@ export function EventsPage() {
         const updated = await eventsApi.update(editingEvent.id, payload);
         setEvents((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       } else {
+        const teamId = form.teamId || user?.teamId;
+        if (!teamId) return;
         const created = await eventsApi.create({
           ...payload,
+          teamId,
           organizerId: user?.id,
           organizerName: user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : undefined,
         });
@@ -116,6 +145,7 @@ export function EventsPage() {
   if (loading) return <div className={styles.center}><Spinner size="lg" /></div>;
 
   const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const createDisabled = isOrganizerWithoutTeam && organizerTeams.length === 0;
 
   return (
     <div>
@@ -123,10 +153,19 @@ export function EventsPage() {
         eyebrow="Календарь"
         title="События"
         subtitle="Встречи, воркшопы и мероприятия от команд и организаторов."
-        actions={<Button size="sm" onClick={openCreateModal}>+ Создать событие</Button>}
+        actions={canCreateEvent ? (
+          <Button size="sm" onClick={openCreateModal} disabled={createDisabled}>
+            + Создать событие
+          </Button>
+        ) : undefined}
       />
 
-      {events.length === 0 && <Empty icon="📅" message="Нет запланированных событий" />}
+      {createDisabled && (
+        <p className={styles.hint}>Нет доступных команд для создания события.</p>
+      )}
+
+      {loadError && events.length === 0 && <Empty icon="📅" message={loadError} />}
+      {!loadError && events.length === 0 && <Empty icon="📅" message="Нет запланированных событий" />}
 
       <div className={styles.list}>
         {sorted.map((item) => {
@@ -185,7 +224,12 @@ export function EventsPage() {
             <Button
               onClick={handleSave}
               loading={saving}
-              disabled={!form.title || !form.date || (form.format === 'online' && !form.onlineLink.trim())}
+              disabled={
+                !form.title
+                || !form.date
+                || (form.format === 'online' && !form.onlineLink.trim())
+                || (isOrganizerWithoutTeam && !form.teamId)
+              }
             >
               {editingEvent ? 'Сохранить' : 'Создать'}
             </Button>
@@ -193,6 +237,21 @@ export function EventsPage() {
         )}
       >
         <div className={styles.createForm}>
+          {isOrganizerWithoutTeam && (
+            <label className={styles.filterField}>
+              <span className={styles.filterLabel}>Команда</span>
+              <select
+                className={styles.select}
+                value={form.teamId}
+                onChange={(event) => setForm({ ...form, teamId: event.target.value })}
+              >
+                <option value="">Выберите команду</option>
+                {organizerTeams.map((team) => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <Input label="Название" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Воркшоп по Java" />
           <Textarea label="Описание (необязательно)" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
           <Input label="Изображение" value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} placeholder="https://..." />

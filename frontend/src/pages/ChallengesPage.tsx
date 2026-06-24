@@ -12,6 +12,7 @@ export function ChallengesPage() {
 
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Challenge | null>(null);
 
   const [reportBody, setReportBody] = useState('');
@@ -24,10 +25,14 @@ export function ChallengesPage() {
 
   const loadChallenges = () => {
     setLoading(true);
+    setLoadError(null);
     const loader = currentTeamId
       ? challengesApi.listForTeam(currentTeamId)
       : challengesApi.list();
-    loader.then(setChallenges).finally(() => setLoading(false));
+    loader
+      .then(setChallenges)
+      .catch(() => setLoadError('Не удалось загрузить челленджи'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -100,8 +105,10 @@ export function ChallengesPage() {
         subtitle="Выполняйте задания организаторов и получайте дополнительные баллы к КРК."
       />
 
+      {loadError && challenges.length === 0 && <Empty message={loadError} />}
+
       <h3 className={styles.section}>Активные</h3>
-      {active.length === 0 && <Empty message="Нет активных челленджей" />}
+      {active.length === 0 && !loadError && <Empty message="Нет активных челленджей" />}
 
       <div className={styles.grid}>
         {active.map((challenge) => (

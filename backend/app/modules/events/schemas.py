@@ -8,6 +8,7 @@ class EventCreateRequest(BaseModel):
     """Создание события"""
     title: str = Field(..., min_length=3, max_length=200)
     description: Optional[str] = None
+    image_url: Optional[str] = None
     event_type: str = Field(default="workshop")
     format: str = Field(default="online")
     location: Optional[str] = Field(None, max_length=200)
@@ -15,6 +16,26 @@ class EventCreateRequest(BaseModel):
     ends_at: Optional[datetime] = None
     max_participants: Optional[int] = Field(None, ge=1)
     is_public: bool = True
+    team_id: Optional[int] = Field(None, description="Для admin/teacher без своей команды")
+
+    @field_validator("starts_at", "ends_at", mode="after")
+    @classmethod
+    def normalize_datetimes(cls, value: datetime | None) -> datetime | None:
+        return to_naive_utc(value)
+
+
+class EventUpdateRequest(BaseModel):
+    """Редактирование события (все поля опциональны)"""
+    title: Optional[str] = Field(None, min_length=3, max_length=200)
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    event_type: Optional[str] = None
+    format: Optional[str] = None
+    location: Optional[str] = Field(None, max_length=200)
+    starts_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+    max_participants: Optional[int] = Field(None, ge=1)
+    is_public: Optional[bool] = None
 
     @field_validator("starts_at", "ends_at", mode="after")
     @classmethod
@@ -28,6 +49,7 @@ class EventResponse(BaseModel):
     team_id: int
     title: str
     description: Optional[str] = None
+    image_url: Optional[str] = None
     event_type: str
     format: str
     location: Optional[str] = None
@@ -36,6 +58,7 @@ class EventResponse(BaseModel):
     max_participants: Optional[int] = None
     is_public: bool
     created_by: int
+    organizer_name: Optional[str] = None
     created_at: datetime
 
 

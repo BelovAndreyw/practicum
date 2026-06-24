@@ -35,12 +35,16 @@ if ($Push) {
     git push -u origin TestAndFix
 }
 
-Write-Host ""
 Write-Host "Готово к ручному деплою на сервере:"
+Write-Host "  git push -u origin TestAndFix   # если ещё не запушено"
+Write-Host "  ssh root@77.91.93.156"
 Write-Host "  cd /opt/teamzachet"
 Write-Host "  GIT_BRANCH=TestAndFix bash infra/scripts/deploy-pilot-manual.sh"
 Write-Host ""
-Write-Host "Диагностика: docs/diagnostics-testandfix.md"
+Write-Host "С обновлением демо-данных (идемпотентно):"
+Write-Host "  RUN_SEED=true GIT_BRANCH=TestAndFix bash infra/scripts/deploy-pilot-manual.sh"
+Write-Host ""
+Write-Host "Документация: docs/diagnostics-testandfix.md"
 
 if ($DeployHost) {
     Write-Host "==> SSH deploy to $DeployHost ..."

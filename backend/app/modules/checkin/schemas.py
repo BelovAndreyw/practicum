@@ -8,6 +8,8 @@ class CheckinCreateRequest(BaseModel):
     """Создание check-in"""
     week_start_date: datetime
     content: Optional[str] = None
+    achievements: Optional[str] = None
+    blockers: Optional[str] = None
 
     @field_validator("week_start_date", mode="after")
     @classmethod
@@ -36,6 +38,8 @@ class CheckinResponse(BaseModel):
     team_id: int
     week_start_date: datetime
     content: Optional[str] = None
+    achievements: Optional[str] = None
+    blockers: Optional[str] = None
     created_by: int
     created_at: datetime
     reviewed_by: Optional[int] = None

@@ -80,4 +80,9 @@ async def login_user_logic(username: str, password: str, db: AsyncSession) -> tu
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
+    from app.modules.achievement.service import AchievementService
+    achievement_service = AchievementService(db)
+    await achievement_service.sync_for_user(user.id)
+    await db.commit()
+
     return token, user

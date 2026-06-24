@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.access import require_team_access
 from app.models.user import User
 from app.modules.activity.logic import (
     get_personalized_feed_logic,
@@ -28,7 +29,9 @@ async def get_team_feed(
     team_id: int,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Лента активностей конкретной команды"""
+    """Лента активностей конкретной команды (только для участников или staff)."""
+    await require_team_access(current_user, team_id, db)
     return await get_team_activity_feed_logic(team_id, limit, offset, db)

@@ -15,25 +15,39 @@ export function RatingPage() {
   const [tab, setTab] = useState('teams');
   const [teamRating, setTeamRating] = useState<TeamRatingEntry[]>([]);
   const [userRating, setUserRating] = useState<UserRatingEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [teamsError, setTeamsError] = useState<string | null>(null);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
-  const [streamFilter, setStreamFilter] = useState('all');
   const [teamFilter, setTeamFilter] = useState('all');
   const [studentSearch, setStudentSearch] = useState('');
 
   useEffect(() => {
-    Promise.allSettled([ratingApi.getTeamRating(), ratingApi.getUserRating()])
-      .then(([teams, users]) => {
-        if (teams.status === 'fulfilled') setTeamRating(teams.value);
-        if (users.status === 'fulfilled') setUserRating(users.value);
-      })
-      .finally(() => setLoading(false));
+    setTeamsLoading(true);
+    setTeamsError(null);
+    ratingApi.getTeamRating()
+      .then(setTeamRating)
+      .catch(() => setTeamsError('Не удалось загрузить рейтинг команд'))
+      .finally(() => setTeamsLoading(false));
   }, []);
 
-  const streamOptions = useMemo(() => {
-    const unique = new Set(userRating.map((entry) => entry.stream).filter(Boolean) as string[]);
-    return Array.from(unique);
-  }, [userRating]);
+  useEffect(() => {
+    let cancelled = false;
+    const q = studentSearch.trim();
+    setUsersLoading(true);
+    setUsersError(null);
+    const timer = window.setTimeout(() => {
+      ratingApi.getUserRating(q ? { q } : undefined)
+        .then((rows) => { if (!cancelled) setUserRating(rows); })
+        .catch(() => { if (!cancelled) setUsersError('Не удалось загрузить рейтинг студентов'); })
+        .finally(() => { if (!cancelled) setUsersLoading(false); });
+    }, q ? 300 : 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [studentSearch]);
 
   const teamOptions = useMemo(() => {
     const unique = new Set(userRating.map((entry) => entry.teamName).filter(Boolean) as string[]);
@@ -41,21 +55,14 @@ export function RatingPage() {
   }, [userRating]);
 
   const filteredUsers = useMemo(() => {
-    const normalizedSearch = normalizeSearch(studentSearch);
-
     return userRating.filter((entry) => {
-      const streamMatch = streamFilter === 'all' || entry.stream === streamFilter;
       const teamMatch = teamFilter === 'all' || entry.teamName === teamFilter;
-      const searchable = [
-        ...Object.values(entry.user).filter((value): value is string => typeof value === 'string'),
-        entry.teamName ?? '',
-      ].join(' ');
-      const searchMatch = !normalizedSearch || normalizeSearch(searchable).includes(normalizedSearch);
-      return streamMatch && teamMatch && searchMatch;
+      return teamMatch;
     });
-  }, [userRating, streamFilter, teamFilter, studentSearch]);
+  }, [userRating, teamFilter]);
 
-  if (loading) return <div className={styles.center}><Spinner size="lg" /></div>;
+  const initialLoading = teamsLoading && teamRating.length === 0 && usersLoading && userRating.length === 0;
+  if (initialLoading) return <div className={styles.center}><Spinner size="lg" /></div>;
 
   const TABS = [
     { id: 'teams', label: '🏆 Команды' },
@@ -75,7 +82,11 @@ export function RatingPage() {
           <Card padding="lg">
             <span className="eyebrow">Рейтинг команд</span>
 
-            {teamRating.length === 0 ? (
+            {teamsLoading && teamRating.length === 0 ? (
+              <div className={styles.center}><Spinner /></div>
+            ) : teamsError && teamRating.length === 0 ? (
+              <Empty message={teamsError} />
+            ) : teamRating.length === 0 ? (
               <Empty message="Нет данных по командам" />
             ) : (
               <table className={[styles.table, styles.teamsTable].join(' ')}>
@@ -121,20 +132,6 @@ export function RatingPage() {
 
             <div className={styles.filtersRow}>
               <label className={styles.filterField}>
-                <span className={styles.filterLabel}>Поток</span>
-                <select
-                  className={styles.select}
-                  value={streamFilter}
-                  onChange={(event) => setStreamFilter(event.target.value)}
-                >
-                  <option value="all">Все потоки</option>
-                  {streamOptions.map((stream) => (
-                    <option key={stream} value={stream}>{stream}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className={styles.filterField}>
                 <span className={styles.filterLabel}>Команда</span>
                 <select
                   className={styles.select}
@@ -149,48 +146,59 @@ export function RatingPage() {
               </label>
             </div>
 
-            {filteredUsers.length === 0 ? (
+            {usersError && userRating.length === 0 ? (
+              <Empty message={usersError} />
+            ) : usersLoading && userRating.length === 0 ? (
+              <div className={styles.center}><Spinner /></div>
+            ) : filteredUsers.length === 0 ? (
               <Empty message="По выбранным фильтрам нет студентов" />
             ) : (
-              <table className={[styles.table, styles.usersTable].join(' ')}>
-                <thead>
-                  <tr>
-                    <th className={styles.placeHeader}>Место</th>
-                    <th>Студент</th>
-                    <th>Команда</th>
-                    <th>Лига</th>
-                    <th className={styles.scoreHeader}>Баллы</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((entry) => (
-                    <tr key={entry.user.id} className={entry.rank <= 3 ? styles.top : ''}>
-                      <td className={styles.placeCell}>
-                        <Rank rank={entry.rank} />
-                      </td>
-                      <td>
-                        <div className={styles.userCell}>
-                          <Avatar name={`${entry.user.firstName} ${entry.user.lastName}`} src={entry.user.avatarUrl} size="sm" />
-                          <Link to={`/users/${entry.user.id}`} className={styles.entityLink}>
-                            {entry.user.firstName} {entry.user.lastName}
-                          </Link>
-                        </div>
-                      </td>
-                      <td className={styles.teamLabel}>
-                        {entry.teamId ? (
-                          <Link to={`/teams/${entry.teamId}`} className={styles.entityLink}>{entry.teamName ?? '—'}</Link>
-                        ) : (
-                          entry.teamName ?? '—'
-                        )}
-                      </td>
-                      <td>
-                        <Badge variant={LEAGUE_VARIANT[entry.user.league] ?? 'accent'}>{entry.user.league}</Badge>
-                      </td>
-                      <td className={styles.krkCell}>{entry.user.personalRating.toFixed(2)}</td>
+              <>
+                {usersLoading && (
+                  <div className={styles.center}><Spinner size="sm" /></div>
+                )}
+                <table className={[styles.table, styles.usersTable].join(' ')}>
+                  <thead>
+                    <tr>
+                      <th className={styles.placeHeader}>Место</th>
+                      <th>Студент</th>
+                      <th>Команда</th>
+                      <th>Лига</th>
+                      <th className={styles.scoreHeader}>Баллы</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((entry) => (
+                      <tr key={entry.user.id} className={entry.rank <= 3 ? styles.top : ''}>
+                        <td className={styles.placeCell}>
+                          <Rank rank={entry.rank} />
+                        </td>
+                        <td>
+                          <div className={styles.userCell}>
+                            <Avatar name={`${entry.user.firstName} ${entry.user.lastName}`} src={entry.user.avatarUrl} size="sm" />
+                            <Link to={`/users/${entry.user.id}`} className={styles.entityLink}>
+                              {entry.user.firstName} {entry.user.lastName}
+                            </Link>
+                          </div>
+                        </td>
+                        <td className={styles.teamLabel}>
+                          {entry.teamId ? (
+                            <Link to={`/teams/${entry.teamId}`} className={styles.entityLink}>{entry.teamName ?? '—'}</Link>
+                          ) : (
+                            entry.teamName ?? '—'
+                          )}
+                        </td>
+                        <td>
+                          <Badge variant={LEAGUE_VARIANT[getLeagueByKrk(entry.user.personalRating)] ?? 'accent'}>
+                            {getLeagueByKrk(entry.user.personalRating)}
+                          </Badge>
+                        </td>
+                        <td className={styles.krkCell}>{entry.user.personalRating.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             )}
           </Card>
         )}
@@ -203,7 +211,9 @@ export function RatingPage() {
                   <div className={styles.topRank}>{rankMedal(entry.rank) ?? entry.rank}</div>
                   <Avatar name={`${entry.user.firstName} ${entry.user.lastName}`} src={entry.user.avatarUrl} size="lg" />
                   <p className={styles.topName}>{entry.user.firstName}<br />{entry.user.lastName}</p>
-                  <Badge variant={LEAGUE_VARIANT[entry.user.league] ?? 'accent'}>{entry.user.league}</Badge>
+                  <Badge variant={LEAGUE_VARIANT[getLeagueByKrk(entry.user.personalRating)] ?? 'accent'}>
+                    {getLeagueByKrk(entry.user.personalRating)}
+                  </Badge>
                   <p className={styles.topScore}>{entry.user.personalRating.toFixed(2)}</p>
                 </Card>
               </Link>
@@ -277,10 +287,6 @@ function LeagueDesc({ league }: { league: string }) {
   };
 
   return <p className={styles.leagueDesc}>{desc[league]}</p>;
-}
-
-function normalizeSearch(value: string) {
-  return value.trim().toLowerCase().replace(/ё/g, 'е');
 }
 
 function getLeagueByKrk(krk: number) {

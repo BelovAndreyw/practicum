@@ -1,5 +1,15 @@
 ﻿.center { display: flex; justify-content: center; padding: 60px; }
 
+.loadError {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: #fff4e5;
+  border: 1px solid #f5d9a8;
+  color: #8a5a00;
+  font-size: 0.88rem;
+}
+
 .grid {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);

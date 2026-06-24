@@ -19,6 +19,9 @@ interface BackendPublicUserProfile {
   role: string;
   team_name?: string | null;
   team_id?: number | null;
+  email?: string | null;
+  phone?: string | null;
+  avatar_url?: string | null;
   personal_rating: number;
   league?: string | null;
   krk_breakdown?: {
@@ -58,6 +61,9 @@ export const usersApi = {
         student_id: 0,
         full_name: data.full_name,
         role: data.role,
+        email: data.email,
+        phone: data.phone,
+        avatar_url: data.avatar_url,
         achievements: data.achievements,
       },
       {
@@ -83,6 +89,9 @@ export const usersApi = {
       surname: data.lastName,
       name: data.firstName,
       patronymic: data.middleName,
+      email: data.email,
+      phone: data.phone,
+      avatar_url: data.avatarUrl,
     });
 
     return authApi.me();

@@ -48,9 +48,22 @@ done
 
 docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" ps
 
+if [ "${RUN_SEED:-false}" = "true" ]; then
+  echo ""
+  echo "==> Seed (идемпотентный seed_all.py)..."
+  docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" run --rm --no-deps \
+    -v "${APP_DIR}/scripts:/scripts:ro" \
+    -v "${APP_DIR}/backend:/app:ro" \
+    backend python /scripts/seed_all.py
+fi
+
 echo ""
 echo "==> Smoke (локально на сервере):"
 echo "  curl -fsS -o /dev/null https://teamzachet.ru/ || curl -fsS -o /dev/null http://127.0.0.1/"
 echo "  curl -fsS https://teamzachet.ru/api/ || true"
+echo ""
+echo "Опционально — обновить демо-данные (идемпотентно):"
+echo "  bash scripts/seed_pilot.sh"
+echo "  # или: RUN_SEED=true bash infra/scripts/deploy-pilot-manual.sh"
 echo ""
 echo "Деплой ветки ${GIT_BRANCH} завершён."

@@ -59,13 +59,16 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Обновление ФИО в профиле"""
+    """Обновление профиля: ФИО, контакты, аватар"""
     return await update_user_profile_logic(
         current_user,
         data.surname,
         data.name,
         data.patronymic,
         db,
+        email=data.email,
+        phone=data.phone,
+        avatar_url=data.avatar_url,
     )
 
 

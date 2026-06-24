@@ -22,6 +22,23 @@ from app.modules.checkin.schemas import (
 router = APIRouter(prefix="/checkins", tags=["Check-in"])
 
 
+def _checkin_response(c) -> CheckinResponse:
+    return CheckinResponse(
+        id=c.id,
+        team_id=c.team_id,
+        week_start_date=c.week_start_date,
+        content=c.content,
+        achievements=c.achievements,
+        blockers=c.blockers,
+        created_by=c.created_by,
+        created_at=c.created_at,
+        reviewed_by=c.reviewed_by,
+        reviewed_at=c.reviewed_at,
+        status=c.status,
+        tasks=[],
+    )
+
+
 @router.post("")
 async def create_checkin(
     data: CheckinCreateRequest,
@@ -37,20 +54,10 @@ async def create_checkin(
         raise HTTPException(status_code=400, detail="Вы не состоите в команде")
 
     checkin = await create_checkin_logic(
-        membership.team_id, current_user.id, data.week_start_date, data.content, db
+        membership.team_id, current_user.id, data.week_start_date, data.content, db,
+        achievements=data.achievements, blockers=data.blockers,
     )
-    return CheckinResponse(
-        id=checkin.id,
-        team_id=checkin.team_id,
-        week_start_date=checkin.week_start_date,
-        content=checkin.content,
-        created_by=checkin.created_by,
-        created_at=checkin.created_at,
-        reviewed_by=checkin.reviewed_by,
-        reviewed_at=checkin.reviewed_at,
-        status=checkin.status,
-        tasks=[]
-    )
+    return _checkin_response(checkin)
 
 
 @router.get("/team/{team_id}")
@@ -61,21 +68,7 @@ async def get_team_checkins(
     """История check-ins команды"""
     checkins = await get_team_checkins_logic(team_id, db)
     return {
-        "checkins": [
-            CheckinResponse(
-                id=c.id,
-                team_id=c.team_id,
-                week_start_date=c.week_start_date,
-                content=c.content,
-                created_by=c.created_by,
-                created_at=c.created_at,
-                reviewed_by=c.reviewed_by,
-                reviewed_at=c.reviewed_at,
-                status=c.status,
-                tasks=[]
-            )
-            for c in checkins
-        ],
+        "checkins": [_checkin_response(c) for c in checkins],
         "total": len(checkins)
     }
 
@@ -88,21 +81,7 @@ async def get_pending_checkins(
     """Ожидающие проверки (преподаватель/админ)"""
     checkins = await get_pending_checkins_logic(db)
     return {
-        "checkins": [
-            CheckinResponse(
-                id=c.id,
-                team_id=c.team_id,
-                week_start_date=c.week_start_date,
-                content=c.content,
-                created_by=c.created_by,
-                created_at=c.created_at,
-                reviewed_by=c.reviewed_by,
-                reviewed_at=c.reviewed_at,
-                status=c.status,
-                tasks=[]
-            )
-            for c in checkins
-        ],
+        "checkins": [_checkin_response(c) for c in checkins],
         "total": len(checkins)
     }
 

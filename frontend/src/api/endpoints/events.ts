@@ -2,17 +2,23 @@ import { http } from '../client';
 import { mockDelay } from '../mock/delay';
 import { shouldUseMock } from '../mock/config';
 import { MOCK_EVENTS } from '../mock/data';
-import { mapEvent, mapEventList, toBackendEventCreate } from '../mappers/events';
+import { mapEvent, mapEventList, toBackendEventCreate, toBackendEventUpdate } from '../mappers/events';
 import type { CalendarEvent } from '@/types';
 
 const USE_MOCK = shouldUseMock();
 type EventCreateData = Omit<CalendarEvent, 'id' | 'createdAt' | 'organizerId' | 'organizerName'>
-  & Partial<Pick<CalendarEvent, 'organizerId' | 'organizerName'>>;
+  & Partial<Pick<CalendarEvent, 'organizerId' | 'organizerName'>>
+  & { teamId?: string };
 
 export const eventsApi = {
-  async list(): Promise<CalendarEvent[]> {
-    if (USE_MOCK) { await mockDelay(); return MOCK_EVENTS; }
-    const data = await http.get<Parameters<typeof mapEventList>[0]>('/events');
+  async list(teamId?: string): Promise<CalendarEvent[]> {
+    if (USE_MOCK) {
+      await mockDelay();
+      if (teamId) return MOCK_EVENTS.filter((e) => e.invitedTeamIds.includes(teamId));
+      return MOCK_EVENTS;
+    }
+    const query = teamId ? `?team_id=${teamId}` : '';
+    const data = await http.get<Parameters<typeof mapEventList>[0]>(`/events${query}`);
     return mapEventList(data);
   },
 
@@ -55,7 +61,8 @@ export const eventsApi = {
       MOCK_EVENTS[index] = { ...MOCK_EVENTS[index], ...data };
       return MOCK_EVENTS[index];
     }
-    return http.patch<CalendarEvent>(`/events/${id}`, data);
+    const updated = await http.patch<Parameters<typeof mapEvent>[0]>(`/events/${id}`, toBackendEventUpdate(data));
+    return mapEvent(updated);
   },
 
   async remove(id: string): Promise<void> {

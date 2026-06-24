@@ -22,6 +22,7 @@ export function DashboardPage() {
   const [knowledge, setKnowledge] = useState<KnowledgeRequest[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadErrors, setLoadErrors] = useState<string[]>([]);
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ type: 'need' as KnowledgeRequestType, title: '', description: '', tags: '' });
@@ -34,9 +35,14 @@ export function DashboardPage() {
       activityApi.getFeed(8),
     ])
       .then(([newsResult, knowledgeResult, activityResult]) => {
+        const errors: string[] = [];
         if (newsResult.status === 'fulfilled') setNews(newsResult.value);
+        else errors.push('новости');
         if (knowledgeResult.status === 'fulfilled') setKnowledge(knowledgeResult.value);
+        else errors.push('биржу знаний');
         if (activityResult.status === 'fulfilled') setActivity(activityResult.value);
+        else errors.push('ленту активности');
+        setLoadErrors(errors);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -85,6 +91,12 @@ export function DashboardPage() {
         title="Главная"
         subtitle={`Здесь сразу все обновления по сообществу и командам, ${user?.firstName}.`}
       />
+
+      {loadErrors.length > 0 && (
+        <p className={styles.loadError}>
+          Не удалось загрузить: {loadErrors.join(', ')}. Попробуйте обновить страницу.
+        </p>
+      )}
 
       <div className={styles.grid}>
         <section className={styles.newsColumn}>

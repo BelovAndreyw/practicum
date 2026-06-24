@@ -7,9 +7,9 @@ import enum
 
 class LeagueTier(enum.Enum):
     """Уровни лиг"""
-    NEWBIE = "newbie"      # 0 - 49.99 баллов
-    PRO = "pro"            # 50 - 99.99 баллов
-    LEGEND = "legend"      # 100+ баллов
+    NEWBIE = "newbie"      # 0 - 59.99 баллов
+    PRO = "pro"            # 60 - 84.99 баллов
+    LEGEND = "legend"      # 85+ баллов
 
 
 class UserRating(Base):
@@ -97,7 +97,7 @@ class RatingAdminOverwrite(Base):
     reason = Column(Text, nullable=False)
     is_active = Column(Boolean, default=True)  # Можно отключить overwrite
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("UserRating", back_populates="admin_overwrites")
     admin_user = relationship("User", foreign_keys=[admin_user_id])
@@ -162,7 +162,8 @@ class LeagueSettings(Base):
 
     is_active = Column(Boolean, default=True)
 
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    # naive UTC: колонка TIMESTAMP WITHOUT TIME ZONE, asyncpg не принимает aware-datetime
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class RatingPeriodArchive(Base):
@@ -181,7 +182,7 @@ class RatingPeriodArchive(Base):
     final_rank = Column(Integer, nullable=False)
     league = Column(String, nullable=False)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
     team = relationship("Team")

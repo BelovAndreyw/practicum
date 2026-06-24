@@ -22,10 +22,10 @@ router = APIRouter(prefix="/rating", tags=["Rating"])
 
 
 def _league_for_krk(krk: float) -> str:
-    """Лига по значению КРК (согласовано с LeagueTier)."""
-    if krk >= 100:
+    """Лига по значению КРК (Новичок < 60, Профи 60-85, Легенда >= 85)."""
+    if krk >= 85:
         return "legend"
-    if krk >= 50:
+    if krk >= 60:
         return "pro"
     return "newbie"
 
@@ -36,6 +36,7 @@ async def get_leaderboard(
     offset: int = Query(0, ge=0),
     team_id: Optional[int] = None,
     league: Optional[str] = None,
+    q: Optional[str] = Query(None, description="Поиск по логину или ФИО (в т.ч. на русском)"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -59,19 +60,25 @@ async def get_leaderboard(
         limit=limit,
         offset=offset,
         team_id=team_id,
-        league=league
+        league=league,
+        q=q,
     )
 
-    # Формируем ответ с username и team_name
+    # Формируем ответ с username, ФИО и team_name
     rankings = []
     for r in ratings:
         user_result = await db.execute(
             select(User)
             .where(User.id == r.user_id)
-            .options(selectinload(User.team_membership))
+            .options(selectinload(User.team_membership), selectinload(User.student))
         )
         user = user_result.scalar_one_or_none()
         username = user.username if user else "Unknown"
+
+        full_name = None
+        if user and user.student:
+            s = user.student
+            full_name = f"{s.surname} {s.name} {s.patronymic}".strip()
 
         team_name = None
         team_id_value = None
@@ -87,6 +94,7 @@ async def get_leaderboard(
         rankings.append(RankingItemResponse(
             user_id=r.user_id,
             username=username,
+            full_name=full_name,
             total_krk=r.total_krk,
             global_rank=r.global_rank,
             league=r.league,

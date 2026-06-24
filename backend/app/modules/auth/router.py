@@ -49,8 +49,6 @@ async def get_me(
         full_name = "Unknown"
 
     achievement_service = AchievementService(db)
-    await achievement_service.sync_for_user(current_user.id)
-    await db.commit()
     achievements = await achievement_service.get_user_achievements(current_user.id)
 
     return UserResponse(

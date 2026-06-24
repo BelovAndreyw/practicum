@@ -70,9 +70,10 @@ async def create_help_request(
 @router.get("/{request_id}")
 async def get_help_request(
     request_id: int,
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Детали заявки"""
+    """Детали заявки (требуется авторизация)."""
     request = await get_help_request_detail_logic(request_id, db)
     data = await serialize_help_request(request, db)
     return HelpRequestDetailResponse(

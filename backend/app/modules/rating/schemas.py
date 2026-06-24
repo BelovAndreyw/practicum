@@ -49,6 +49,7 @@ class RankingItemResponse(BaseModel):
     """Элемент списка рейтинга"""
     user_id: int
     username: str
+    full_name: Optional[str] = None
     total_krk: float
     global_rank: int
     league: str
@@ -98,8 +99,8 @@ class LeagueDistributionResponse(BaseModel):
     pro_count: int
     legend_count: int
     newbie_threshold: float = 0.0
-    pro_threshold: float = 50.0
-    legend_threshold: float = 100.0
+    pro_threshold: float = 60.0
+    legend_threshold: float = 85.0
 
 
 class RatingHistoryItem(BaseModel):

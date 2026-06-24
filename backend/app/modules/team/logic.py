@@ -83,6 +83,9 @@ async def get_user_profile_logic(user: User, db: AsyncSession) -> dict:
         "role": user.role,
         "team_name": team_name,
         "team_id": team_id,
+        "email": user.email,
+        "phone": user.phone,
+        "avatar_url": user.avatar_url,
     }
 
 
@@ -125,6 +128,9 @@ async def get_public_user_profile_logic(user_id: int, db: AsyncSession) -> dict:
         "role": user.role,
         "team_name": team_name,
         "team_id": team_id,
+        "email": user.email,
+        "phone": user.phone,
+        "avatar_url": user.avatar_url,
         "personal_rating": round(rating.total_krk, 2),
         "league": rating.league,
         "krk_breakdown": {
@@ -226,8 +232,11 @@ async def update_user_profile_logic(
     name: str | None,
     patronymic: str | None,
     db: AsyncSession,
+    email: str | None = None,
+    phone: str | None = None,
+    avatar_url: str | None = None,
 ) -> dict:
-    """Обновление ФИО студента в профиле"""
+    """Обновление ФИО, контактов и аватара в профиле"""
     if not user.student_id:
         raise HTTPException(status_code=400, detail="Профиль студента не найден")
 
@@ -241,6 +250,15 @@ async def update_user_profile_logic(
         student.name = name
     if patronymic is not None:
         student.patronymic = patronymic
+
+    # Контакты и аватар храним на аккаунте (users), а не на студенте
+    if email is not None:
+        user.email = email or None
+    if phone is not None:
+        user.phone = phone or None
+    if avatar_url is not None:
+        user.avatar_url = avatar_url or None
+    db.add(user)
 
     await db.commit()
     return await get_user_profile_logic(user, db)
@@ -279,7 +297,11 @@ async def create_invite_link_logic(team: Team, expires_hours: int = 24,
 async def join_by_link_logic(token: str, user: User, db: AsyncSession) -> Team:
     """Вступление в команду по пригласительной ссылке"""
     token = token.strip().upper()
-    link_result = await db.execute(select(TeamInviteLink).where(TeamInviteLink.token == token))
+    link_result = await db.execute(
+        select(TeamInviteLink)
+        .where(TeamInviteLink.token == token)
+        .with_for_update()
+    )
     link = link_result.scalar_one_or_none()
 
     if not link or not link.is_active:
@@ -309,8 +331,12 @@ async def join_by_link_logic(token: str, user: User, db: AsyncSession) -> Team:
     if link.max_uses and link.uses_count >= link.max_uses:
         link.is_active = False
 
-    await TeamRatingService(db).on_member_joined(team.id, user.id)
-    await db.commit()
+    try:
+        await TeamRatingService(db).on_member_joined(team.id, user.id)
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Вы уже состоите в команде")
 
     return team
 
@@ -376,9 +402,16 @@ async def process_join_request_logic(request_id: int, action: str, captain: User
         membership = TeamMember(user_id=request.user_id, team_id=team.id)
         db.add(membership)
         request.status = "approved"
-        await TeamRatingService(db).on_member_joined(team.id, request.user_id)
+        try:
+            await TeamRatingService(db).on_member_joined(team.id, request.user_id)
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise HTTPException(status_code=400, detail="Пользователь уже в команде")
+        await db.refresh(request)
+        return request
 
-    elif action == "reject":
+    if action == "reject":
         request.status = "rejected"
     else:
         raise HTTPException(status_code=400, detail="Неверное действие")
@@ -435,6 +468,10 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession, viewer: User | N
             "joined_at": m.joined_at,
             "personal_krk": personal_krk,
             "league": user_rating.league if user_rating else None,
+            "email": user.email,
+            "phone": user.phone,
+            "avatar_url": user.avatar_url,
+            "role": user.role,
         })
 
     personal_scores = [m["personal_krk"] for m in members_list]

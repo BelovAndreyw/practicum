@@ -55,6 +55,16 @@
 }
 
 .createForm { display: flex; flex-direction: column; gap: 14px; }
+.hint { font-size: 0.85rem; color: var(--muted); margin: 0 0 12px; }
+.filterField { display: flex; flex-direction: column; gap: 6px; }
+.filterLabel { font-size: 0.82rem; font-weight: 600; }
+.select {
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  font-size: 0.9rem;
+}
 .formatRow { display: flex; flex-direction: column; gap: 6px; }
 .formatLabel { font-size: 0.82rem; font-weight: 600; }
 .formatBtns { display: flex; gap: 8px; }
@@ -116,6 +126,7 @@
   font-size: 0.92rem;
   line-height: 1.65;
   color: var(--text);
+  white-space: pre-wrap;
 }
 
 .detailsInfo {

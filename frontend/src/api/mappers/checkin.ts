@@ -5,6 +5,8 @@ interface BackendCheckin {
   team_id: number;
   week_start_date: string;
   content?: string | null;
+  achievements?: string | null;
+  blockers?: string | null;
   created_by: number;
   created_at: string;
   status: string;
@@ -21,7 +23,8 @@ export function mapCheckin(item: BackendCheckin): CheckIn {
     teamId: String(item.team_id),
     weekLabel: new Date(item.week_start_date).toLocaleDateString('ru-RU'),
     summary: item.content ?? '',
-    achievements: '',
+    achievements: item.achievements ?? '',
+    blockers: item.blockers ?? undefined,
     submittedAt: item.created_at,
     submittedByUserId: String(item.created_by),
   };
@@ -37,13 +40,6 @@ export function toBackendCheckinCreate(data: {
   achievements: string;
   blockers?: string;
 }) {
-  const parts = [
-    data.weekLabel && `Период: ${data.weekLabel}`,
-    data.summary && `Итоги: ${data.summary}`,
-    data.achievements && `Достижения: ${data.achievements}`,
-    data.blockers && `Блокеры: ${data.blockers}`,
-  ].filter(Boolean);
-
   const parsedWeek = data.weekLabel ? new Date(data.weekLabel) : new Date();
   const weekStart = Number.isNaN(parsedWeek.getTime())
     ? new Date().toISOString()
@@ -51,6 +47,8 @@ export function toBackendCheckinCreate(data: {
 
   return {
     week_start_date: weekStart,
-    content: parts.join('\n\n') || data.summary,
+    content: data.summary,
+    achievements: data.achievements || null,
+    blockers: data.blockers || null,
   };
 }

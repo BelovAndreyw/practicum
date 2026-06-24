@@ -13,7 +13,9 @@ async def create_checkin_logic(
     user_id: int,
     week_start_date,
     content: str | None,
-    db: AsyncSession
+    db: AsyncSession,
+    achievements: str | None = None,
+    blockers: str | None = None,
 ) -> WeeklyCheckin:
     """Создание check-in"""
     team = await db.get(Team, team_id)
@@ -24,6 +26,8 @@ async def create_checkin_logic(
         team_id=team_id,
         week_start_date=week_start_date,
         content=content,
+        achievements=achievements,
+        blockers=blockers,
         created_by=user_id,
         status="pending"
     )

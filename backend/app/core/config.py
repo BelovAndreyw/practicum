@@ -30,7 +30,9 @@ class Settings(BaseSettings):
     # Безопасность JWT
     SECRET_KEY: str = "dev_secret_key_12345_change_in_production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    # 12 часов: чтобы сессия не «слетала» посреди работы (раньше было 30 минут,
+    # из-за чего через короткое время разделы пустели и приходилось логиниться заново)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 720
 
     # Демо-режим для тестов, чтобы отдельно проверять для себя их работоспособность
     DEMO_MODE: bool = True

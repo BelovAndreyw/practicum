@@ -30,6 +30,7 @@ backend/university.db
 
 # Локальные загрузки (отчёты, картинки постов)
 backend/uploads/
+uploads/
 
 # Зависимости
 node_modules/

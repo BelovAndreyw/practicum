@@ -3,6 +3,7 @@ import { activityApi } from '@/api';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { ActivityEvent } from '@/types';
 import { Avatar, Badge, Button, Card, Empty, Input, Modal, PageHeader } from '@/components/ui';
+import { ACHIEVEMENT_CATALOG } from '@/constants/achievements';
 import styles from './ProfilePage.module.css';
 
 const LEAGUE_VARIANT: Record<string, 'accent' | 'violet' | 'warning'> = {
@@ -10,12 +11,6 @@ const LEAGUE_VARIANT: Record<string, 'accent' | 'violet' | 'warning'> = {
   Профи: 'violet',
   Легенда: 'warning',
 };
-
-const ACH_ALL = [
-  { id: 'ach_x1', title: 'Первый check-in', description: 'Отправьте первый еженедельный отчёт', icon: '✅' },
-  { id: 'ach_x2', title: 'Спаситель', description: 'Помогите другой команде в спасении', icon: '🆘' },
-  { id: 'ach_x3', title: 'Знаток биржи', description: 'Разместите предложение на бирже знаний', icon: '💡' },
-];
 
 export function ProfilePage() {
   const { user, updateProfile } = useAuth();
@@ -185,7 +180,7 @@ export function ProfilePage() {
                 </div>
               ))}
 
-              {ACH_ALL.filter((item) => !unlockedIds.has(item.id)).map((item) => (
+              {ACHIEVEMENT_CATALOG.filter((item) => !unlockedIds.has(item.id)).map((item) => (
                 <div key={item.id} className={[styles.achCard, styles.achLocked].join(' ')}>
                   <span className={styles.achIcon}>🔒</span>
                   <p className={styles.achTitle}>{item.title}</p>

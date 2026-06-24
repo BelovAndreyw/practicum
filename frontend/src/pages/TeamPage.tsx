@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { activityApi, challengesApi, eventsApi, teamsApi, usersApi } from '@/api';
 import type { ActivityEvent, CalendarEvent, Challenge, EventFormat, KrkBreakdown, Team, User } from '@/types';
@@ -66,7 +66,7 @@ export function TeamPage() {
       teamsApi.getTeam(user.teamId),
       teamsApi.getKrkBreakdown(user.teamId),
       challengesApi.list(),
-      eventsApi.list(),
+      eventsApi.list(user.teamId),
       activityApi.getFeed(40),
     ])
       .then((results) => {
@@ -84,11 +84,10 @@ export function TeamPage() {
             ? challengesResult.value.filter((item) => item.status === 'active').slice(0, 5)
             : [],
         );
-        const teamMemberIds = new Set(teamData.members.map((member) => member.userId));
         setEvents(
           eventsResult.status === 'fulfilled'
             ? eventsResult.value
-              .filter((item) => item.invitedTeamIds.includes(teamData.id) || teamMemberIds.has(item.organizerId))
+              .slice()
               .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             : [],
         );
@@ -211,39 +210,55 @@ export function TeamPage() {
     setEditingEventId(null);
   };
 
-  const handleSaveTeamEvent = () => {
+  const reloadTeamEvents = async () => {
+    if (!user?.teamId) return;
+    const fresh = await eventsApi.list(user.teamId);
+    setEvents(fresh.slice().sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+  };
+
+  const handleSaveTeamEvent = async () => {
     if (!team || !user || !eventForm.title.trim() || !eventForm.date) return;
     const existingEvent = editingEventId ? events.find((item) => item.id === editingEventId) : null;
     if (existingEvent && !canEditTeamEvent(existingEvent)) return;
 
-    const payload: CalendarEvent = {
-      id: editingEventId ?? `team-event-${Date.now()}`,
-      title: eventForm.title.trim(),
-      description: eventForm.description.trim() || undefined,
-      format: eventForm.format,
-      date: new Date(eventForm.date).toISOString(),
-      location: eventForm.format === 'offline' ? eventForm.location.trim() || undefined : undefined,
-      onlineLink: eventForm.format === 'online' ? eventForm.onlineLink.trim() || undefined : undefined,
-      organizerId: existingEvent?.organizerId ?? user.id,
-      organizerName: existingEvent?.organizerName ?? [user.firstName, user.lastName].filter(Boolean).join(' '),
-      invitedTeamIds: [team.id],
-      createdAt: existingEvent?.createdAt ?? new Date().toISOString(),
-    };
-
-    setEvents((prev) => {
-      const next = editingEventId
-        ? prev.map((item) => (item.id === editingEventId ? payload : item))
-        : [...prev, payload];
-
-      return next.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    });
-    closeTeamEventModal();
+    setBusy(true);
+    setError('');
+    try {
+      const payload = {
+        title: eventForm.title.trim(),
+        description: eventForm.description.trim() || undefined,
+        format: eventForm.format,
+        date: new Date(eventForm.date).toISOString(),
+        location: eventForm.format === 'offline' ? eventForm.location.trim() || undefined : undefined,
+        onlineLink: eventForm.format === 'online' ? eventForm.onlineLink.trim() || undefined : undefined,
+        invitedTeamIds: [team.id],
+      };
+      if (existingEvent) {
+        await eventsApi.update(existingEvent.id, payload);
+      } else {
+        await eventsApi.create(payload);
+      }
+      await reloadTeamEvents();
+      closeTeamEventModal();
+    } catch (event) {
+      setError(event instanceof Error ? event.message : 'Не удалось сохранить событие');
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleDeleteTeamEvent = () => {
+  const handleDeleteTeamEvent = async () => {
     if (!editingTeamEvent || !canDeleteTeamEvent(editingTeamEvent) || !window.confirm('Удалить событие команды?')) return;
-    setEvents((prev) => prev.filter((item) => item.id !== editingTeamEvent.id));
-    closeTeamEventModal();
+    setBusy(true);
+    try {
+      await eventsApi.remove(editingTeamEvent.id);
+      await reloadTeamEvents();
+      closeTeamEventModal();
+    } catch (event) {
+      setError(event instanceof Error ? event.message : 'Не удалось удалить событие');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const inviteExpiresLabel = useMemo(() => {

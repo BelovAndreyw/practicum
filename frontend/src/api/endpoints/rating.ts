@@ -18,7 +18,7 @@ export const ratingApi = {
     return mapTeamRatingList(data);
   },
 
-  async getUserRating(filters?: { teamId?: string; stream?: string }): Promise<UserRatingEntry[]> {
+  async getUserRating(filters?: { teamId?: string; stream?: string; q?: string }): Promise<UserRatingEntry[]> {
     if (USE_MOCK) {
       await mockDelay();
 
@@ -31,6 +31,7 @@ export const ratingApi = {
 
     const params = new URLSearchParams({ limit: '100' });
     if (filters?.teamId) params.set('team_id', filters.teamId);
+    if (filters?.q) params.set('q', filters.q);
     const data = await http.get<Parameters<typeof mapUserRatingList>[0]>(`/rating/leaderboard?${params}`);
     let list = mapUserRatingList(data);
     if (filters?.stream) list = list.filter((entry) => entry.stream === filters.stream);

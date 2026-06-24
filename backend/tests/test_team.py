@@ -278,3 +278,56 @@ async def test_join_request_flow(client):
     profile = await client.get("/team/profile", headers={"Authorization": f"Bearer {student_token}"})
     assert profile.json()["team_name"] == "Request Team"
 
+
+@pytest.mark.asyncio
+async def test_team_feed_requires_auth(client):
+    """GET /feed/team/{id} без токена — 401."""
+    response = await client.get("/feed/team/1")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_team_feed_forbidden_for_outsider(client):
+    """GET /feed/team/{id} для пользователя не из команды — 403."""
+    captain_login = await client.post("/auth/login", json={
+        "username": "ivanov_captain",
+        "password": "CaptainPass123!",
+    })
+    captain_token = captain_login.json()["access_token"]
+
+    create = await client.post("/team/create", json={"name": "Feed Team"}, headers={
+        "Authorization": f"Bearer {captain_token}",
+    })
+    assert create.status_code == 200
+    team_id = create.json()["id"]
+
+    student_login = await client.post("/auth/login", json={
+        "username": "petrov_student",
+        "password": "StudentPass123!",
+    })
+    student_token = student_login.json()["access_token"]
+
+    denied = await client.get(f"/feed/team/{team_id}", headers={
+        "Authorization": f"Bearer {student_token}",
+    })
+    assert denied.status_code == 403
+
+    allowed = await client.get(f"/feed/team/{team_id}", headers={
+        "Authorization": f"Bearer {captain_token}",
+    })
+    assert allowed.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_events_team_calendar_requires_auth(client):
+    """GET /events?team_id=... без токена — 401."""
+    response = await client.get("/events?team_id=1")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_help_detail_requires_auth(client):
+    """GET /help/{id} без токена — 401."""
+    response = await client.get("/help/1")
+    assert response.status_code == 401
+

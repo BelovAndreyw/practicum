@@ -20,6 +20,10 @@ export interface BackendTeamMember {
   joined_at: string;
   personal_krk?: number;
   league?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  avatar_url?: string | null;
+  role?: string | null;
 }
 
 export interface BackendTeamDetail extends BackendTeamSummary {
@@ -50,14 +54,23 @@ function roundKrk(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+function mapMemberRole(backendRole: string | null | undefined, isCaptain: boolean): UserRole {
+  if (backendRole === 'teacher' || backendRole === 'admin') return 'organizer';
+  if (backendRole === 'captain' || isCaptain) return 'captain';
+  return 'student';
+}
+
 function mapMember(member: BackendTeamMember, captainId: number): TeamMember {
   const { firstName, lastName } = splitFullName(member.full_name);
-  const role: UserRole = member.user_id === captainId ? 'captain' : 'student';
+  const role = mapMemberRole(member.role, member.user_id === captainId);
   return {
     userId: String(member.user_id),
     firstName,
     lastName,
     role,
+    email: member.email ?? undefined,
+    phone: member.phone ?? undefined,
+    avatarUrl: member.avatar_url ?? undefined,
     personalRating: roundKrk(member.personal_krk ?? 0),
   };
 }

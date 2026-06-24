@@ -29,6 +29,9 @@ export interface BackendUserResponse {
   student_id: number;
   full_name: string;
   role: string;
+  email?: string | null;
+  phone?: string | null;
+  avatar_url?: string | null;
   achievements?: BackendAchievement[];
 }
 
@@ -82,7 +85,9 @@ export function mapBackendUser(
     firstName,
     lastName,
     middleName: middleName || undefined,
-    email: data.username,
+    email: data.email ?? (data.username || ''),
+    phone: data.phone ?? undefined,
+    avatarUrl: data.avatar_url ?? undefined,
     studentId: data.student_id ? String(data.student_id) : undefined,
     role: mapBackendRole(data.role),
     teamId: extras?.teamId,

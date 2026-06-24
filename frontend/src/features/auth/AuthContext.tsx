@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authApi } from '@/api';
 import { usersApi } from '@/api';
+import { AUTH_UNAUTHORIZED_EVENT } from '@/api/client';
 import type { User } from '@/types';
 
 interface AuthState {
@@ -14,15 +15,6 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 const AUTH_USER_KEY = 'kz-auth-user';
-
-function readStoredUser() {
-  try {
-    const raw = localStorage.getItem(AUTH_USER_KEY);
-    return raw ? (JSON.parse(raw) as User) : null;
-  } catch {
-    return null;
-  }
-}
 
 function writeStoredUser(user: User | null) {
   try {
@@ -38,18 +30,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = readStoredUser();
-    if (storedUser) setUser(storedUser);
-
     authApi.me()
       .then((freshUser) => {
         setUser(freshUser);
         writeStoredUser(freshUser);
       })
       .catch(() => {
-        if (!storedUser) setUser(null);
+        setUser(null);
+        writeStoredUser(null);
       })
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    // Бэкенд вернул 401 (протух токен) — чисто сбрасываем сессию,
+    // чтобы пользователя один раз перекинуло на логин, а не оставляло
+    // с «висящим» аккаунтом и пустыми разделами.
+    const onUnauthorized = () => {
+      setUser(null);
+      writeStoredUser(null);
+    };
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
   }, []);
 
   const login = async (username: string, password: string) => {

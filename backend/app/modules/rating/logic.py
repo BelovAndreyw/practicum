@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, or_
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Tuple
@@ -212,10 +212,10 @@ class RatingService:
                     if score >= setting.min_score:
                         return setting.tier
         else:
-            # Дефолтные пороги
-            if score >= 100:
+            # Дефолтные пороги: Новичок < 60, Профи 60-85, Легенда >= 85
+            if score >= 85:
                 return LeagueTier.LEGEND.value
-            elif score >= 50:
+            elif score >= 60:
                 return LeagueTier.PRO.value
             else:
                 return LeagueTier.NEWBIE.value
@@ -305,16 +305,43 @@ class RatingService:
         offset: int = 0,
         stream_id: Optional[int] = None,
         team_id: Optional[int] = None,
-        league: Optional[str] = None
+        league: Optional[str] = None,
+        q: Optional[str] = None,
     ) -> Tuple[List[UserRating], int]:
         """Получить глобальный рейтинг с фильтрацией"""
-        query = select(UserRating)
+        from app.models.user import Student
+        from app.models.team import Team, TeamMember
 
-        # Фильтры
+        query = select(UserRating).join(User, User.id == UserRating.user_id)
+
         if team_id:
-            query = query.join(User).join(TeamMember).where(TeamMember.team_id == team_id)
+            query = query.join(TeamMember, TeamMember.user_id == User.id).where(
+                TeamMember.team_id == team_id
+            )
+
         if league:
             query = query.where(UserRating.league == league)
+
+        if q:
+            needle = q.strip().lower().replace("ё", "е")
+            if needle:
+                pattern = f"%{needle}%"
+                if team_id:
+                    query = query.outerjoin(Team, Team.id == TeamMember.team_id)
+                else:
+                    query = (
+                        query.outerjoin(TeamMember, TeamMember.user_id == User.id)
+                        .outerjoin(Team, Team.id == TeamMember.team_id)
+                    )
+                query = query.outerjoin(Student, Student.id == User.student_id).where(
+                    or_(
+                        func.lower(User.username).like(pattern),
+                        func.replace(func.lower(Student.surname), "ё", "е").like(pattern),
+                        func.replace(func.lower(Student.name), "ё", "е").like(pattern),
+                        func.replace(func.lower(Student.patronymic), "ё", "е").like(pattern),
+                        func.replace(func.lower(Team.name), "ё", "е").like(pattern),
+                    )
+                )
 
         # Сортировка по убыванию КРК
         query = query.order_by(UserRating.total_krk.desc())

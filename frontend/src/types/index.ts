@@ -1,4 +1,4 @@
-﻿// в”Ђв”Ђв”Ђ Р РѕР»Рё в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// в”Ђв”Ђв”Ђ Р РѕР»Рё в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 export type UserRole = 'student' | 'captain' | 'organizer';
 
@@ -71,7 +71,9 @@ export interface TeamRatingEntry {
 
 export interface UserRatingEntry {
   rank: number;
-  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'personalRating' | 'league'> & Partial<Pick<User, 'middleName' | 'email' | 'phone' | 'studentId' | 'avatarUrl'>>;
+  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'personalRating' | 'league'>
+    & Partial<Pick<User, 'middleName' | 'email' | 'phone' | 'studentId' | 'avatarUrl'>>
+    & { username?: string };
   teamId?: string;
   teamName?: string;
   stream?: string;

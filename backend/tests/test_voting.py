@@ -202,6 +202,33 @@ async def voting_client():
 
 
 @pytest.mark.asyncio
+async def test_get_active_round_with_duplicates_returns_latest(db_session):
+    """При нескольких открытых раундах (повторный seed) берём самый новый, без 500."""
+    captain = await _create_user(db_session, "cap_dup")
+    team = await _create_team(db_session, "DupTeam", captain, [])
+
+    older = VoteRound(
+        team_id=team.id,
+        cycle_label="Старый",
+        is_open=True,
+        closes_at=datetime.utcnow() + timedelta(days=7),
+    )
+    newer = VoteRound(
+        team_id=team.id,
+        cycle_label="Новый",
+        is_open=True,
+        closes_at=datetime.utcnow() + timedelta(days=14),
+    )
+    db_session.add_all([older, newer])
+    await db_session.commit()
+
+    service = VotingService(db_session)
+    found = await service.get_active_round(team.id)
+    assert found is not None
+    assert found.cycle_label == "Новый"
+
+
+@pytest.mark.asyncio
 async def test_teacher_can_get_active_round_without_membership(voting_client):
     client, team = voting_client
 

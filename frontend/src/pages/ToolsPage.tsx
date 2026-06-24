@@ -15,7 +15,7 @@ const STATUS_VAR: Record<string, 'default' | 'accent' | 'warning' | 'success' | 
 };
 
 export function ToolsPage() {
-  const { user, refreshUser } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const [tab, setTab] = useState<Tab>('checkin');
 
   // Check-in state
@@ -41,27 +41,62 @@ export function ToolsPage() {
   const [voteSubmitted, setVoteSubmitted] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.teamId) { setLoading(false); return; }
-    Promise.all([
-      checkinApi.list(user.teamId),
-      rescueApi.list(),
-      votingApi.getActiveRound(user.teamId),
-      teamsApi.getTeam(user.teamId),
-    ]).then(([ci, rs, vr, team]) => {
-      setCheckins(ci);
-      setRescues(rs);
-      setRound(vr);
-      setMembers(team.members.filter((m) => m.userId !== user.id));
-      if (vr?.hasVoted) setVoteSubmitted(true);
-    }).catch(() => {
-      setCheckins([]);
-      setRescues([]);
-      setRound(null);
-      setMembers([]);
-    }).finally(() => setLoading(false));
-  }, [user]);
+    if (authLoading) return;
+
+    const teamId = user?.teamId;
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+
+    (async () => {
+      const errors: string[] = [];
+
+      try {
+        const rescuesData = await rescueApi.list();
+        if (!cancelled) setRescues(rescuesData);
+      } catch {
+        errors.push('спасения');
+      }
+
+      if (teamId) {
+        try {
+          const ci = await checkinApi.list(teamId);
+          if (!cancelled) setCheckins(ci);
+        } catch {
+          errors.push('check-in');
+        }
+
+        try {
+          const vr = await votingApi.getActiveRound(teamId);
+          if (!cancelled) {
+            setRound(vr);
+            if (vr?.hasVoted) setVoteSubmitted(true);
+          }
+        } catch {
+          errors.push('голосование');
+        }
+
+        try {
+          const team = await teamsApi.getTeam(teamId);
+          if (!cancelled && user) {
+            setMembers(team.members.filter((m) => m.userId !== user.id));
+          }
+        } catch {
+          errors.push('команду');
+        }
+      }
+
+      if (!cancelled && errors.length) {
+        setLoadError(`Не удалось загрузить: ${errors.join(', ')}`);
+      }
+      if (!cancelled) setLoading(false);
+    })();
+
+    return () => { cancelled = true; };
+  }, [user, authLoading]);
 
   // Check-in handlers
   const handleCiSubmit = async () => {
@@ -142,10 +177,24 @@ export function ToolsPage() {
     } finally { setVoteSaving(false); }
   };
 
-  if (loading) return <div className={styles.center}><Spinner size="lg" /></div>;
+  if (authLoading || loading) return <div className={styles.center}><Spinner size="lg" /></div>;
+
+  if (!user?.teamId) {
+    return (
+      <div className={styles.page}>
+        <PageHeader
+          eyebrow="Командные инструменты"
+          title="Инструменты"
+          subtitle="Еженедельные отчёты, запросы помощи и оценивание вклада участников."
+        />
+        <Empty icon="👥" message="Вы не состоите в команде" hint="Вступите в команду, чтобы пользоваться check-in и голосованием." />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
+      {loadError && <p className={styles.loadError}>{loadError}</p>}
       <PageHeader
         eyebrow="Командные инструменты"
         title="Инструменты"
@@ -216,7 +265,7 @@ export function ToolsPage() {
                     <span className={styles.ciDate}>{new Date(ci.submittedAt).toLocaleDateString('ru-RU')}</span>
                   </div>
                   <p className={styles.ciField}><strong>Итоги:</strong> {ci.summary}</p>
-                  <p className={styles.ciField}><strong>Достижения:</strong> {ci.achievements}</p>
+                  <p className={styles.ciField}><strong>Достижения:</strong> {ci.achievements || '—'}</p>
                   {ci.blockers && <p className={styles.ciField}><strong>Блокеры:</strong> {ci.blockers}</p>}
                 </Card>
               ))

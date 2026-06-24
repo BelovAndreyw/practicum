@@ -25,7 +25,9 @@ export const challengesApi = {
   },
 
   async listForTeam(teamId: string): Promise<Challenge[]> {
-    const [challenges, my] = await Promise.all([this.list(), this.getMy()]);
+    const [challengesResult, myResult] = await Promise.allSettled([this.list(), this.getMy()]);
+    const challenges = challengesResult.status === 'fulfilled' ? challengesResult.value : [];
+    const my = myResult.status === 'fulfilled' ? myResult.value : { challenges: [] };
     return mergeMyChallengeStatus(challenges, my.challenges, teamId);
   },
 

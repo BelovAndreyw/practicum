@@ -34,10 +34,9 @@ class VotingService:
             select(VoteRound).where(
                 VoteRound.team_id == team_id,
                 VoteRound.is_open == True,
-            ).order_by(VoteRound.created_at.desc())
+            ).order_by(VoteRound.created_at.desc()).limit(1)
         )
-        round_obj = result.scalar_one_or_none()
-        return round_obj
+        return result.scalars().first()
 
     async def voter_has_submitted(self, round_id: int, voter_user_id: int) -> bool:
         result = await self.db.execute(
