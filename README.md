@@ -26,7 +26,8 @@
 
 ```bash
 # 1) Создать .env (не коммитить)
-# Минимум: POSTGRES_*, DATABASE_URL, SECRET_KEY, DEMO_MODE
+# Минимум: POSTGRES_*, DATABASE_URL, SECRET_KEY
+# DEMO_MODE: в .env.example — false; если переменная не задана, в config.py по умолчанию True
 
 # 2) Запуск dev стенда
 docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build
@@ -40,6 +41,10 @@ curl -s http://localhost:8000/
 # 4) Остановка
 docker compose -f infra/docker-compose.dev.yml --env-file .env down
 ```
+
+**Загрузка файлов:** в pilot используется volume `uploads-pilot` (`infra/docker-compose.pilot.yml`). В dev/test файлы в `uploads/` внутри контейнера backend **не сохраняются** при пересоздании контейнера.
+
+**Frontend локально (`npm run dev`):** по умолчанию включён mock-режим. Для реального API см. [`frontend/README.md`](frontend/README.md) (`VITE_FORCE_REAL_API=true`).
 
 ## Локальный прогон pilot-контура
 

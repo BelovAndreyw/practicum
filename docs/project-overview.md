@@ -20,7 +20,7 @@
 ```
 ┌─────────────────────┐
 │   Пользователь      │
-│   (Браузер / PWA)   │
+│   (Браузер / SPA)   │
 └──────────┬──────────┘
            │
            ▼
@@ -139,9 +139,29 @@ Total = (Base × 0.6) + (Unity × 0.3) + (Bonus × 0.1) + Penalty
 1. **POST `/auth/verify`** — проверка `student_id` по таблице `students`
 2. **POST `/auth/register`** — регистрация с verification token
 3. **POST `/auth/login`** — JWT access token
-4. **GET `/auth/me`** — профиль + синхронизация достижений
+4. **GET `/auth/me`** — профиль и достижения (синхронизация достижений — при **логине**, `auth/logic.py`)
 
-В `DEMO_MODE=true` при старте сидируются демо-пользователи (команды «Альфа» и «Бета»). План интеграции SSO УрФУ: [`sso-integration.md`](sso-integration.md).
+В `DEMO_MODE=true` (значение по умолчанию в `config.py`, если env не задан) при старте сидируются демо-пользователи. В `.env.example` рекомендуется `DEMO_MODE=false`. План SSO: [`sso-integration.md`](sso-integration.md).
+
+### Загрузка файлов
+
+Утилиты: `backend/app/core/uploads.py`. Файлы на диске, метаданные в БД.
+
+| Тип | Директория | API |
+|-----|------------|-----|
+| Посты | `uploads/posts/` | `POST /posts/`, `GET /posts/{id}/images/{id}` |
+| Отчёты | `uploads/reports/` | `POST /reports/{id}/files`, `GET /reports/{id}/files/{fid}` |
+| Аватары | `uploads/avatars/` | `POST/DELETE /team/profile/avatar`, `GET /team/users/{id}/avatar` |
+| События | `uploads/events/` | `POST/DELETE/GET /events/{id}/image` |
+
+Volume `uploads-pilot` — только в pilot compose. Dev/test: файлы **эфемерны** при пересоздании контейнера.
+
+Внешние URL (`avatar_url`, `image_url`) остаются запасным вариантом; приоритет у загруженного файла.
+
+### Backend без UI во фронтенде
+
+- `/auth/verify`, `/auth/register` — нет экранов регистрации
+- `/team/{id}/join-request`, `/team/{id}/requests` — заявки на вступление не подключены к React
 
 ## Frontend: экраны
 
@@ -196,7 +216,7 @@ Backend-тесты (`backend/tests/`):
 
 - `test_auth.py`, `test_team.py`, `test_challenges.py`
 - `test_rating.py`, `test_achievements.py`, `test_voting.py`
-- `test_help.py`, `test_posts.py`
+- `test_help.py`, `test_posts.py`, `test_uploads.py`
 
 Запуск:
 
@@ -259,4 +279,6 @@ python scripts/seed_all.py
 | [`project-roadmap.md`](project-roadmap.md) | Дорожная карта проекта |
 | [`diagnostics-testandfix.md`](diagnostics-testandfix.md) | Диагностика ветки TestAndFix |
 | [`../frontend/README.md`](../frontend/README.md) | Запуск фронтенда |
+| [`../frontend/docs/api-contract.md`](../frontend/docs/api-contract.md) | API-контракт |
+| [`../frontend/docs/backend-integration-checklist.md`](../frontend/docs/backend-integration-checklist.md) | Интеграция фронта с API |
 | [`../README.md`](../README.md) | Быстрый старт в корне репозитория |

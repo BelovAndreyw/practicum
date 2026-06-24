@@ -2,56 +2,67 @@
 
 Фронтенд игры «Командный зачёт» на React + TypeScript + Vite.
 
-## Быстрый запуск (каждый у себя локально, независимо)
+## Быстрый запуск (локально)
 
-Этот сценарий **не зависит от чужого компьютера/сервера**.
-Каждый разработчик поднимает свой локальный экземпляр.
-
-1. Клонировать репозиторий и перейти в ветку `frontend`:
 ```bash
 git clone https://github.com/BelovAndreyw/practicum.git
-cd practicum
-git checkout frontend
-```
-
-2. Перейти во фронтенд и установить зависимости:
-```bash
-cd frontend
+cd practicum/frontend
 npm install
-```
-
-3. Запустить локальный dev-сервер:
-```bash
 npm run dev
 ```
 
-4. Открыть в браузере:
-- `http://localhost:5173`
+Открыть: `http://localhost:5173`
 
-## Локальный вход в демо-режиме
+## Локальный вход в mock-режиме
 
-По умолчанию для локальной разработки используется mock-режим:
-- даже без `.env` (и без `.env.development`) в `dev`-режиме mock включен автоматически
-- вход работает с любым логином/паролем (для демонстрации интерфейса)
+По умолчанию в `dev` mock включён автоматически (`frontend/src/api/mock/config.ts`), даже без `.env`.
 
-Это не мешает дальнейшей интеграции с backend.
+- Данные из `frontend/src/api/mock/`
+- Вход: поле «логин» сопоставляется с **email** mock-пользователя (например `student@urfu.ru`), пароль любой
+
+Для демонстрации UI backend не нужен.
 
 ## Как включить реальный backend
 
-1. Поднять backend (локально/на стенде).
-2. В `frontend/.env.development` указать:
+### Вариант A: Docker dev-стенд (рекомендуется)
+
+```bash
+# из корня репозитория
+docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build
+```
+
+API: `http://localhost/api/...` (nginx), backend напрямую: `http://localhost:8000`
+
+В `frontend/.env.development`:
+
+```env
+VITE_BACKEND_URL=http://localhost:8000
+VITE_API_BASE=/api
+VITE_FORCE_REAL_API=true
+```
+
+### Вариант B: backend без Docker (`uvicorn` на 8080)
+
 ```env
 VITE_BACKEND_URL=http://localhost:8080
 VITE_API_BASE=/api
-VITE_USE_MOCK=false
 VITE_FORCE_REAL_API=true
 ```
-3. Перезапустить фронт:
-```bash
-npm run dev
-```
+
+Vite proxy по умолчанию смотрит на `http://localhost:8080` (`frontend/vite.config.ts`).
+
+Перезапустить: `npm run dev`
+
+> `VITE_USE_MOCK=false` в dev **не отключает** mock сам по себе — нужен `VITE_FORCE_REAL_API=true`.
 
 ## Production-сборка
+
+Docker-сборка фронтенда (`frontend/Dockerfile`, compose) передаёт build-args:
+
+- `VITE_API_BASE=/api`
+- `VITE_USE_MOCK=false`
+
+Локально:
 
 ```bash
 npm run build
@@ -60,20 +71,20 @@ npm run preview
 
 ## Переменные окружения
 
-- `VITE_BACKEND_URL` — адрес backend
-- `VITE_API_BASE` — префикс API (обычно `/api`)
-- `VITE_USE_MOCK` — `true` для mock, `false` для реального backend
-- `VITE_FORCE_REAL_API` — в `dev` принудительно отключает mock и включает реальный backend
+| Переменная | Назначение |
+|------------|------------|
+| `VITE_BACKEND_URL` | Адрес backend для Vite proxy (dev) |
+| `VITE_API_BASE` | Префикс API, обычно `/api` |
+| `VITE_USE_MOCK` | `true` в production-like сборках без mock |
+| `VITE_FORCE_REAL_API` | В dev принудительно отключает mock |
+
+## API и контракт
+
+Актуальные вызовы — в `frontend/src/api/endpoints/*.ts`. Справочник: [`docs/api-contract.md`](docs/api-contract.md). OpenAPI backend: `/docs` (при запущенном API).
 
 ## Частые проблемы
 
-1. `localhost:5173` не открывается:
-- проверьте, что в терминале запущен `npm run dev`
-- проверьте, что порт 5173 не занят
-
-2. Ошибка при `npm install`:
-- проверьте версию Node.js (`node -v`), рекомендуется Node 20+
-
-3. Белая страница:
-- откройте DevTools (F12) и проверьте ошибки в Console
-- выполните `Ctrl+F5`
+1. **Пустые списки при «залогиненном» UI** — протухший JWT; перелогиньтесь или включите `VITE_FORCE_REAL_API=true` и проверьте backend.
+2. **`localhost:5173` не открывается** — запущен ли `npm run dev`, свободен ли порт 5173.
+3. **Белая страница** — DevTools → Console, `Ctrl+F5`.
+4. **Node.js** — рекомендуется 20+.

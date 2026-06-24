@@ -1,38 +1,60 @@
 ﻿# Backend Integration Checklist
 
-This frontend is now prepared to work with a real backend without removing mock data files.
+Статус интеграции фронтенда с реальным API.
 
-## What is already done
+## Готово
 
-- All UI hardcodes tied to one team (`t1`) were removed from runtime pages.
-- Challenge report submit uses current user team id from auth context.
-- Challenge report attachments no longer use `mock://...` values.
-- Vite dev proxy now reads `VITE_BACKEND_URL` from `.env*` files correctly.
-- Production env config is added with `VITE_USE_MOCK=false`.
+- Все страницы используют `frontend/src/api/endpoints/*.ts`, не захардкоженные mock-данные в runtime.
+- Vite dev proxy читает `VITE_BACKEND_URL` из `.env*`.
+- Docker-сборка фронтенда: `VITE_USE_MOCK=false`, `VITE_API_BASE=/api` (build-args в `frontend/Dockerfile` и compose).
+- Загрузка файлов:
+  - новости → `POST /posts/` (multipart)
+  - отчёты → `POST /reports/{id}/files`
+  - аватары → `POST /team/profile/avatar`
+  - обложки событий → `POST /events/{id}/image`
+- Открытие файлов отчётов: `reportsApi.openFile` → `GET /reports/{id}/files/{file_id}`
 
-## Required env values
+## Переменные окружения
 
-For real backend mode:
+### Production / Docker
 
 ```env
 VITE_API_BASE=/api
 VITE_USE_MOCK=false
 ```
 
-For local dev with backend:
+Задаются через build-args compose, отдельный `frontend/.env.production` **не используется**.
+
+### Локальная разработка с backend
+
+**Docker backend (порт 8000):**
+
+```env
+VITE_BACKEND_URL=http://localhost:8000
+VITE_API_BASE=/api
+VITE_FORCE_REAL_API=true
+```
+
+**Локальный uvicorn (порт 8080 в `main.py`):**
 
 ```env
 VITE_BACKEND_URL=http://localhost:8080
 VITE_API_BASE=/api
-VITE_USE_MOCK=false
+VITE_FORCE_REAL_API=true
 ```
 
-## Deploy notes
+## Deploy
 
-- Build uses `.env.production` by default.
-- `VITE_USE_MOCK=false` in `.env.production`, so mock data does not affect production build.
-- Keep nginx/reverse-proxy route for `/api/*` to backend service.
+- Nginx проксирует `/api/*` → backend.
+- Pilot: volume `uploads-pilot:/app/uploads` для сохранения загруженных файлов.
 
-## Optional next step (when backend is ready)
+## Не интегрировано во фронтенде
 
-- Replace report `fileUrls` (currently file names) with actual uploaded URLs/ids once backend file-upload endpoint is available.
+- `POST /auth/verify`, `POST /auth/register` — нет UI-экранов
+- `POST /team/{id}/join-request`, обработка заявок капитаном — только backend
+
+## Справочники
+
+- API: [`api-contract.md`](api-contract.md)
+- Запуск фронта: [`../README.md`](../README.md)
+- Обзор проекта: [`../../docs/project-overview.md`](../../docs/project-overview.md)

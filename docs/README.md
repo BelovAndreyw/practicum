@@ -18,6 +18,9 @@
 | [mvp-coverage.md](mvp-coverage.md) | Соответствие требованиям ТЗ и реализации |
 | [project-roadmap.md](project-roadmap.md) | Дорожная карта и этапы проекта |
 | [sso-integration.md](sso-integration.md) | План интеграции SSO УрФУ |
+| [../frontend/docs/api-contract.md](../frontend/docs/api-contract.md) | Актуальный API-контракт |
+| [../frontend/docs/backend-integration-checklist.md](../frontend/docs/backend-integration-checklist.md) | Чеклист интеграции фронта с API |
+| [../frontend/README.md](../frontend/README.md) | Запуск фронтенда, mock vs real API |
 
 ## Инфраструктура и безопасность
 

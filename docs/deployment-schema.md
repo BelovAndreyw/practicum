@@ -7,7 +7,7 @@
 ```
 ┌─────────────────────┐
 │   Пользователь      │
-│   (Браузер / PWA)   │
+│   (Браузер / SPA)   │
 └──────────┬──────────┘
            │
            ▼
@@ -64,11 +64,22 @@
 - `restart: unless-stopped` на всех сервисах — автоподъём после падения/перезагрузки
 - ротация логов: `json-file` driver, `max-size=10m`, `max-file=3`
 - nginx: HSTS, `server_tokens off`, gzip, rate-limit на `/api/auth/`, http2
-- отдельные volume `pgdata-pilot` и сеть `teamzachet-pilot` — не пересекаются с dev/test
+- отдельные volume `pgdata-pilot`, **`uploads-pilot`** (`/app/uploads`) и сеть `teamzachet-pilot` — не пересекаются с dev/test
+- Postgres на хосте для seed/migrations: `127.0.0.1:5433` → контейнер `5432`
 - `.well-known/acme-challenge/` в http-блоке nginx уже зарезервирован под Let's Encrypt
 
 Локально pilot запускается так же, как на сервере, отличается только источник cert-а
 (self-signed vs Let's Encrypt) и источник `.env.pilot` (рука vs GitHub Secrets).
+
+### Хранение загруженных файлов
+
+| Окружение | Volume | Поведение |
+|-----------|--------|-----------|
+| **dev** | нет | `uploads/*` внутри контейнера backend, теряется при recreate |
+| **test** | нет | то же |
+| **pilot** | `uploads-pilot:/app/uploads` | файлы сохраняются между деплоями |
+
+Подкаталоги: `posts/`, `reports/`, `avatars/`, `events/`. См. [`project-overview.md`](project-overview.md).
 
 ## CI/CD Flow
 
@@ -125,11 +136,10 @@ cp .env.example .env
 docker compose -f infra/docker-compose.dev.yml --env-file .env up -d
 
 # 3. Проверяем
-# Через Nginx (порт 80): / — фронтенд; API бэкенда — под префиксом /api/
-curl -s http://localhost/api/auth/verify -H "Content-Type: application/json" -d '{"student_id":123,"surname":"Иванов","name":"Иван","patronymic":"Иванович"}'
-# Прямой доступ к бэкенду (порт 8000, как в compose dev): корень — health
+# Через Nginx: / — фронтенд; API — под /api/
+curl -s http://localhost/api/auth/verify -H "Content-Type: application/json" -d '{"student_id":123}'
+# Прямой доступ к бэкенду (порт 8000): health
 curl -s http://localhost:8000/
-# {"message": "API работает! Открой /docs"}
 
 # 4. Останавливаем
 docker compose -f infra/docker-compose.dev.yml --env-file .env down

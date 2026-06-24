@@ -1,214 +1,96 @@
 # API Contract — Командный зачёт
 
-Этот документ описывает все эндпоинты, которые ожидает фронтенд.
-Все пути относительны `VITE_API_BASE` (по умолчанию `/api`).
+Актуальный контракт между фронтендом и backend. Все пути относительны `VITE_API_BASE` (по умолчанию `/api`).
 
-> **Авторизация:** JWT-токен в куке `session` (credentials: 'include') или в заголовке `Authorization: Bearer <token>`.
-> Ролевая модель: `student` | `captain` | `organizer`.
+**Источник правды в коде:**
 
----
+- Backend: `backend/app/modules/*/router.py`, OpenAPI `/docs`
+- Frontend: `frontend/src/api/endpoints/*.ts`, мапперы в `frontend/src/api/mappers/`
 
-## Auth
+> Старые пути (`/users`, `/news`, `/rescues`) **не используются** — это legacy mock-схема.
+
+## Авторизация
+
+- JWT в заголовке `Authorization: Bearer <token>` (`frontend/src/api/client.ts`)
+- Токен в `localStorage` (`access_token`)
+- `credentials: 'include'` на fetch; cookie `session` **не** используется
+- Роли frontend: `student` | `captain` | `organizer` (backend: `student`, `captain`, `teacher`, `admin`)
 
 ### POST `/auth/login`
-```json
-// request
-{ "email": "student@urfu.ru", "password": "..." }
 
-// response 200
-{ "user": User, "token": "jwt-string" }
+```json
+{ "username": "smirnov_ap", "password": "..." }
 ```
 
-### POST `/auth/logout`
-Response: `204 No Content`
+Ответ:
+
+```json
+{ "access_token": "...", "token_type": "bearer" }
+```
+
+Профиль после логина: `GET /auth/me` + `GET /team/profile`, `GET /rating/my-rating`.
 
 ### GET `/auth/me`
-Response: `User`
 
----
+Текущий пользователь. Синхронизация достижений выполняется при **логине** (`backend/app/modules/auth/logic.py`), не при каждом `/me`.
 
-## Users
+### POST `/auth/verify`, POST `/auth/register`
 
-### GET `/users/:id` → `User`
+Реализованы на backend; **отдельного UI нет** — только `LoginPage` с логином/паролем.
 
-### PATCH `/users/:id`
-```json
-// request (partial)
-{ "firstName": "...", "lastName": "...", "middleName": "...", "avatarUrl": "..." }
-// response: User
-```
+### Logout
 
----
+Backend endpoint отсутствует. Клиент очищает `localStorage` (`authApi.logout`).
 
-## Teams
+## Профиль и команда (`/team`)
 
-### GET `/teams` → `Team[]`
-### GET `/teams/:id` → `Team`
+| Метод | Путь | Назначение |
+|-------|------|------------|
+| GET | `/team/profile` | Свой профиль |
+| PATCH | `/team/profile` | ФИО, контакты, внешний `avatar_url` |
+| POST | `/team/profile/avatar` | Загрузка аватара (multipart `file`) |
+| DELETE | `/team/profile/avatar` | Удалить загруженный аватар |
+| GET | `/team/users/{id}` | Публичный профиль |
+| GET | `/team/users/{id}/avatar` | Файл аватара |
+| POST | `/team/create` | Создать команду |
+| GET | `/team/search?query=*` | Поиск команд |
+| GET | `/team/{id}` | Детали команды |
+| POST | `/team/join-by-link` | Вступление по коду |
+| POST | `/team/{id}/invite` | Создать инвайт (капитан) |
+| POST | `/team/{id}/join-request` | Заявка на вступление (**UI не реализован**) |
+| GET | `/team/{id}/requests` | Заявки капитану (**UI не реализован**) |
 
-### POST `/teams`
-```json
-// request
-{ "name": "Байты Знаний" }
-// response: Team
-```
+## Контент и активность
 
-### POST `/teams/join`
-```json
-// request
-{ "inviteCode": "BYTE2026" }
-// response: Team
-```
+| Префикс | Назначение |
+|---------|------------|
+| `/posts` | Новости; `POST /` multipart (title, content, files[]); `GET /{post_id}/images/{image_id}` |
+| `/feed` | Лента активностей |
+| `/challenges` | Челленджи, запись команд |
+| `/reports` | Отчёты; `POST /{id}/files` — вложения |
+| `/events` | События; `POST/DELETE/GET /{id}/image` — обложка |
+| `/checkins` | Weekly check-in |
+| `/help` | «Спасения» |
+| `/rating` | `my-rating`, `top-teams`, `leaderboard`, админ-настройки |
+| `/voting` | Раунды голосования в команде |
 
-### GET `/teams/:id/krk` → `KrkBreakdown`
-```json
-{
-  "baseRating": 47.0,      // 60% от КРК
-  "cohesionCoeff": 23.5,   // 30% от КРК
-  "bonusCoeff": 7.8,       // 10% от КРК
-  "total": 78.4
-}
-```
+## Загрузка файлов
 
-### POST `/teams/:id/invite-code` → `{ "inviteCode": "NEWCODE" }`
+| Тип | Директория на диске | Лимит |
+|-----|---------------------|-------|
+| Посты | `uploads/posts/` | image/*, 5 MB |
+| Отчёты | `uploads/reports/` | 10 MB |
+| Аватары | `uploads/avatars/` | image/*, 5 MB |
+| События | `uploads/events/` | image/*, 5 MB |
 
----
+В pilot данные в volume `uploads-pilot`. В dev/test при пересоздании контейнера файлы теряются.
 
-## Rating
-
-### GET `/rating/teams` → `TeamRatingEntry[]`
-```json
-[{ "rank": 1, "team": { "id": "t1", "name": "...", "league": "Профи", "krk": 78.4 } }]
-```
-
-### GET `/rating/users?teamId=&stream=` → `UserRatingEntry[]`
-
----
-
-## Activity
-
-### GET `/activity?limit=20` → `ActivityEvent[]`
-
----
-
-## Challenges
-
-### GET `/challenges` → `Challenge[]`
-### POST `/challenges` (organizer) → `Challenge`
-### POST `/challenges/reports`
-```json
-{
-  "challengeId": "ch1",
-  "teamId": "t1",
-  "comment": "Провели воркшоп...",
-  "fileUrls": []
-}
-// response: 204
-```
-
----
-
-## Events
-
-### GET `/events` → `CalendarEvent[]`
-### GET `/events/:id` → `CalendarEvent`
-### POST `/events`
-```json
-{
-  "title": "Воркшоп по Java",
-  "description": "...",
-  "format": "online",          // "online" | "offline"
-  "date": "2026-04-27T14:00:00Z",
-  "location": "ауд. 310",      // optional
-  "invitedTeamIds": []
-}
-// response: CalendarEvent
-```
-
----
-
-## News
-
-### GET `/news` → `NewsItem[]` (desc по publishedAt)
-### POST `/news` (organizer)
-```json
-{ "title": "...", "body": "..." }
-// response: NewsItem
-```
-
----
-
-## Knowledge Exchange
-
-### GET `/knowledge?type=need&resolved=false` → `KnowledgeRequest[]`
-### POST `/knowledge`
-```json
-{ "type": "need", "title": "...", "description": "...", "tags": ["Java"] }
-// response: KnowledgeRequest
-```
-### PATCH `/knowledge/:id/resolve` → `204`
-
----
-
-## Check-in
-
-### GET `/checkins?teamId=t1` → `CheckIn[]`
-### GET `/checkins` (organizer, все команды) → `CheckIn[]`
-### POST `/checkins`
-```json
-{
-  "teamId": "t1",
-  "weekLabel": "Неделя 3",
-  "summary": "...",
-  "achievements": "...",
-  "blockers": "..."            // optional
-}
-// response: CheckIn
-```
-
----
-
-## Rescue
-
-### GET `/rescues` → `RescueRequest[]`
-### POST `/rescues`
-```json
-{ "topic": "Java — дженерики", "description": "..." }
-// response: RescueRequest
-```
-### PATCH `/rescues/:id`
-```json
-{ "status": "accepted" }   // accepted | confirmed | rejected
-// response: RescueRequest
-```
-
----
-
-## Voting
-
-### GET `/voting/active?teamId=t1` → `VoteRound | null`
-### POST `/voting/ballots`
-```json
-{ "roundId": "vr1", "targetUserId": "u2", "score": 4 }
-// response: 204
-```
-
----
-
-## Типы DTO
-
-Полные TypeScript-определения: [`src/types/index.ts`](../src/types/index.ts).
-
----
+Приоритет URL: загруженный файл → внешний `avatar_url` / `image_url`.
 
 ## Ошибки
 
-Все ошибки возвращаются в формате:
-```json
-{
-  "status": 400,
-  "message": "Описание ошибки",
-  "details": { "field": "Что не так" }   // optional
-}
-```
+FastAPI: `{ "detail": "..." }` или массив validation errors. Клиент: `ApiError` в `frontend/src/api/client.ts`.
 
-HTTP-коды: `400` (валидация), `401` (не авторизован), `403` (нет прав), `404` (не найдено), `500` (сервер).
+## Mock-режим
+
+В dev по умолчанию endpoints в `frontend/src/api/endpoints/*.ts` возвращают данные из `frontend/src/api/mock/`. Отключение: `VITE_FORCE_REAL_API=true`.

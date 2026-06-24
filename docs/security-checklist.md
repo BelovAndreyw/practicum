@@ -49,9 +49,17 @@
 
 ## Файловое хранилище
 
-- [ ] Файлы не должны пропадать при пересоздании контейнера (volume или внешнее хранилище)
-- [ ] Доступ к файлам только через backend API endpoints
-- [ ] Валидация типа и размера файлов на backend
+Реализация: `backend/app/core/uploads.py` — валидация `image/*`, лимит 5 MB; файлы в `uploads/{posts,reports,avatars,events}/`.
+
+| Проверка | Статус |
+|----------|--------|
+| Volume в pilot (`uploads-pilot`) — файлы не теряются при redeploy | [x] pilot compose |
+| Volume в dev/test | [ ] файлы эфемерны при recreate контейнера |
+| Доступ к файлам через backend API (не прямой static из nginx) | [x] `GET /posts/.../images/...`, `/team/users/{id}/avatar`, `/events/{id}/image`, `/reports/.../files/...` |
+| Валидация типа и размера на backend | [x] `uploads.py` |
+| Публичные GET без auth для медиа постов/аватаров/событий | [!] осознанно для отображения в `<img>`; при ужесточении — signed URLs или cookie-auth |
+
+Внешние URL (`avatar_url`, `image_url`) остаются запасным вариантом; приоритет у загруженного файла.
 
 ## Персональные данные
 
