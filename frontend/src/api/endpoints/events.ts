@@ -74,4 +74,36 @@ export const eventsApi = {
     }
     return http.delete<void>(`/events/${id}`);
   },
+
+  async uploadImage(id: string, file: File): Promise<CalendarEvent> {
+    if (USE_MOCK) {
+      await mockDelay();
+      const index = MOCK_EVENTS.findIndex((item) => item.id === id);
+      if (index < 0) throw new Error('Event not found');
+      MOCK_EVENTS[index] = {
+        ...MOCK_EVENTS[index],
+        imageUrl: URL.createObjectURL(file),
+      };
+      return MOCK_EVENTS[index];
+    }
+
+    const form = new FormData();
+    form.append('file', file);
+    const updated = await http.postForm<Parameters<typeof mapEvent>[0]>(`/events/${id}/image`, form);
+    return mapEvent(updated);
+  },
+
+  async removeImage(id: string): Promise<CalendarEvent> {
+    if (USE_MOCK) {
+      await mockDelay();
+      const index = MOCK_EVENTS.findIndex((item) => item.id === id);
+      if (index < 0) throw new Error('Event not found');
+      const { imageUrl: _removed, ...rest } = MOCK_EVENTS[index];
+      MOCK_EVENTS[index] = { ...rest, imageUrl: undefined };
+      return MOCK_EVENTS[index];
+    }
+
+    const updated = await http.delete<Parameters<typeof mapEvent>[0]>(`/events/${id}/image`);
+    return mapEvent(updated);
+  },
 };

@@ -38,6 +38,12 @@ async def apply_schema_patches(conn: AsyncConnection) -> None:
 
     # События: картинка
     await conn.execute(text("ALTER TABLE team_events ADD COLUMN IF NOT EXISTS image_url TEXT"))
+    await conn.execute(text("ALTER TABLE team_events ADD COLUMN IF NOT EXISTS image_file_path VARCHAR"))
+    await conn.execute(text("ALTER TABLE team_events ADD COLUMN IF NOT EXISTS image_content_type VARCHAR"))
+
+    # Аватары: загруженные файлы
+    await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_file_path VARCHAR"))
+    await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_content_type VARCHAR"))
 
     # Check-in: достижения и блокеры
     await conn.execute(text("ALTER TABLE weekly_checkins ADD COLUMN IF NOT EXISTS achievements TEXT"))

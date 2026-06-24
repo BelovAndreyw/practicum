@@ -1,5 +1,6 @@
 ﻿import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { activityApi } from '@/api';
+import { activityApi, usersApi } from '@/api';
+import { externalMediaUrl, isApiMediaUrl } from '@/api/mappers/user';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { ActivityEvent } from '@/types';
 import { Avatar, Badge, Button, Card, Empty, Input, Modal, PageHeader } from '@/components/ui';
@@ -13,11 +14,13 @@ const LEAGUE_VARIANT: Record<string, 'accent' | 'violet' | 'warning'> = {
 };
 
 export function ProfilePage() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshUser } = useAuth();
 
   const [feed, setFeed] = useState<ActivityEvent[]>([]);
   const [showEdit, setShowEdit] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -39,9 +42,15 @@ export function ProfilePage() {
       middleName: user.middleName ?? '',
       email: user.email,
       phone: user.phone ?? '',
-      avatarUrl: user.avatarUrl ?? '',
+      avatarUrl: externalMediaUrl(user.avatarUrl),
     });
+    setPendingAvatarFile(null);
+    setAvatarPreviewUrl(null);
   }, [user]);
+
+  useEffect(() => () => {
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+  }, [avatarPreviewUrl]);
 
   const personalRating = user?.personalRating ?? 0;
   const ratingParts = useMemo(() => {
@@ -63,11 +72,16 @@ export function ProfilePage() {
 
   const fullName = [user.lastName, user.firstName, user.middleName].filter(Boolean).join(' ');
   const unlockedIds = new Set(user.achievements.map((item) => item.id));
+  const hasUploadedAvatar = isApiMediaUrl(user.avatarUrl);
+  const editAvatarPreview = avatarPreviewUrl ?? (form.avatarUrl || user.avatarUrl);
 
   const handleSave = async () => {
     if (!form.firstName.trim() || !form.lastName.trim()) return;
     setSaving(true);
     try {
+      if (pendingAvatarFile) {
+        await usersApi.uploadAvatar(pendingAvatarFile);
+      }
       await updateProfile({
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
@@ -76,6 +90,9 @@ export function ProfilePage() {
         phone: form.phone.trim() || undefined,
         avatarUrl: form.avatarUrl.trim() || undefined,
       });
+      setPendingAvatarFile(null);
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+      setAvatarPreviewUrl(null);
       setShowEdit(false);
     } finally {
       setSaving(false);
@@ -86,13 +103,23 @@ export function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setForm((prev) => ({ ...prev, avatarUrl: reader.result as string }));
-      }
-    };
-    reader.readAsDataURL(file);
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    setPendingAvatarFile(file);
+    setAvatarPreviewUrl(URL.createObjectURL(file));
+    event.target.value = '';
+  };
+
+  const handleRemoveUploadedAvatar = async () => {
+    setSaving(true);
+    try {
+      await usersApi.removeAvatar();
+      await refreshUser();
+      setPendingAvatarFile(null);
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+      setAvatarPreviewUrl(null);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -241,8 +268,15 @@ export function ProfilePage() {
           <div className={styles.photoField}>
             <span className={styles.photoLabel}>Фото</span>
             <div className={styles.photoControls}>
-              {form.avatarUrl && <Avatar name={`${form.firstName} ${form.lastName}`} src={form.avatarUrl} size="md" />}
+              {editAvatarPreview && (
+                <Avatar name={`${form.firstName} ${form.lastName}`} src={editAvatarPreview} size="md" />
+              )}
               <label className={styles.uploadButton} htmlFor="profile-photo-upload">+ Загрузить</label>
+              {(hasUploadedAvatar || pendingAvatarFile) && (
+                <Button size="sm" variant="secondary" onClick={handleRemoveUploadedAvatar} loading={saving}>
+                  Удалить загруженное
+                </Button>
+              )}
               <input
                 id="profile-photo-upload"
                 type="file"
@@ -252,7 +286,13 @@ export function ProfilePage() {
               />
             </div>
           </div>
-          <Input label="Ссылка на аватар" value={form.avatarUrl} onChange={(event) => setForm({ ...form, avatarUrl: event.target.value })} placeholder="https://..." />
+          <Input
+            label="Ссылка на аватар"
+            value={form.avatarUrl}
+            onChange={(event) => setForm({ ...form, avatarUrl: event.target.value })}
+            placeholder="https://..."
+            hint="Используется, если файл не загружен на сервер"
+          />
         </div>
       </Modal>
     </div>

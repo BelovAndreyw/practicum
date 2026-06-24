@@ -1,12 +1,21 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
+from pathlib import Path
 from datetime import datetime
 from app.models.reports import TeamEvent, EventInvitation, EventParticipant
 from app.models.team import Team
 from app.models.user import User, UserRole
 from app.modules.events.schemas import EventCreateRequest, EventUpdateRequest
+from app.core.uploads import EVENT_IMAGE_UPLOAD_DIR, delete_file, save_image, validate_image
+
+
+def resolve_event_image_url(event: TeamEvent) -> str | None:
+    """Приоритет загруженного файла над внешней ссылкой."""
+    if event.image_file_path:
+        return f"/events/{event.id}/image"
+    return event.image_url
 
 
 async def _is_team_captain(user: User, team_id: int, db: AsyncSession) -> bool:
@@ -236,6 +245,51 @@ async def rsvp_event_logic(
     return participant
 
 
+async def upload_event_image_logic(
+    event_id: int,
+    user: User,
+    file: UploadFile,
+    db: AsyncSession,
+) -> TeamEvent:
+    """Загрузка обложки события."""
+    event = await db.get(TeamEvent, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Событие не найдено")
+    if not await _can_manage_team_event(user, event, db):
+        raise HTTPException(status_code=403, detail="Нет прав на редактирование события")
+
+    validate_image(file)
+    delete_file(event.image_file_path)
+
+    _, file_path, _, content_type = save_image(file, EVENT_IMAGE_UPLOAD_DIR)
+    event.image_file_path = file_path
+    event.image_content_type = content_type
+    await db.commit()
+    await db.refresh(event)
+    return event
+
+
+async def remove_event_image_logic(
+    event_id: int,
+    user: User,
+    db: AsyncSession,
+) -> TeamEvent:
+    """Удаление загруженной обложки события."""
+    event = await db.get(TeamEvent, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Событие не найдено")
+    if not await _can_manage_team_event(user, event, db):
+        raise HTTPException(status_code=403, detail="Нет прав на редактирование события")
+
+    if event.image_file_path:
+        delete_file(event.image_file_path)
+        event.image_file_path = None
+        event.image_content_type = None
+        await db.commit()
+        await db.refresh(event)
+    return event
+
+
 async def delete_event_logic(
     event_id: int,
     user: User,
@@ -247,5 +301,6 @@ async def delete_event_logic(
         raise HTTPException(status_code=404, detail="Событие не найдено")
     if not await _can_manage_team_event(user, event, db):
         raise HTTPException(status_code=403, detail="Нет прав")
+    delete_file(event.image_file_path)
     await db.delete(event)
     await db.commit()

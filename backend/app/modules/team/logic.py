@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from app.models.user import User, UserRole, Student
 from app.models.team import Team, TeamMember, TeamInviteLink, TeamJoinRequest
 from app.models.rating import UserRating
@@ -12,9 +12,18 @@ from app.modules.achievement.service import AchievementService
 from app.modules.team.schemas import TeamCreateRequest
 from datetime import datetime, timedelta
 import secrets
+from app.core.uploads import AVATAR_UPLOAD_DIR, delete_file, save_image, validate_image
 
 # Алфавит без визуально похожих символов (0/O, 1/I/L) — код удобно вводить вручную
 INVITE_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
+def resolve_avatar_url(user: User) -> str | None:
+    """Приоритет загруженного файла над внешней ссылкой."""
+    if user.avatar_file_path:
+        return f"/team/users/{user.id}/avatar"
+    return user.avatar_url
+
 
 
 async def _generate_unique_invite_code(db: AsyncSession, length: int = 6) -> str:
@@ -85,7 +94,7 @@ async def get_user_profile_logic(user: User, db: AsyncSession) -> dict:
         "team_id": team_id,
         "email": user.email,
         "phone": user.phone,
-        "avatar_url": user.avatar_url,
+        "avatar_url": resolve_avatar_url(user),
     }
 
 
@@ -130,7 +139,7 @@ async def get_public_user_profile_logic(user_id: int, db: AsyncSession) -> dict:
         "team_id": team_id,
         "email": user.email,
         "phone": user.phone,
-        "avatar_url": user.avatar_url,
+        "avatar_url": resolve_avatar_url(user),
         "personal_rating": round(rating.total_krk, 2),
         "league": rating.league,
         "krk_breakdown": {
@@ -261,6 +270,30 @@ async def update_user_profile_logic(
     db.add(user)
 
     await db.commit()
+    return await get_user_profile_logic(user, db)
+
+
+async def upload_avatar_logic(user: User, file: UploadFile, db: AsyncSession) -> dict:
+    """Загрузка аватара на сервер."""
+    validate_image(file)
+    delete_file(user.avatar_file_path)
+
+    _, file_path, _, content_type = save_image(file, AVATAR_UPLOAD_DIR)
+    user.avatar_file_path = file_path
+    user.avatar_content_type = content_type
+    db.add(user)
+    await db.commit()
+    return await get_user_profile_logic(user, db)
+
+
+async def remove_avatar_logic(user: User, db: AsyncSession) -> dict:
+    """Удаление загруженного аватара (внешняя ссылка не затрагивается)."""
+    if user.avatar_file_path:
+        delete_file(user.avatar_file_path)
+        user.avatar_file_path = None
+        user.avatar_content_type = None
+        db.add(user)
+        await db.commit()
     return await get_user_profile_logic(user, db)
 
 
@@ -470,7 +503,7 @@ async def get_team_detail_logic(team_id: int, db: AsyncSession, viewer: User | N
             "league": user_rating.league if user_rating else None,
             "email": user.email,
             "phone": user.phone,
-            "avatar_url": user.avatar_url,
+            "avatar_url": resolve_avatar_url(user),
             "role": user.role,
         })
 

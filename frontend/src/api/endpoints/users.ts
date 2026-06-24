@@ -96,4 +96,31 @@ export const usersApi = {
 
     return authApi.me();
   },
+
+  async uploadAvatar(file: File): Promise<User> {
+    if (USE_MOCK) {
+      await mockDelay();
+      const url = URL.createObjectURL(file);
+      const user = MOCK_USERS[0];
+      if (user) user.avatarUrl = url;
+      return user ?? (await authApi.me());
+    }
+
+    const form = new FormData();
+    form.append('file', file);
+    await http.postForm('/team/profile/avatar', form);
+    return authApi.me();
+  },
+
+  async removeAvatar(): Promise<User> {
+    if (USE_MOCK) {
+      await mockDelay();
+      const user = MOCK_USERS[0];
+      if (user) user.avatarUrl = undefined;
+      return user ?? (await authApi.me());
+    }
+
+    await http.delete('/team/profile/avatar');
+    return authApi.me();
+  },
 };

@@ -1,5 +1,6 @@
-﻿import { useEffect, useState } from 'react';
+﻿import { type ChangeEvent, useEffect, useState } from 'react';
 import { eventsApi, teamsApi } from '@/api';
+import { externalMediaUrl, isApiMediaUrl } from '@/api/mappers/user';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { CalendarEvent, EventFormat, Team } from '@/types';
 import { Badge, Button, Card, Empty, Input, Modal, PageHeader, Spinner, Textarea } from '@/components/ui';
@@ -21,6 +22,9 @@ export function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [hasUploadedImage, setHasUploadedImage] = useState(false);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -49,7 +53,15 @@ export function EventsPage() {
     teamsApi.listTeams().then(setOrganizerTeams).catch(() => setOrganizerTeams([]));
   }, [isOrganizerWithoutTeam]);
 
+  useEffect(() => () => {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+  }, [imagePreviewUrl]);
+
   const resetForm = () => {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setPendingImageFile(null);
+    setImagePreviewUrl(null);
+    setHasUploadedImage(false);
     setForm({
       title: '',
       description: '',
@@ -71,10 +83,14 @@ export function EventsPage() {
   const openEditModal = (event: CalendarEvent) => {
     setEditingEvent(event);
     setSelectedEvent(null);
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setPendingImageFile(null);
+    setImagePreviewUrl(null);
+    setHasUploadedImage(isApiMediaUrl(event.imageUrl));
     setForm({
       title: event.title,
       description: event.description ?? '',
-      imageUrl: event.imageUrl ?? '',
+      imageUrl: externalMediaUrl(event.imageUrl),
       format: event.format,
       date: toDatetimeLocalValue(new Date(event.date)),
       location: event.location ?? '',
@@ -91,6 +107,33 @@ export function EventsPage() {
 
   const canEditEvent = (event: CalendarEvent) => Boolean(user && event.organizerId === user.id);
   const canDeleteEvent = (event: CalendarEvent) => Boolean(user && (event.organizerId === user.id || user.role === 'organizer'));
+  const formImagePreview = imagePreviewUrl ?? (form.imageUrl || (hasUploadedImage ? editingEvent?.imageUrl : undefined));
+
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setPendingImageFile(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
+    event.target.value = '';
+  };
+
+  const handleRemoveUploadedImage = async () => {
+    if (!editingEvent) return;
+    setSaving(true);
+    try {
+      const updated = await eventsApi.removeImage(editingEvent.id);
+      setEvents((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      setEditingEvent(updated);
+      setHasUploadedImage(false);
+      setPendingImageFile(null);
+      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -107,17 +150,23 @@ export function EventsPage() {
       };
 
       if (editingEvent) {
-        const updated = await eventsApi.update(editingEvent.id, payload);
+        let updated = await eventsApi.update(editingEvent.id, payload);
+        if (pendingImageFile) {
+          updated = await eventsApi.uploadImage(updated.id, pendingImageFile);
+        }
         setEvents((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       } else {
         const teamId = form.teamId || user?.teamId;
         if (!teamId) return;
-        const created = await eventsApi.create({
+        let created = await eventsApi.create({
           ...payload,
           teamId,
           organizerId: user?.id,
           organizerName: user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : undefined,
         });
+        if (pendingImageFile) {
+          created = await eventsApi.uploadImage(created.id, pendingImageFile);
+        }
         setEvents((prev) => [...prev, created]);
       }
 
@@ -254,7 +303,38 @@ export function EventsPage() {
           )}
           <Input label="Название" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Воркшоп по Java" />
           <Textarea label="Описание (необязательно)" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-          <Input label="Изображение" value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} placeholder="https://..." />
+          <div className={styles.imageField}>
+            <span className={styles.imageLabel}>Обложка</span>
+            <div className={styles.imageControls}>
+              {formImagePreview ? (
+                <div className={styles.imagePreview}>
+                  <img src={formImagePreview} alt="" />
+                </div>
+              ) : (
+                <div className={styles.imagePlaceholder}>Нет изображения</div>
+              )}
+              <label className={styles.uploadButton} htmlFor="event-image-upload">+ Загрузить</label>
+              {editingEvent && (hasUploadedImage || pendingImageFile) && (
+                <Button size="sm" variant="secondary" onClick={handleRemoveUploadedImage} loading={saving}>
+                  Удалить загруженное
+                </Button>
+              )}
+              <input
+                id="event-image-upload"
+                type="file"
+                accept="image/*"
+                className={styles.fileInput}
+                onChange={handleImageUpload}
+              />
+            </div>
+          </div>
+          <Input
+            label="Ссылка на изображение"
+            value={form.imageUrl}
+            onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
+            placeholder="https://..."
+            hint="Используется, если файл не загружен на сервер"
+          />
           <Input label="Дата и время" type="datetime-local" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
 
           <div className={styles.formatRow}>

@@ -39,6 +39,8 @@ class User(Base):
     email = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     avatar_url = Column(Text, nullable=True)
+    avatar_file_path = Column(String, nullable=True)
+    avatar_content_type = Column(String, nullable=True)
 
     student = relationship("Student", back_populates="user")
     team_membership = relationship("TeamMember", back_populates="user", uselist=False)

@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -21,6 +24,8 @@ from app.modules.team.logic import (
     get_my_invite_links_logic,
     revoke_invite_link_logic,
     update_user_profile_logic,
+    upload_avatar_logic,
+    remove_avatar_logic,
 )
 from app.modules.team.schemas import (
     UserProfileResponse,
@@ -69,6 +74,46 @@ async def update_profile(
         email=data.email,
         phone=data.phone,
         avatar_url=data.avatar_url,
+    )
+
+
+@router.post("/profile/avatar", response_model=UserProfileResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Загрузка аватара (файл с компьютера)."""
+    return await upload_avatar_logic(current_user, file, db)
+
+
+@router.delete("/profile/avatar", response_model=UserProfileResponse)
+async def remove_avatar(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Удаление загруженного аватара."""
+    return await remove_avatar_logic(current_user, db)
+
+
+@router.get("/users/{user_id}/avatar")
+async def get_user_avatar(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Отдача загруженного аватара пользователя."""
+    user = await db.get(User, user_id)
+    if not user or not user.avatar_file_path:
+        raise HTTPException(status_code=404, detail="Аватар не найден")
+
+    file_path = Path(user.avatar_file_path)
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Файл не найден на диске")
+
+    return FileResponse(
+        path=file_path,
+        media_type=user.avatar_content_type or "image/jpeg",
+        filename=file_path.name,
     )
 
 

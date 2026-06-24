@@ -1,4 +1,21 @@
 import type { User, UserRole, Achievement, KrkBreakdown } from '@/types';
+import { API_BASE } from '../client';
+
+export function resolveMediaUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('/')) return `${API_BASE}${url}`;
+  return url;
+}
+
+export function isApiMediaUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return url.startsWith('/') || url.startsWith(`${API_BASE}/`);
+}
+
+export function externalMediaUrl(url?: string | null): string {
+  if (!url || isApiMediaUrl(url)) return '';
+  return url;
+}
 
 export function mapBackendRole(role: string): UserRole {
   if (role === 'captain') return 'captain';
@@ -87,7 +104,7 @@ export function mapBackendUser(
     middleName: middleName || undefined,
     email: data.email ?? (data.username || ''),
     phone: data.phone ?? undefined,
-    avatarUrl: data.avatar_url ?? undefined,
+    avatarUrl: resolveMediaUrl(data.avatar_url),
     studentId: data.student_id ? String(data.student_id) : undefined,
     role: mapBackendRole(data.role),
     teamId: extras?.teamId,

@@ -60,6 +60,8 @@ class TeamEvent(Base):
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     image_url = Column(Text, nullable=True)
+    image_file_path = Column(String, nullable=True)
+    image_content_type = Column(String, nullable=True)
     event_type = Column(String(50), default="workshop")
     format = Column(String(20), default="online")
     location = Column(String(200), nullable=True)

@@ -1,4 +1,5 @@
 import type { CalendarEvent, EventFormat } from '@/types';
+import { resolveMediaUrl } from './user';
 
 interface BackendEvent {
   id: number;
@@ -29,7 +30,7 @@ export function mapEvent(event: BackendEvent): CalendarEvent {
     id: String(event.id),
     title: event.title,
     description: event.description ?? undefined,
-    imageUrl: event.image_url ?? undefined,
+    imageUrl: resolveMediaUrl(event.image_url),
     format: fmt,
     date: event.starts_at,
     location: fmt === 'offline' ? (event.location ?? undefined) : undefined,

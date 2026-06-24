@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, UploadFile, File
+from fastapi.responses import FileResponse
+from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_optional_current_user
@@ -16,6 +18,9 @@ from app.modules.events.logic import (
     delete_event_logic,
     resolve_organizer_name,
     resolve_organizer_names,
+    resolve_event_image_url,
+    upload_event_image_logic,
+    remove_event_image_logic,
 )
 from app.modules.events.schemas import (
     EventCreateRequest,
@@ -35,7 +40,7 @@ def _event_response(event, organizer_name=None) -> EventResponse:
         team_id=event.team_id,
         title=event.title,
         description=event.description,
-        image_url=event.image_url,
+        image_url=resolve_event_image_url(event),
         event_type=event.event_type,
         format=event.format,
         location=event.location,
@@ -123,7 +128,7 @@ async def get_event(
         team_id=event.team_id,
         title=event.title,
         description=event.description,
-        image_url=event.image_url,
+        image_url=resolve_event_image_url(event),
         event_type=event.event_type,
         format=event.format,
         location=event.location,
@@ -150,6 +155,54 @@ async def patch_event(
     event = await update_event_logic(event_id, current_user, data, db)
     organizer_name = await resolve_organizer_name(event.created_by, db)
     return _event_response(event, organizer_name)
+
+
+@router.post("/{event_id}/image")
+async def upload_event_image(
+    event_id: int,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Загрузка обложки события."""
+    event = await upload_event_image_logic(event_id, current_user, file, db)
+    organizer_name = await resolve_organizer_name(event.created_by, db)
+    return _event_response(event, organizer_name)
+
+
+@router.delete("/{event_id}/image")
+async def remove_event_image(
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Удаление загруженной обложки события."""
+    event = await remove_event_image_logic(event_id, current_user, db)
+    organizer_name = await resolve_organizer_name(event.created_by, db)
+    return _event_response(event, organizer_name)
+
+
+@router.get("/{event_id}/image")
+async def get_event_image(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Отдача загруженной обложки события."""
+    from app.models.reports import TeamEvent
+
+    event = await db.get(TeamEvent, event_id)
+    if not event or not event.image_file_path:
+        raise HTTPException(status_code=404, detail="Изображение не найдено")
+
+    file_path = Path(event.image_file_path)
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Файл не найден на диске")
+
+    return FileResponse(
+        path=file_path,
+        media_type=event.image_content_type or "image/jpeg",
+        filename=file_path.name,
+    )
 
 
 @router.post("/{event_id}/invite/{team_id}")

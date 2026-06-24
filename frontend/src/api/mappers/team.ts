@@ -1,5 +1,5 @@
 import type { Team, TeamMember, KrkBreakdown, UserRole } from '@/types';
-import { mapLeague, splitFullName } from './user';
+import { mapLeague, splitFullName, resolveMediaUrl } from './user';
 
 export interface BackendTeamSummary {
   id: number;
@@ -70,7 +70,7 @@ function mapMember(member: BackendTeamMember, captainId: number): TeamMember {
     role,
     email: member.email ?? undefined,
     phone: member.phone ?? undefined,
-    avatarUrl: member.avatar_url ?? undefined,
+    avatarUrl: resolveMediaUrl(member.avatar_url),
     personalRating: roundKrk(member.personal_krk ?? 0),
   };
 }
