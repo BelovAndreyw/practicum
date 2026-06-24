@@ -53,7 +53,6 @@ if [ "${RUN_SEED:-false}" = "true" ]; then
   echo "==> Seed (идемпотентный seed_all.py)..."
   docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" run --rm --no-deps \
     -v "${APP_DIR}/scripts:/scripts:ro" \
-    -v "${APP_DIR}/backend:/app:ro" \
     backend python /scripts/seed_all.py
 fi
 

@@ -14,7 +14,8 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   exit 1
 fi
 
+# Не монтируем backend в /app:ro — в pilot-compose есть uploads-pilot:/app/uploads,
+# и read-only overlay не даёт создать mountpoint для вложенного volume.
 docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" run --rm --no-deps \
   -v "${ROOT}/scripts:/scripts:ro" \
-  -v "${ROOT}/backend:/app:ro" \
   backend python /scripts/seed_all.py

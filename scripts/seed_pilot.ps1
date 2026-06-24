@@ -13,7 +13,7 @@ if (-not (Test-Path $EnvFile)) {
     Write-Error "Не найден $EnvFile. Скопируйте из .env.pilot.example."
 }
 
+# Не монтируем backend в /app:ro — uploads-pilot:/app/uploads конфликтует с read-only /app.
 docker compose -f $ComposeFile --env-file $EnvFile run --rm --no-deps `
     -v "${Root}/scripts:/scripts:ro" `
-    -v "${Root}/backend:/app:ro" `
     backend python /scripts/seed_all.py
