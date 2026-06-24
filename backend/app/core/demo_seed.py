@@ -509,7 +509,7 @@ async def _seed_team_achievements(session: AsyncSession, teams_by_name: dict[str
                         UserAchievement.achievement_id == achievement_id,
                     )
                 )
-                if dup.scalar_one_or_none():
+                if dup.scalars().first():
                     continue
                 session.add(UserAchievement(
                     user_id=m.user_id,
@@ -526,7 +526,7 @@ async def _seed_team_achievements(session: AsyncSession, teams_by_name: dict[str
                         Activity.title == f"Достижение: {title}",
                     )
                 )
-                if dup_activity.scalar_one_or_none():
+                if dup_activity.scalars().first():
                     continue
                 # ОДНА запись в ленту на команду (без дублей вида «Спаситель ×5»)
                 session.add(Activity(
