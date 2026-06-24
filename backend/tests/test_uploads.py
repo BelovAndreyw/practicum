@@ -136,6 +136,20 @@ async def test_delete_avatar(client):
 
 
 @pytest.mark.asyncio
+async def test_upload_avatar_accepts_octet_stream(client):
+  ac, user_id, _team_id = client
+  headers = await _auth_headers(ac)
+
+  upload = await ac.post(
+    "/team/profile/avatar",
+    files={"file": ("photo.jpg", io.BytesIO(MINI_PNG), "application/octet-stream")},
+    headers=headers,
+  )
+  assert upload.status_code == 200
+  assert upload.json()["avatar_url"] == f"/team/users/{user_id}/avatar"
+
+
+@pytest.mark.asyncio
 async def test_reject_non_image_avatar(client):
   ac, _user_id, _team_id = client
   headers = await _auth_headers(ac)

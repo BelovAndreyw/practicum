@@ -38,7 +38,6 @@ export function toBackendCheckinCreate(data: {
   weekLabel: string;
   summary: string;
   achievements: string;
-  blockers?: string;
 }) {
   const parsedWeek = data.weekLabel ? new Date(data.weekLabel) : new Date();
   const weekStart = Number.isNaN(parsedWeek.getTime())
@@ -49,6 +48,6 @@ export function toBackendCheckinCreate(data: {
     week_start_date: weekStart,
     content: data.summary,
     achievements: data.achievements || null,
-    blockers: data.blockers || null,
+    blockers: null,
   };
 }

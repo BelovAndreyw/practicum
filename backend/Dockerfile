@@ -19,7 +19,7 @@ RUN python -m pip install --upgrade pip \
 
 COPY app ./app
 
-RUN mkdir -p /app/uploads/posts
+RUN mkdir -p /app/uploads/posts /app/uploads/avatars /app/uploads/events /app/uploads/reports
 
 EXPOSE 8000
 

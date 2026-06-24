@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy import select
@@ -7,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.uploads import resolve_upload_path
 from app.modules.posts.logic import (
     create_post_logic,
     get_post_by_id,
@@ -115,7 +114,7 @@ async def get_post_image(
     if not image:
         raise HTTPException(status_code=404, detail="Изображение не найдено")
 
-    file_path = Path(image.file_path)
+    file_path = resolve_upload_path(image.file_path)
     if not file_path.is_file():
         raise HTTPException(status_code=404, detail="Файл не найден на диске")
 

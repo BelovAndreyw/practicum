@@ -206,7 +206,6 @@ export function AdminPage() {
                   </div>
                   <p className={styles.ciField}><strong>Итоги:</strong> {ci.summary}</p>
                   <p className={styles.ciField}><strong>Достижения:</strong> {ci.achievements}</p>
-                  {ci.blockers && <p className={styles.ciField}><strong>Блокеры:</strong> {ci.blockers}</p>}
                 </div>
               ))}
             </div>

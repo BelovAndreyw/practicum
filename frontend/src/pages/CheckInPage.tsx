@@ -10,7 +10,7 @@ export function CheckInPage() {
   const [history, setHistory] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ weekLabel: '', summary: '', achievements: '', blockers: '' });
+  const [form, setForm] = useState({ weekLabel: '', summary: '', achievements: '' });
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -27,7 +27,7 @@ export function CheckInPage() {
       setHistory((prev) => [ci, ...prev]);
       setShowForm(false);
       setSuccess(true);
-      setForm({ weekLabel: '', summary: '', achievements: '', blockers: '' });
+      setForm({ weekLabel: '', summary: '', achievements: '' });
       await refreshUser();
     } catch (event) {
       alert(event instanceof Error ? event.message : 'Не удалось отправить check-in');
@@ -58,7 +58,6 @@ export function CheckInPage() {
             <Input label="Неделя" value={form.weekLabel} onChange={(e) => setForm({ ...form, weekLabel: e.target.value })} placeholder="Неделя 3" />
             <Textarea label="Что сделали за неделю?" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="Кратко опишите результаты..." />
             <Textarea label="Достижения и завершённые задачи" value={form.achievements} onChange={(e) => setForm({ ...form, achievements: e.target.value })} placeholder="Завершили челлендж, провели воркшоп..." />
-            <Textarea label="Что мешает? (необязательно)" value={form.blockers} onChange={(e) => setForm({ ...form, blockers: e.target.value })} placeholder="Трудности с расписанием, нет понимания темы..." />
             <div className={styles.formBtns}>
               <Button onClick={handleSubmit} loading={saving} disabled={!form.weekLabel || !form.summary}>Отправить</Button>
               <Button variant="ghost" onClick={() => setShowForm(false)}>Отмена</Button>
@@ -78,7 +77,6 @@ export function CheckInPage() {
             </div>
             <p className={styles.ciField}><strong>Итоги:</strong> {ci.summary}</p>
             <p className={styles.ciField}><strong>Достижения:</strong> {ci.achievements}</p>
-            {ci.blockers && <p className={styles.ciField}><strong>Блокеры:</strong> {ci.blockers}</p>}
           </Card>
         ))}
       </div>

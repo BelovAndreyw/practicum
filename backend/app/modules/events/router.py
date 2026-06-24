@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
-from pathlib import Path
+from app.core.uploads import resolve_upload_path
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_optional_current_user
@@ -194,7 +194,7 @@ async def get_event_image(
     if not event or not event.image_file_path:
         raise HTTPException(status_code=404, detail="Изображение не найдено")
 
-    file_path = Path(event.image_file_path)
+    file_path = resolve_upload_path(event.image_file_path)
     if not file_path.is_file():
         raise HTTPException(status_code=404, detail="Файл не найден на диске")
 

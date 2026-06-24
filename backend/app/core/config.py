@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     # Демо-режим для тестов, чтобы отдельно проверять для себя их работоспособность
     DEMO_MODE: bool = True
 
+    # Каталог загрузок (в Docker: /app/uploads, volume uploads-pilot)
+    UPLOAD_DIR: str = "uploads"
+
     # Настройки Pydantic v2. Пока оставлю, мб потом уберу, пока не уверена
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),

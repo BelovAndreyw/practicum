@@ -1,37 +1,14 @@
-import os
-import uuid
-from pathlib import Path
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
-from fastapi import HTTPException, status, UploadFile
+from fastapi import HTTPException, UploadFile, status
 from app.models.user import User, Student
 from app.models.team import Team, TeamMember
 from app.models.post import Post, PostImage
 from app.modules.posts.schemas import PostCreateRequest, PostUpdateRequest
 from datetime import datetime, timezone
-import shutil
-
-UPLOAD_DIR = Path("uploads/posts")
-
-
-async def ensure_upload_dir():
-    """Создаёт директорию для загрузок, если её нет"""
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def save_uploaded_file(file: UploadFile, post_id: int) -> tuple[str, str, int]:
-    """Сохраняет загруженный файл и возвращает информацию о нём"""
-    file_extension = Path(file.filename).suffix.lower() if file.filename else ".jpg"
-    unique_filename = f"{uuid.uuid4().hex}{file_extension}"
-    file_path = UPLOAD_DIR / unique_filename
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    file_size = file_path.stat().st_size
-    return file.filename or "unknown", str(file_path), file_size
+from app.core.uploads import POST_UPLOAD_DIR, ensure_dir, save_image, validate_image, delete_file
 
 
 async def get_user_team(user: User, db: AsyncSession) -> Optional[Team]:
@@ -69,7 +46,7 @@ async def create_post_logic(
         db: AsyncSession
 ) -> Post:
     """Создание нового поста"""
-    await ensure_upload_dir()
+    ensure_dir(POST_UPLOAD_DIR)
     team = await get_user_team(user, db)
 
     post = Post(
@@ -86,29 +63,14 @@ async def create_post_logic(
         for file in files:
             if not file.filename:
                 continue
-            if file.content_type and not file.content_type.startswith("image/"):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Файл {file.filename} не является изображением"
-                )
-
-            file.file.seek(0, 2)
-            file_size = file.file.tell()
-            file.file.seek(0)
-
-            if file_size > 5 * 1024 * 1024:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Файл {file.filename} слишком большой (максимум 5MB)"
-                )
-
-            original_filename, file_path, size = save_uploaded_file(file, post.id)
+            validate_image(file)
+            original_filename, file_path, size, content_type = save_image(file, POST_UPLOAD_DIR)
             post_image = PostImage(
                 post_id=post.id,
                 filename=original_filename,
                 file_path=file_path,
                 file_size=size,
-                content_type=file.content_type or "image/jpeg"
+                content_type=content_type
             )
             db.add(post_image)
 
@@ -186,9 +148,7 @@ async def delete_post_logic(
         )
 
     for image in post.images:
-        image_path = Path(image.file_path)
-        if image_path.exists():
-            image_path.unlink()
+        delete_file(image.file_path)
 
     await db.delete(post)
     await db.commit()
@@ -217,9 +177,7 @@ async def delete_post_image_logic(
             detail="Изображение не найдено"
         )
 
-    image_path = Path(image.file_path)
-    if image_path.exists():
-        image_path.unlink()
+    delete_file(image.file_path)
 
     await db.delete(image)
     await db.commit()

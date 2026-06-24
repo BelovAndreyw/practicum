@@ -21,7 +21,7 @@ export function ToolsPage() {
   // Check-in state
   const [checkins, setCheckins] = useState<CheckIn[]>([]);
   const [showCiForm, setShowCiForm] = useState(false);
-  const [ciForm, setCiForm] = useState({ weekLabel: '', summary: '', achievements: '', blockers: '' });
+  const [ciForm, setCiForm] = useState({ weekLabel: '', summary: '', achievements: '' });
   const [ciSaving, setCiSaving] = useState(false);
   const [ciSuccess, setCiSuccess] = useState(false);
 
@@ -107,7 +107,7 @@ export function ToolsPage() {
       setCheckins((prev) => [ci, ...prev]);
       setShowCiForm(false);
       setCiSuccess(true);
-      setCiForm({ weekLabel: '', summary: '', achievements: '', blockers: '' });
+      setCiForm({ weekLabel: '', summary: '', achievements: '' });
       await refreshUser();
     } catch (event) {
       alert(event instanceof Error ? event.message : 'Не удалось отправить check-in');
@@ -230,7 +230,7 @@ export function ToolsPage() {
                 <span className={styles.actionIcon}>✅</span>
                 <h3 className={styles.actionTitle}>Отправить еженедельный отчёт</h3>
                 <p className={styles.actionDesc}>
-                  Расскажите организаторам, что команда сделала за неделю, чего достигла и что мешает двигаться вперёд.
+                  Расскажите организаторам, что команда сделала за неделю и чего достигла.
                 </p>
                 <Button onClick={() => { setShowCiForm(true); setCiSuccess(false); }}>
                   Новый check-in
@@ -243,7 +243,6 @@ export function ToolsPage() {
                   <Input label="Неделя" value={ciForm.weekLabel} onChange={(e) => setCiForm({ ...ciForm, weekLabel: e.target.value })} placeholder="Неделя 3" />
                   <Textarea label="Что сделали?" value={ciForm.summary} onChange={(e) => setCiForm({ ...ciForm, summary: e.target.value })} placeholder="Кратко о результатах..." />
                   <Textarea label="Достижения" value={ciForm.achievements} onChange={(e) => setCiForm({ ...ciForm, achievements: e.target.value })} placeholder="Завершили челлендж, воркшоп..." />
-                  <Textarea label="Блокеры (необязательно)" value={ciForm.blockers} onChange={(e) => setCiForm({ ...ciForm, blockers: e.target.value })} placeholder="Трудности, нехватка времени..." />
                   <div className={styles.formBtns}>
                     <Button onClick={handleCiSubmit} loading={ciSaving} disabled={!ciForm.weekLabel || !ciForm.summary}>Отправить</Button>
                     <Button variant="ghost" onClick={() => setShowCiForm(false)}>Отмена</Button>
@@ -266,7 +265,6 @@ export function ToolsPage() {
                   </div>
                   <p className={styles.ciField}><strong>Итоги:</strong> {ci.summary}</p>
                   <p className={styles.ciField}><strong>Достижения:</strong> {ci.achievements || '—'}</p>
-                  {ci.blockers && <p className={styles.ciField}><strong>Блокеры:</strong> {ci.blockers}</p>}
                 </Card>
               ))
             }

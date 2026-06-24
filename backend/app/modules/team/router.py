@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_current_captain, get_optional_current_user
+from app.core.uploads import resolve_upload_path
 from app.modules.team.logic import (
     get_user_profile_logic,
     create_team_logic,
@@ -106,7 +105,7 @@ async def get_user_avatar(
     if not user or not user.avatar_file_path:
         raise HTTPException(status_code=404, detail="Аватар не найден")
 
-    file_path = Path(user.avatar_file_path)
+    file_path = resolve_upload_path(user.avatar_file_path)
     if not file_path.is_file():
         raise HTTPException(status_code=404, detail="Файл не найден на диске")
 
